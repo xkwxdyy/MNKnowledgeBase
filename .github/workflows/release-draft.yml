@@ -1,20 +1,16 @@
-name: Validate release draft
+name: Prepare candidate release draft
 
 on:
   workflow_dispatch:
     inputs:
+      channel:
+        description: Intended distribution channel after acceptance
+        required: true
+        default: GitHub-Release
       candidate:
-        description: Repository-relative candidate archive produced by the reviewed build commands
+        description: Repository-relative candidate produced by the reviewed build
         required: true
-        default: artifacts/candidate.mnaddon
-      manifest:
-        description: Repository-relative source manifest
-        required: true
-        default: mnaddon.json
-      source_root:
-        description: Repository-relative source or dist directory matching the archive
-        required: true
-        default: dist
+        default: dist/mnknowledgebase_v1_87.mnaddon
 
 permissions:
   contents: read
@@ -33,9 +29,18 @@ jobs:
         run: node ci/run-checks.mjs ci/commands.json
       - name: Build a local candidate using the reviewed explicit command list
         run: node ci/run-checks.mjs ci/candidate-commands.json
-      - name: Verify archive, identity, version, and file parity
+      - name: Verify the exact runtime whitelist and prepare the candidate draft
         env:
           CANDIDATE: ${{ inputs.candidate }}
-          MANIFEST: ${{ inputs.manifest }}
-          SOURCE_ROOT: ${{ inputs.source_root }}
-        run: python3 ci/validate-candidate.py --archive "$CANDIDATE" --manifest "$MANIFEST" --source-root "$SOURCE_ROOT"
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          node build/build.js --verify "$CANDIDATE" > dist/release-verification.json
+          {
+            printf '# Candidate release draft\n\nSource commit: `%s`\n\nChannel: %s\n\n' "$GITHUB_SHA" "$CHANNEL"
+            printf 'Package SHA-256: '
+            sha256sum "$CANDIDATE"
+            printf '\n```json\n'
+            cat mnaddon.json
+            cat dist/release-verification.json
+            printf '\n```\n\nDevice acceptance remains pending. This draft does not publish or distribute the candidate.\n'
+          } | tee dist/release-draft.md >> "$GITHUB_STEP_SUMMARY"

@@ -9,14 +9,51 @@ import stat
 import zipfile
 
 
+def protected_part(part):
+    return part.lower() in {".git", "cursor"} or part.lower().startswith(".cursor")
+
+
+def unsafe_name(value):
+    name = PurePosixPath(value)
+    return (not value or name.is_absolute() or value != name.as_posix()
+            or ".." in name.parts or "\\" in value
+            or any(protected_part(part) for part in name.parts))
+
+
 def local_path(root, value):
     path = Path(value)
-    if path.is_absolute() or ".." in path.parts or any(p.lower() == ".cursor" for p in path.parts):
+    if path.is_absolute() or ".." in path.parts or "\\" in str(value) or any(protected_part(part) for part in path.parts):
         raise ValueError("Expected a repository-relative path")
-    resolved = (root / path).resolve(strict=True)
+    current = root
+    for part in path.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValueError("Symbolic links are forbidden")
+    resolved = current.resolve(strict=True)
     if resolved != root and root not in resolved.parents:
         raise ValueError("Path escapes the repository")
     return resolved
+
+
+def source_files(root):
+    files = set()
+    def visit(directory):
+        entries = list(directory.iterdir())
+        # Reject protected names before inspecting or descending into any entry.
+        if any(unsafe_name(path.relative_to(root).as_posix()) for path in entries):
+            raise ValueError("Unsafe source entry")
+        for path in entries:
+            mode = path.lstat().st_mode
+            if stat.S_ISLNK(mode):
+                raise ValueError("Symbolic links are forbidden")
+            if stat.S_ISDIR(mode):
+                visit(path)
+            elif stat.S_ISREG(mode):
+                files.add(path.relative_to(root).as_posix())
+            else:
+                raise ValueError("Source entries must be regular files or directories")
+    visit(root)
+    return files
 
 
 def validate(root, archive, manifest, source_root):
@@ -26,6 +63,7 @@ def validate(root, archive, manifest, source_root):
     source_root = local_path(root, source_root)
     if archive.suffix != ".mnaddon" or not source_root.is_dir():
         raise ValueError("Expected a .mnaddon archive and a source directory")
+    expected_files = source_files(source_root)
     expected = json.loads(manifest.read_text(encoding="utf-8"))
     with zipfile.ZipFile(archive) as package:
         files = [item for item in package.infolist() if not item.is_dir()]
@@ -34,12 +72,15 @@ def validate(root, archive, manifest, source_root):
         names = [item.filename for item in files]
         if len(names) != len(set(names)) or "mnaddon.json" not in names:
             raise ValueError("Duplicate archive entries or missing root manifest")
-        for item in files:
-            name = PurePosixPath(item.filename)
-            if name.is_absolute() or item.filename != name.as_posix() or ".." in name.parts or "\\" in item.filename or any(p.lower() in {".git", ".cursor"} for p in name.parts):
+        for item in package.infolist():
+            name = item.filename[:-1] if item.is_dir() else item.filename
+            if unsafe_name(name):
                 raise ValueError("Unsafe archive entry")
             if stat.S_ISLNK(item.external_attr >> 16) or item.file_size > 128 * 1024 * 1024:
                 raise ValueError("Archive symlinks and oversized entries are forbidden")
+        if set(names) != expected_files:
+            raise ValueError("Archive/source file set differs")
+        for item in files:
             source = local_path(source_root, item.filename)
             if not source.is_file() or hashlib.sha256(package.read(item)).digest() != hashlib.sha256(source.read_bytes()).digest():
                 raise ValueError("Archive/source byte parity failed")
@@ -58,7 +99,7 @@ def main():
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--source-root", required=True)
     args = parser.parse_args()
-    print(json.dumps(validate(Path.cwd().resolve(), args.archive, args.manifest, args.source_root), ensure_ascii=False))
+    print(json.dumps(validate(Path(__file__).resolve().parents[1], args.archive, args.manifest, args.source_root), ensure_ascii=False))
 
 
 if __name__ == "__main__":
