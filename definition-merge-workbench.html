@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="color-scheme" content="light dark">
+  <title>MNKnowledgeBase - 定义卡合并工作台</title>
+  <link rel="stylesheet" href="./styles/definition-merge-workbench.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="heading">
+        <div class="kicker">MNKnowledgeBase · 合并工作台</div>
+        <h1>定义卡合并决策</h1>
+        <p id="contextText">等待卡片数据…</p>
+      </div>
+      <div class="top-actions">
+        <span class="status" id="statusText" aria-live="polite">初始化中</span>
+        <button type="button" id="swapBtn" class="tool-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"></path><path d="M4 7h16"></path><path d="m16 21 4-4-4-4"></path><path d="M20 17H4"></path></svg>
+          <span>交换 A/B</span>
+        </button>
+        <button type="button" id="refreshBtn" class="tool-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
+          <span>刷新</span>
+        </button>
+        <button type="button" id="closeBtn" class="tool-btn icon-only" aria-label="关闭工作台" title="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="loading-view" id="loadingView">
+      <div class="spinner" aria-hidden="true"></div>
+      <strong>正在读取定义卡及归类树</strong>
+      <span>正在准备数据，通常不超过一秒</span>
+    </main>
+
+    <div class="workbench" id="workbenchView" hidden>
+      <div class="error-banner" id="errorBanner" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+        <span id="errorBannerText"></span>
+      </div>
+
+      <section class="decision-strip" aria-label="合并规则">
+        <div class="decision-group">
+          <div class="decision-label"><span>合并后主标题</span><span>用户选择</span></div>
+          <div class="segmented" role="radiogroup" aria-label="合并后主标题">
+            <label><input type="radio" name="titleMode" value="source" checked><span><b class="seg-side">A</b><span class="seg-text" id="titleModeALabel">来源标题</span></span></label>
+            <label><input type="radio" name="titleMode" value="target"><span><b class="seg-side">B</b><span class="seg-text" id="titleModeBLabel">目标标题</span></span></label>
+          </div>
+        </div>
+        <div class="decision-group">
+          <div class="decision-label"><span>另一侧标题词</span><span>检索召回</span></div>
+          <label class="switch-line"><input id="keepAliases" type="checkbox" checked><span class="box" aria-hidden="true"></span><span class="switch-text" id="aliasHint">保留为检索别名</span></label>
+        </div>
+        <div class="decision-group">
+          <div class="decision-label"><span>前缀调整范围</span><span>默认规则</span></div>
+          <div class="fixed-rule">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="0"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>只更新真正换父的知识点前缀</span>
+          </div>
+        </div>
+      </section>
+
+      <main class="workspace" id="workspace">
+        <div class="interaction-bar" id="interactionBar">
+          <div class="interaction-text" id="interactionText"><strong>未配对来源将整树迁移</strong>；点按来源卡选择，或长按拖到目标归类改为合并。</div>
+          <div class="legend" aria-hidden="true">
+            <span class="legend-item"><svg width="24" height="8" aria-hidden="true"><path d="M1 4 H23" class="lg-pair"></path></svg>合并配对</span>
+            <span class="legend-item"><svg width="24" height="8" aria-hidden="true"><path d="M1 4 H23" class="lg-move"></path></svg>整树迁移</span>
+          </div>
+          <button type="button" id="cancelSelectionBtn" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            <span>取消选择</span>
+          </button>
+        </div>
+
+        <section class="pane source-pane" id="sourcePane">
+          <i class="corner tl" aria-hidden="true"></i><i class="corner tr" aria-hidden="true"></i><i class="corner bl" aria-hidden="true"></i><i class="corner br" aria-hidden="true"></i>
+          <header class="pane-header">
+            <div class="pane-title-row">
+              <span class="side-chip side-a" aria-hidden="true">A</span>
+              <h2>来源定义</h2>
+              <span id="sourceCount" class="count-badge"></span>
+            </div>
+            <div class="definition-title" id="sourceTitle"></div>
+          </header>
+          <div class="tree" id="sourceTree"></div>
+        </section>
+
+        <section class="pane target-pane" id="targetPane">
+          <i class="corner tl" aria-hidden="true"></i><i class="corner tr" aria-hidden="true"></i><i class="corner bl" aria-hidden="true"></i><i class="corner br" aria-hidden="true"></i>
+          <header class="pane-header">
+            <span class="pane-anchor" id="targetAnchor" aria-hidden="true"></span>
+            <div class="pane-title-row">
+              <span class="side-chip side-b" aria-hidden="true">B</span>
+              <h2>目标定义</h2>
+              <span id="targetPlanStatus" class="count-badge"></span>
+            </div>
+            <div class="definition-title" id="targetTitle"></div>
+          </header>
+          <div class="tree" id="targetTree"></div>
+        </section>
+
+        <svg class="connectors" id="connectorSvg" aria-hidden="true"></svg>
+      </main>
+
+      <footer class="footer">
+        <div class="summary" aria-live="polite">
+          <div class="summary-item"><strong id="pairedCount">0</strong><span>归类合并</span></div>
+          <div class="summary-item"><strong id="movedTreeCount">0</strong><span>整树迁移</span></div>
+          <div class="summary-item"><strong id="mergedKnowledgeCount">0</strong><span>知识点合并</span></div>
+          <div class="summary-item"><strong id="movedKnowledgeCount">0</strong><span>知识点换父</span></div>
+          <div class="summary-item"><strong id="deletedCount">1</strong><span>合并后删除</span></div>
+        </div>
+        <div class="footer-note">结构链接定点重建，用户手写相关链接保留。</div>
+        <button type="button" id="previewBtn" class="primary blueprint">
+          <i class="corner tl" aria-hidden="true"></i><i class="corner tr" aria-hidden="true"></i><i class="corner bl" aria-hidden="true"></i><i class="corner br" aria-hidden="true"></i>
+          <span>预演合并</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+        </button>
+      </footer>
+    </div>
+
+    <div class="completion-view" id="completionView" hidden>
+      <section class="completion-card blueprint" role="status">
+        <i class="corner tl" aria-hidden="true"></i><i class="corner tr" aria-hidden="true"></i><i class="corner bl" aria-hidden="true"></i><i class="corner br" aria-hidden="true"></i>
+        <svg class="completion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+        <h2>合并完成</h2>
+        <p id="completionSummary">定义卡及归类树已合并。</p>
+        <button type="button" id="completionCloseBtn" class="primary">关闭工作台</button>
+      </section>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="previewModal" hidden>
+    <section class="modal blueprint" role="dialog" aria-modal="true" aria-labelledby="previewHeading">
+      <i class="corner tl" aria-hidden="true"></i><i class="corner tr" aria-hidden="true"></i><i class="corner bl" aria-hidden="true"></i><i class="corner br" aria-hidden="true"></i>
+      <header class="modal-header">
+        <h2 id="previewHeading">合并预演</h2>
+        <button type="button" id="closeModalBtn" class="tool-btn icon-only" aria-label="关闭预演" title="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <p class="preview-title"><span>主标题预览</span><strong id="finalTitlePreview"></strong></p>
+        <div class="preview-stats" id="previewStats" aria-label="合并统计"></div>
+        <section aria-labelledby="previewActionsHeading">
+          <h3 class="preview-section-title" id="previewActionsHeading">归类处理</h3>
+          <div class="preview-actions" id="previewActions"></div>
+        </section>
+        <div class="preview-rules" id="previewRules"></div>
+        <p class="preview-caution">确认后将直接执行合并；如中途中断，可在 MarginNote 中撤销一次恢复。</p>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" id="modalBackBtn">返回调整</button>
+        <button type="button" id="executeBtn" class="primary">确认合并</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" hidden aria-live="polite"></div>
+  <div class="drag-ghost" id="dragGhost" hidden aria-hidden="true"></div>
+
+  <script src="./scripts/definition-merge-workbench/core.js"></script>
+  <script src="./scripts/definition-merge-workbench/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MNKnowledgeBase · 搜索知识库</title>
+  <script>
+    window.__MNKB_STARTUP_PERF_T0__ = (window.performance && typeof window.performance.now === 'function')
+      ? window.performance.now()
+      : Date.now();
+    // 生产默认关闭诊断。仅在 Native/调试会话显式注入 true 时采样，
+    // 避免启动阶段的 htmlLog 与用户 action 争用 URL Scheme 队列。
+    window.__MNKB_STARTUP_PERF_LOG__ = window.__MNKB_STARTUP_PERF_LOG__ === true;
+    window.__MNKB_SEARCH_DEBUG__ = window.__MNKB_SEARCH_DEBUG__ === true;
+  </script>
+  <link rel="stylesheet" href="./styles/search.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-main">
+      <div class="quick-action-grid" role="group" aria-label="常用快捷操作">
+        <button id="locateMNSelectionBtn" class="btn quick-btn" type="button" title="定位 MarginNote 当前选中的卡片" aria-label="定位 MarginNote 当前选中的卡片">📍</button>
+        <button id="toggleFiltersBtn" class="btn quick-btn filter-toggle" type="button" aria-controls="filtersPanel" aria-expanded="true" aria-label="收起筛选工具栏">🔻</button>
+        <button id="refreshBtn" class="btn quick-btn" type="button" title="刷新搜索列表" aria-label="刷新搜索列表">🔄</button>
+        <button id="clearBtn" class="btn quick-btn" type="button" title="清空搜索与筛选条件" aria-label="清空搜索与筛选条件">🗑️</button>
+      </div>
+      <div class="search-input-wrap">
+        <div class="search-input-caption">
+          <label for="searchInput">搜索知识库</label>
+          <div id="searchCount" class="search-count" role="status" aria-live="polite" aria-atomic="true">等待数据</div>
+        </div>
+        <input id="searchInput" class="search-input" placeholder="输入关键词，双引号保持词组完整" aria-label="搜索知识库" aria-controls="searchHistoryDropdown" aria-expanded="false" aria-haspopup="dialog" autocomplete="off" autocapitalize="none" spellcheck="false" />
+        <div id="searchHistoryDropdown" class="search-history-dropdown" role="dialog" aria-label="搜索历史" hidden></div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="aiCardSearchBtn" class="btn ai-card-search-btn" type="button" title="按数学术语义项查找最相关的知识点卡片">AI 找卡片</button>
+      <span id="indexModeBadge" class="index-mode-badge"></span>
+      <button id="autoCloseModeBtn" class="btn" type="button" title="当前：操作后关闭窗口&#10;点击切换为：保持窗口打开">↘ 操作后关闭</button>
+      <button id="sidebarPanelBtn" class="btn ghost" type="button" aria-controls="sidebar" aria-expanded="true" aria-pressed="true" title="打开/关闭操作面板">⚡ 操作</button>
+      <button id="aiRecommendBtn" class="btn" type="button" title="AI 推荐归类/定义卡片" style="display: none;">🤖 推荐</button>
+    </div>
+    <div id="activeSearchFilters" class="active-search-filters" role="group" aria-label="当前筛选条件" hidden>
+      <span class="active-search-filters__label">筛选</span>
+      <div id="activeSearchFilterList" class="active-search-filters__list"></div>
+      <button class="active-search-filters__clear" type="button" data-search-recovery="filters">清除筛选</button>
+    </div>
+  </div>
+
+  <!-- 局部搜索横幅 -->
+  <div id="localSearchBanner" class="local-search-banner" hidden></div>
+
+  <section id="aiCardSearchPanel" class="ai-card-search-panel" aria-label="AI 找卡片" hidden>
+    <div class="ai-card-search-panel__main">
+      <div class="ai-card-search-panel__heading">
+        <span class="ai-card-search-panel__label">智能检索</span>
+        <div id="aiCardSearchConcepts" class="ai-card-search-panel__concepts"></div>
+      </div>
+      <div id="aiCardSearchDetails" class="ai-card-search-panel__details"></div>
+    </div>
+    <div class="ai-card-search-panel__result">
+      <label class="ai-card-search-model" title="选择 AI 精排模型">
+        <span class="ai-card-search-model__label">模型</span>
+        <select id="aiCardSearchModelSelect" aria-label="AI 精排模型" disabled>
+          <option value="">本地检索</option>
+        </select>
+      </label>
+      <button id="aiCardSearchRefreshModelsBtn" class="ai-card-search-panel__icon-btn" type="button" title="刷新在线模型列表" aria-label="刷新在线模型列表">↻</button>
+      <span id="aiCardSearchStatus" role="status" aria-live="polite" aria-atomic="true"></span>
+      <button id="aiCardSearchRetryBtn" class="ai-card-search-panel__retry-btn" type="button" title="重新发送 AI 精排" aria-label="重新发送 AI 精排" hidden>重试精排</button>
+      <button id="aiCardSearchCloseBtn" class="ai-card-search-panel__close" type="button" title="退出智能检索" aria-label="退出智能检索">×</button>
+    </div>
+  </section>
+
+  <div class="filters-backdrop" id="filtersBackdrop" aria-hidden="true"></div>
+
+  <div class="filters-panel" id="filtersPanel" aria-label="筛选面板">
+    <div class="pill-section pill-section--type" data-section="type">
+      <div class="pill-section__header">
+        <div class="pill-section__label-group">
+          <div class="pill-section__label">类型筛选</div>
+          <button class="pill-section__toggle-btn" data-toggle="type" type="button" aria-label="折叠/展开">
+            ▼
+          </button>
+        </div>
+      </div>
+      <div class="pill-section__content" data-content="type">
+        <div class="pill-row type-bar" id="typeBar" aria-label="类型筛选">
+          <!-- 类型筛选 pill 将在 JS 中渲染 -->
+        </div>
+      </div>
+    </div>
+    <div class="pill-section pill-section--classification component-hidden" data-section="classification">
+      <div class="pill-section__header">
+        <div class="pill-section__label-group">
+          <div class="pill-section__label">归类子类型</div>
+          <button class="pill-section__toggle-btn" data-toggle="classification" type="button" aria-label="折叠/展开">
+            ▼
+          </button>
+        </div>
+      </div>
+      <div class="pill-section__content" data-content="classification">
+        <div class="pill-row classification-bar" id="classificationBar" aria-label="归类二级类型">
+          <!-- 归类二级类型 pill -->
+        </div>
+      </div>
+    </div>
+    <div class="pill-section pill-section--preset" data-section="preset">
+      <div class="pill-section__header">
+        <div class="pill-section__label-group">
+          <div class="pill-section__label">搜索预设</div>
+          <button class="pill-section__clear-btn" id="clearPresetsBtn" type="button">
+            <span class="clear-icon">✕</span>
+            <span class="clear-text">清除</span>
+          </button>
+          <button class="pill-section__toggle-btn" data-toggle="preset" type="button" aria-label="折叠/展开">
+            ▼
+          </button>
+        </div>
+      </div>
+      <div class="pill-section__content" data-content="preset">
+        <div id="presetBar" aria-label="搜索预设">
+          <!-- 预设分组将在 JS 中渲染 -->
+        </div>
+      </div>
+    </div>
+    <div class="pill-section pill-section--negative" data-section="negative">
+      <div class="pill-section__header">
+        <div class="pill-section__label-group">
+          <div class="pill-section__label">排除关键词</div>
+          <button class="pill-section__clear-btn" id="clearNegativesBtn" type="button">
+            <span class="clear-icon">✕</span>
+            <span class="clear-text">清除</span>
+          </button>
+          <button class="pill-section__toggle-btn" data-toggle="negative" type="button" aria-label="折叠/展开">
+            ▼
+          </button>
+        </div>
+      </div>
+      <div class="pill-section__content" data-content="negative">
+        <div class="filter-input-row filter-input-row--negative">
+          <input id="excludeInput" class="search-input exclude-input" placeholder="临时排除标题：空格分词，双引号保持整体" aria-label="临时排除标题关键词" autocomplete="off" autocapitalize="none" spellcheck="false" />
+          <div class="filter-input-help">只影响当前搜索，不会修改下方固定排除词。</div>
+        </div>
+        <div class="pill-row negative-bar" id="negativeBar" aria-label="排除词">
+          <!-- 负向排除词（粉色）将在 JS 中渲染 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar 遮罩层 (仅移动端) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar 切换按钮 (仅移动端) -->
+  <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="打开卡片操作面板" aria-controls="sidebar" aria-expanded="false" style="display: none;">
+    ⚙️
+  </button>
+
+  <div class="main-layout">
+    <!-- 左侧操作面板 -->
+    <aside class="sidebar" id="sidebar" aria-label="卡片操作面板">
+      <div class="sidebar-header">
+        <div class="sidebar-header-heading">
+          <div class="sidebar-title">目标卡片</div>
+          <button id="sidebarCloseBtn" class="sidebar-close-btn" type="button" aria-label="关闭卡片操作面板" title="关闭操作面板（Esc）">×</button>
+        </div>
+        <div class="selected-card-info empty" id="selectedCardInfo">未选中卡片</div>
+        <div class="sidebar-workflow" aria-label="操作流程">
+          <span data-workflow-step="select">1 选择卡片</span>
+          <span aria-hidden="true">→</span>
+          <span data-workflow-step="operate">2 选择操作</span>
+          <span aria-hidden="true">→</span>
+          <span data-workflow-step="confirm">3 再次确认</span>
+        </div>
+        <div class="ai-recommendation" id="aiRecommendPanel" style="display: none;">
+          <div class="ai-recommendation__header">
+            <div class="ai-recommendation__title">AI 推荐</div>
+            <button class="ai-recommendation__clear" id="aiRecommendClearBtn" type="button">清除</button>
+          </div>
+          <div class="ai-recommendation__debug" id="aiRecommendDebug"></div>
+          <div class="ai-recommendation__list" id="aiRecommendList"></div>
+        </div>
+      </div>
+
+      <!-- ⭐ 星标常用功能区 -->
+      <!-- 暂时注释：双向链接功能已移至卡片操作图标 -->
+      <!--
+      <div class="sidebar-section sidebar-section--starred">
+        <div class="sidebar-section-title">⭐ 常用功能</div>
+        <button class="sidebar-btn" id="bidirectionalLinkFromeFocusNoteToTargetNoteBtn" type="button" disabled>
+          <span>🔗</span>
+          <span>FocusNote 与选中卡片双向链接</span>
+        </button>
+      </div>
+      -->
+
+      <div class="sidebar-section sidebar-section--actions">
+        <div class="sidebar-section-heading">
+          <div>
+            <div class="sidebar-section-title">下一步</div>
+            <div class="sidebar-section-hint" id="sidebarWorkflowHint">先从右侧结果中选择一张目标卡片。</div>
+          </div>
+        </div>
+
+        <div class="sidebar-empty-guide" id="sidebarEmptyGuide">
+          <span class="sidebar-empty-guide__number">1</span>
+          <span>点击一张搜索结果卡片；选中后，这里只展开你上次使用的操作。</span>
+        </div>
+
+
+        <!-- 局部搜索按钮 -->
+        <div class="sidebar-btn-group sidebar-btn-group--local-search" id="localSearchSidebarGroup">
+          <button class="sidebar-btn sidebar-btn--local-search" id="activateLocalSearchBtn" type="button" disabled>
+            <div class="sidebar-btn-content">
+              <span class="sidebar-btn-title">🔍 以此卡为根，搜索子孙卡片</span>
+              <span class="sidebar-btn-subtitle" id="localSearchSidebarSubtitle">选中卡片后可用</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- 合并操作组 -->
+        <div class="sidebar-btn-group sidebar-btn-group--merge" data-operation-group="merge">
+          <button class="sidebar-btn-group-label sidebar-operation-toggle" data-operation-toggle="merge" type="button" aria-expanded="false" aria-controls="mergeOperationBody">
+            <span class="sidebar-operation-icon">🔗</span>
+            <span class="sidebar-operation-copy">
+              <strong>合并重复知识点</strong>
+              <small>将当前焦点卡片内容并入选中卡片</small>
+            </span>
+            <span class="sidebar-operation-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="sidebar-operation-body" id="mergeOperationBody">
+            <div class="sidebar-merge-layout">
+              <div class="sidebar-merge-action-card">
+                <div class="sidebar-action-kicker">主操作</div>
+                <div class="sidebar-merge-action-note">当前焦点卡片内容 → 选中卡片</div>
+                <button class="sidebar-btn sidebar-btn--grouped sidebar-btn--merge-primary" id="mergeDuplicateKnowledgeNoteToTargetNoteBtn" type="button" disabled>
+                  <div class="sidebar-btn-content">
+                    <span class="sidebar-btn-title">合并到选中卡片</span>
+                    <span class="sidebar-btn-subtitle" id="mergeDuplicateKnowledgeNoteToTargetNoteSubtitle">默认：标题去重 · 仅摘录 · 不先摘录 · 下方 · 不定位 · 不链接旧归类</span>
+                  </div>
+                </button>
+                <div class="sidebar-mode-tags" id="mergeModeTags"></div>
+                <div class="sidebar-last-action is-empty" id="mergeLastAction">
+                  <div class="sidebar-last-action-label">最近一次执行</div>
+                  <div class="sidebar-last-action-text">暂无记录</div>
+                </div>
+                <div class="sidebar-merge-action-tip">先点一次查看确认提示，再点一次执行。</div>
+              </div>
+              <details class="sidebar-settings-disclosure">
+                <summary>
+                  <span>调整合并设置</span>
+                  <small>默认已采用推荐方案</small>
+                </summary>
+                <div class="sidebar-merge-config-card">
+                  <div class="sidebar-merge-card-desc">这些设置会自动保存，下次继续使用。</div>
+                  <div class="sidebar-merge-options">
+                    <label class="sidebar-switch-row" for="mergeRemoveTitleToggle">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">合并前去掉标题</span>
+                        <span class="sidebar-switch-subtitle">关闭时并入标题变体并去重</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="mergeRemoveTitleToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <label class="sidebar-switch-row" for="mergeKeepOnlyExcerptToggle">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">只保留摘录</span>
+                        <span class="sidebar-switch-subtitle">默认开启，只动摘录更稳</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="mergeKeepOnlyExcerptToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <label class="sidebar-switch-row" for="mergeExcerptFromSelectionToggle">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">先摘录再合并</span>
+                        <span class="sidebar-switch-subtitle">文档选区 → 新摘录卡片 → 合并</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="mergeExcerptFromSelectionToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <div class="sidebar-option-block">
+                      <div class="sidebar-option-label">合并后的位置</div>
+                      <div class="dataset-toggle" data-variant="overlay" id="mergePositionToggle">
+                        <button type="button" data-position="below">摘录下方▼</button>
+                        <button type="button" data-position="above">摘录上方▲</button>
+                      </div>
+                    </div>
+                    <label class="sidebar-switch-row" for="mergeLocateAfterToggle">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">合并后定位</span>
+                        <span class="sidebar-switch-subtitle">默认关闭</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="mergeLocateAfterToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <label class="sidebar-switch-row" for="mergeLinkOldClassificationToggle">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">链接旧归类卡片</span>
+                        <span class="sidebar-switch-subtitle">把旧归类补进相关链接，默认关闭</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="mergeLinkOldClassificationToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <div class="sidebar-merge-summary" id="mergeConfigSummary"></div>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <!-- 移动操作组 -->
+        <div class="sidebar-btn-group sidebar-btn-group--move" data-operation-group="move">
+          <button class="sidebar-btn-group-label sidebar-operation-toggle" data-operation-toggle="move" type="button" aria-expanded="false" aria-controls="moveOperationBody">
+            <span class="sidebar-operation-icon">🗺️</span>
+            <span class="sidebar-operation-copy">
+              <strong>移动当前焦点卡片</strong>
+              <small>移到选中卡片下，按需制卡和复习</small>
+            </span>
+            <span class="sidebar-operation-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="sidebar-operation-body" id="moveOperationBody">
+            <div class="sidebar-merge-layout">
+              <div class="sidebar-merge-action-card">
+                <div class="sidebar-action-kicker">主操作</div>
+                <div class="sidebar-merge-action-note">当前焦点卡片 → 选中卡片下方（作为子卡片）</div>
+                <button class="sidebar-btn sidebar-btn--grouped sidebar-btn--merge-primary" id="moveFocusNoteToTargetNoteAsChildBtn" type="button" disabled>
+                  <div class="sidebar-btn-content">
+                    <span class="sidebar-btn-title">移动为选中卡片的子卡片</span>
+                    <span class="sidebar-btn-subtitle" id="moveFocusNoteToTargetNoteAsChildSubtitle">默认：仅移动，不制卡，不加复习，不定位</span>
+                  </div>
+                </button>
+                <div class="sidebar-mode-tags" id="moveModeTags"></div>
+                <div class="sidebar-last-action is-empty" id="moveLastAction">
+                  <div class="sidebar-last-action-label">最近一次执行</div>
+                  <div class="sidebar-last-action-text">暂无记录</div>
+                </div>
+                <div class="sidebar-merge-action-tip">先点一次查看确认提示，再点一次执行。</div>
+              </div>
+              <details class="sidebar-settings-disclosure">
+                <summary>
+                  <span>调整移动设置</span>
+                  <small>默认只移动，不制卡</small>
+                </summary>
+                <div class="sidebar-merge-config-card">
+                  <div class="sidebar-merge-card-desc">移动是基础，制卡、复习和定位都是附加项。</div>
+                  <div class="sidebar-merge-options">
+                    <label class="sidebar-switch-row" for="moveMakeNoteToggle">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">移动后制卡</span>
+                        <span class="sidebar-switch-subtitle">转成正式知识卡片</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="moveMakeNoteToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <label class="sidebar-switch-row" for="moveAddToReviewToggle" id="moveAddToReviewRow">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">制卡后加入复习</span>
+                        <span class="sidebar-switch-subtitle">依赖“移动后制卡”</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="moveAddToReviewToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <label class="sidebar-switch-row" for="moveLocateAfterToggle">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">完成后定位</span>
+                        <span class="sidebar-switch-subtitle">定位到处理后的焦点卡片</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="moveLocateAfterToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <div class="sidebar-merge-summary" id="moveConfigSummary"></div>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模板操作组 -->
+        <div class="sidebar-btn-group sidebar-btn-group--template" data-operation-group="template">
+          <button class="sidebar-btn-group-label sidebar-operation-toggle" data-operation-toggle="template" type="button" aria-expanded="false" aria-controls="templateOperationBody">
+            <span class="sidebar-operation-icon">📋</span>
+            <span class="sidebar-operation-copy">
+              <strong>新建归类并移入</strong>
+              <small>在选中卡片下新建归类，并移入焦点卡片</small>
+            </span>
+            <span class="sidebar-operation-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="sidebar-operation-body" id="templateOperationBody">
+            <div class="sidebar-merge-layout">
+              <div class="sidebar-merge-action-card">
+                <div class="sidebar-action-kicker">主操作</div>
+                <div class="sidebar-merge-action-note">选中卡片 → 新建归类 → 移入当前焦点卡片</div>
+                <button class="sidebar-btn sidebar-btn--grouped sidebar-btn--merge-primary" id="addTemplateToTargetNoteAndMoveFocusNoteAsChildBtn" type="button" disabled>
+                  <div class="sidebar-btn-content">
+                    <span class="sidebar-btn-title">新建归类并移入焦点卡片</span>
+                    <span class="sidebar-btn-subtitle" id="addTemplateToTargetNoteAndMoveFocusNoteAsChildSubtitle">默认：新建归类并移入，不定位</span>
+                  </div>
+                </button>
+                <div class="sidebar-mode-tags" id="templateModeTags"></div>
+                <div class="sidebar-last-action is-empty" id="templateLastAction">
+                  <div class="sidebar-last-action-label">最近一次执行</div>
+                  <div class="sidebar-last-action-text">暂无记录</div>
+                </div>
+                <div class="sidebar-merge-action-tip">先点一次查看确认提示，再点一次执行。</div>
+              </div>
+              <details class="sidebar-settings-disclosure">
+                <summary>
+                  <span>调整模板设置</span>
+                  <small>默认完成后不定位</small>
+                </summary>
+                <div class="sidebar-merge-config-card">
+                  <div class="sidebar-merge-card-desc">先新建归类卡片，再把当前焦点卡片移入其中。</div>
+                  <div class="sidebar-merge-options">
+                    <label class="sidebar-switch-row" for="templateLocateAfterToggle">
+                      <span class="sidebar-switch-copy">
+                        <span class="sidebar-switch-title">完成后定位</span>
+                        <span class="sidebar-switch-subtitle">定位到移入后的焦点卡片</span>
+                      </span>
+                      <span class="sidebar-switch">
+                        <input id="templateLocateAfterToggle" type="checkbox" />
+                        <span class="sidebar-switch-track"></span>
+                      </span>
+                    </label>
+                    <div class="sidebar-merge-summary" id="templateConfigSummary"></div>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="sidebar-resize-handle" id="sidebarResizeHandle" role="separator" aria-orientation="vertical" aria-label="调整侧边栏宽度"></div>
+
+    <!-- 右侧卡片区域 -->
+    <div class="container">
+      <section id="searchEmptyState" class="search-empty-state" aria-labelledby="searchEmptyTitle" hidden>
+        <div class="search-empty-state__mark" aria-hidden="true"></div>
+        <h2 id="searchEmptyTitle"></h2>
+        <p id="searchEmptyDescription"></p>
+        <div class="search-empty-state__actions">
+          <button id="searchEmptyEditBtn" class="btn" type="button" data-search-recovery="edit">修改关键词</button>
+          <button id="searchEmptyFiltersBtn" class="btn ghost" type="button" data-search-recovery="filters">清除筛选</button>
+          <button id="searchEmptyRefreshBtn" class="btn" type="button" data-search-recovery="refresh">刷新列表</button>
+          <button id="searchEmptyRetryBtn" class="btn" type="button" data-search-recovery="retry">重新搜索</button>
+        </div>
+      </section>
+      <div class="results" id="results" role="region" aria-label="搜索结果"></div>
+      <!-- 加载更多按钮 -->
+      <div id="loadMoreContainer" class="load-more-container">
+        <button id="loadMoreBtn" class="load-more-btn" type="button">
+          加载更多
+        </button>
+        <div id="loadingIndicator" class="loading-indicator">
+          加载中...
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- 返回顶部按钮 -->
+  <button class="scroll-to-top" id="scrollToTopBtn" type="button" aria-label="返回顶部">
+    ⬆️
+  </button>
+
+  <script src="./scripts/search/bridge.js"></script>
+  <script src="./scripts/search/math-term-search-core.js"></script>
+  <script src="./scripts/search/app-core.js"></script>
+  <script src="./scripts/search/app-runtime-layout.js"></script>
+  <script src="./scripts/search/app-runtime-pagination.js"></script>
+  <script src="./scripts/search/app-runtime-events.js"></script>
+  <script src="./scripts/search/app-runtime-data.js"></script>
+  <script src="./scripts/search/app-filters-presets.js"></script>
+  <script src="./scripts/search/app-filters-query.js"></script>
+  <script src="./scripts/search/app-filters-score.js"></script>
+  <script src="./scripts/search/app-ai-search.js"></script>
+  <script src="./scripts/search/app-ui-interactions.js"></script>
+  <script src="./scripts/search/app-search-history.js"></script>
+  <script src="./scripts/search/app-ui-results.js"></script>
+  <script src="./scripts/search/app-ui.js"></script>
+  <script src="./scripts/search/app-ui-bridge.js"></script>
+  <script src="./scripts/search/app.js"></script>
+
+</body>
+</html>

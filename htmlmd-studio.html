@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MNKnowledgeBase - HtmlMD Studio</title>
+  <link rel="stylesheet" href="./styles/htmlmd-studio.css" />
+</head>
+<body>
+  <div class="studio-shell">
+    <header class="studio-topbar">
+      <div class="studio-heading">
+        <h1 class="studio-title">HtmlMD Studio</h1>
+        <p class="studio-subtitle" id="noteTitle">加载中...</p>
+      </div>
+
+      <nav class="mode-switch" aria-label="工作模式">
+        <button type="button" class="mode-tab active" id="newModeBtn" aria-pressed="true">
+          新建内容
+        </button>
+        <button type="button" class="mode-tab" id="editModeBtn" aria-pressed="false">
+          编辑已有
+          <span class="mode-count" id="candidateCountBadge">0</span>
+        </button>
+      </nav>
+    </header>
+
+    <main class="studio-main" id="studioMain">
+      <aside class="candidate-panel hidden" id="candidatePanel" aria-labelledby="candidateHeading">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="candidateHeading">选择已有评论</h2>
+            <p class="panel-copy" id="candidateSummary">0 条可编辑评论</p>
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="text-btn" id="selectAllBtn">全选</button>
+            <button type="button" class="text-btn" id="clearSelectionBtn">清空</button>
+          </div>
+        </div>
+        <div class="candidate-list" id="candidateList" aria-live="polite">
+          <div class="empty-state">暂无可编辑评论</div>
+        </div>
+      </aside>
+
+      <section class="composer-card" aria-labelledby="composerHeading">
+        <header class="composer-header">
+          <div>
+            <div class="eyebrow" id="modeBadge">新建模式</div>
+            <h2 class="composer-title" id="composerHeading">创建 HtmlMD 评论</h2>
+            <p class="mode-summary" id="modeSummary">输入内容并选择语义类型。</p>
+          </div>
+          <button type="button" class="text-btn" id="newDraftBtn">清空内容</button>
+        </header>
+
+        <fieldset class="type-picker" id="typePicker">
+          <legend>内容类型</legend>
+          <div class="type-list" id="primaryTypeList"></div>
+          <details class="type-more" id="moreTypeDetails">
+            <summary>
+              <span id="moreTypeSummaryLabel">更多类型</span>
+              <span aria-hidden="true">⌄</span>
+            </summary>
+            <div class="secondary-type-groups" id="secondaryTypeList"></div>
+          </details>
+        </fieldset>
+
+        <div class="workspace-grid">
+          <section class="source-card" aria-labelledby="sourceHeading">
+            <div class="section-heading">
+              <div>
+                <h3 id="sourceHeading">正文</h3>
+                <p id="sourceHint">支持 Markdown，打开时始终从空白开始。</p>
+              </div>
+              <span class="character-count" id="characterCount">0 字</span>
+            </div>
+            <label class="sr-only" for="sourceTextarea">正文内容</label>
+            <textarea
+              id="sourceTextarea"
+              spellcheck="false"
+              placeholder="在这里输入备注、关键结论、证明草稿或思路……"
+            ></textarea>
+            <div class="batch-section hidden" id="batchSection">
+              <p id="batchCopy">批量模式不会改正文，只会更新所选评论的语义外观。</p>
+              <div class="inline-actions">
+                <button type="button" class="secondary-btn" id="levelUpBtn">层级上移</button>
+                <button type="button" class="secondary-btn" id="levelDownBtn">层级下移</button>
+              </div>
+            </div>
+          </section>
+
+          <aside class="preview-card" aria-labelledby="previewHeading">
+            <div class="section-heading">
+              <div>
+                <h3 id="previewHeading">实时预览</h3>
+                <p>最终写入 MarginNote 的显示效果</p>
+              </div>
+              <button type="button" class="text-btn" id="copyMarkupBtn">复制源码</button>
+            </div>
+            <div class="preview-canvas" id="previewCanvas" aria-live="polite">
+              <div class="empty-state">输入正文后将在这里显示预览。</div>
+            </div>
+            <details class="markup-details" id="markupDetails">
+              <summary>查看生成的单行 HtmlMD</summary>
+              <label class="sr-only" for="markupOutput">生成的单行 HtmlMD</label>
+              <textarea id="markupOutput" readonly spellcheck="false"></textarea>
+            </details>
+          </aside>
+        </div>
+
+        <details class="appearance-details" id="appearanceDetails">
+          <summary>
+            <span>外观微调</span>
+            <span class="appearance-summary" id="appearanceSummary">使用类型默认外观</span>
+          </summary>
+          <div class="appearance-panel">
+            <div class="appearance-grid">
+              <label class="field">
+                <span class="field-label">字号</span>
+                <select id="sizeSelect"></select>
+              </label>
+              <label class="field">
+                <span class="field-label">颜色</span>
+                <select id="toneSelect"></select>
+              </label>
+              <label class="field">
+                <span class="field-label">高亮</span>
+                <select id="highlightSelect"></select>
+              </label>
+              <label class="field">
+                <span class="field-label">强调样式</span>
+                <select id="emphasisSelect"></select>
+              </label>
+            </div>
+            <div class="appearance-footer">
+              <div class="toggle-row">
+                <label class="toggle-item">
+                  <input type="checkbox" id="leadingDashToggle" />
+                  <span>保留前导 <code>- </code></span>
+                </label>
+                <label class="toggle-item hidden" id="preserveLegacyItem">
+                  <input type="checkbox" id="preserveLegacyToggle" />
+                  <span>保留历史残留样式</span>
+                </label>
+              </div>
+              <button type="button" class="text-btn danger-text" id="resetOverridesBtn">恢复默认外观</button>
+            </div>
+          </div>
+        </details>
+
+        <footer class="composer-actions">
+          <div class="selection-status" id="selectionStatus" aria-live="polite">将创建一条新评论</div>
+          <div class="action-buttons">
+            <button type="button" class="primary-btn" id="appendBtn">创建为新评论</button>
+            <button type="button" class="primary-btn hidden" id="applyBtn">应用到当前评论</button>
+            <button type="button" class="primary-btn hidden" id="applyBatchBtn">应用到已选评论</button>
+          </div>
+        </footer>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="./scripts/htmlmd-studio/app.js"></script>
+</body>
+</html>

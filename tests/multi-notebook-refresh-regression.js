@@ -1,0 +1,34 @@
+const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('assert');
+const source = fs.readFileSync(process.env.MNKB_UTILS_SOURCE || path.join(__dirname, '../utils.js'), 'utf8');
+const start = source.indexOf('  static runUndoGroupingWithoutGlobalDBRefresh(');
+const end = source.indexOf('  static async runUndoGroupingWithoutGlobalDBRefreshAsync(', start);
+function setup({ app = true, failing = '' } = {}) {
+  const events = [];
+  const util = { currentNotebookId: 'CURRENT', refreshAfterDBChanged(id) { events.push('scheduled:' + id); }, undoGroupingNotRefresh(fn) { events.push('begin'); try { return fn(); } finally { events.push('end'); } } };
+  if (app) util.app = { refreshAfterDBChanged(id) { events.push('refresh:' + id); if (id === failing) throw Error('refresh failed'); } };
+  const context = vm.createContext({ MNUtil: util });
+  vm.runInContext('class Helper {' + source.slice(start,end) + '} this.run = Helper.runUndoGroupingWithoutGlobalDBRefresh;', context);
+  return { run: context.run, util, events };
+}
+let t = setup(); const original = t.util.refreshAfterDBChanged;
+assert.equal(t.run(() => { t.util.refreshAfterDBChanged('A'); t.util.refreshAfterDBChanged('B'); t.util.refreshAfterDBChanged('A'); return 7; }, { finalRefreshAfterDBChanged:true }), 7);
+assert.deepEqual(t.events, ['begin','end','refresh:A','refresh:B']);
+assert.equal(t.util.refreshAfterDBChanged, original);
+assert.equal(t.util._suppressRefreshAfterDBChangedDepth,0);
+t = setup();
+t.run(() => { t.util.refreshAfterDBChanged('A'); t.run(() => {t.util.refreshAfterDBChanged('B'); t.util.refreshAfterDBChanged('A');}, {finalRefreshAfterDBChanged:true}); assert(!t.events.some(e => e.startsWith('refresh:'))); }, {finalRefreshAfterDBChanged:true});
+assert.deepEqual(t.events.filter(e => e.startsWith('refresh:')), ['refresh:A','refresh:B']);
+t = setup();
+t.run(() => {t.util.refreshAfterDBChanged('A');t.util.refreshAfterDBChanged('B');});
+assert.deepEqual(t.events,['begin','end'], 'opt-out must stay quiet');
+t = setup({failing:'A'});const error=Error('mutation failed');
+assert.throws(() => t.run(() => {t.util.refreshAfterDBChanged('A');t.util.refreshAfterDBChanged('B');throw error;},{finalRefreshAfterDBChanged:true}), e => e === error);
+assert.deepEqual(t.events.slice(-2),['refresh:A','refresh:B'], 'one refresh failure must not skip another notebook');
+assert.equal(t.util._suppressRefreshAfterDBChangedDepth,0);
+t = setup({failing:'A'});
+assert.throws(() => t.run(() => t.util.refreshAfterDBChanged('A'), {finalRefreshAfterDBChanged:true}), /refresh failed/);
+t = setup();t.run(() => 1,{finalRefreshAfterDBChanged:true});
+assert.equal(t.events.at(-1),'refresh:CURRENT');
+t = setup({app:false});t.run(() => {t.util.refreshAfterDBChanged('A');t.util.refreshAfterDBChanged('B');},{finalRefreshAfterDBChanged:true});
+assert.deepEqual(t.events.slice(-2),['scheduled:A','scheduled:B']);
+console.log('multi-notebook refresh: dedupe, nesting, opt-out, failure isolation, state restoration and legacy fallback passed');

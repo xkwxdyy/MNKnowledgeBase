@@ -1,0 +1,9 @@
+dist/
+.tmp/
+node_modules/
+MEMORY/
+# Private migration materials belong outside this public repository.
+*.mnaddon
+.env*
+*.local.json
+.DS_Store

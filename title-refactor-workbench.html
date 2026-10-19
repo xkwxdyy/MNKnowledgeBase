@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="color-scheme" content="light">
+  <title>MNKnowledgeBase · 归类卡片标题整理</title>
+  <style>
+    /* Hallmark · genre: modern-minimal · macrostructure: Map / Diagram · theme: Cobalt · enrichment: none · nav: N9 · footer: Ft2 */
+    :root {
+      --paper: oklch(98.5% 0.004 250);
+      --paper-2: oklch(96.8% 0.006 250);
+      --paper-3: oklch(94.8% 0.008 250);
+      --ink: oklch(24% 0.02 258);
+      --ink-2: oklch(36% 0.018 257);
+      --muted: oklch(57% 0.018 257);
+      --rule: oklch(87% 0.012 250);
+      --rule-strong: oklch(78% 0.018 250);
+      --accent: oklch(58% 0.20 256);
+      --accent-soft: oklch(93% 0.045 256);
+      --accent-ink: oklch(98% 0.004 250);
+      --graphite: oklch(22% 0.016 260);
+      --success: oklch(48% 0.12 155);
+      --warning: oklch(57% 0.14 72);
+      --highlight: oklch(88% 0.14 92);
+      --highlight-branch: oklch(91% 0.09 245);
+      --font-display: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-body: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; overflow-x: clip; }
+    body { margin: 0; color: var(--ink-2); background: var(--paper); font: 14px/1.45 var(--font-body); -webkit-text-size-adjust: 100%; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .app { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 20px 24px 16px; border-bottom: 1px solid var(--rule); background: color-mix(in oklab, var(--paper) 92%, transparent); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 5; }
+    .eyebrow, .mono-label { color: var(--muted); font: 600 10px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { margin-top: 7px; color: var(--ink); font: 600 clamp(24px, 3vw, 38px)/1.05 var(--font-display); letter-spacing: -.035em; }
+    .lede { margin-top: 9px; max-width: 780px; color: var(--muted); }
+    .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .status { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 10px; border: 1px solid var(--rule); color: var(--muted); background: var(--paper-2); font: 500 11px var(--font-mono); }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+    .status[data-kind="warning"]::before { background: var(--warning); }
+    .btn { border: 1px solid var(--rule-strong); border-radius: 6px; padding: 7px 11px; color: var(--ink-2); background: var(--paper); transition: border-color .18s ease, color .18s ease, background .18s ease; }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary { border-color: var(--accent); color: var(--accent-ink); background: var(--accent); }
+    .btn.primary:hover { color: var(--accent-ink); background: oklch(52% 0.2 256); }
+    .btn:disabled { cursor: not-allowed; opacity: .45; }
+    .file-btn { position: relative; overflow: hidden; }
+    .file-btn input { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; opacity: 0; }
+
+    .toolbar { display: flex; align-items: center; gap: 10px; padding: 11px 24px; border-bottom: 1px solid var(--rule); background: var(--paper-2); }
+    .toolbar .root-label { color: var(--muted); font: 600 10px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+    .toolbar select { min-width: min(560px, 70vw); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 8px 10px; color: var(--ink); background: var(--paper); }
+    .toolbar input { width: 190px; border: 1px solid var(--rule-strong); border-radius: 6px; padding: 8px 10px; color: var(--ink); background: var(--paper); }
+    .toolbar .count { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    .main { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 350px; }
+    .map-panel { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto 1fr; border-right: 1px solid var(--rule); }
+    .map-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--rule); }
+    .map-head h2 { margin-top: 5px; color: var(--ink); font: 600 18px/1.1 var(--font-display); }
+    .map-head p { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .map-hint { color: var(--accent); font: 500 11px var(--font-mono); text-align: right; }
+    .map-scroll { min-height: 0; overflow: auto; background: var(--paper); }
+    .mindmap-stage { position: relative; min-width: 900px; min-height: 620px; padding: 22px; }
+    .mindmap-lines { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+    .mindmap-lines path { fill: none; stroke: var(--rule-strong); stroke-width: 1.5; }
+    .mindmap-lines path.compressed-path { stroke-dasharray: 6 5; }
+    .mindmap-lines path.selected-path { stroke: var(--accent); stroke-width: 2.5; }
+    .mindmap-nodes { position: relative; }
+    .mind-node { position: absolute; width: 260px; min-height: 82px; padding: 11px 12px; border: 1px solid var(--rule-strong); border-radius: 9px; color: var(--ink-2); background: var(--paper); box-shadow: 0 1px 2px color-mix(in oklab, var(--ink) 5%, transparent); text-align: left; cursor: pointer; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+    .mind-node:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .mind-node.root { color: var(--ink-2); border-color: var(--accent); background: var(--paper); }
+    .mind-node.selected { border: 2px solid var(--accent); background: var(--accent-soft); }
+    .mind-node.root.selected { border-color: var(--accent); background: var(--accent-soft); }
+    .mind-node .node-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .mind-node .node-type { color: var(--muted); font: 600 10px var(--font-mono); letter-spacing: .05em; }
+    .mind-node.root .node-type { color: var(--accent); }
+    .mind-node .node-count { color: var(--muted); font: 10px var(--font-mono); white-space: nowrap; }
+    .mind-node.root .node-count { color: var(--muted); }
+    .mind-node .node-title { display: -webkit-box; margin-top: 8px; overflow: hidden; color: var(--ink); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 3; outline: none; }
+    .mind-node .node-title[contenteditable="true"] { cursor: text; box-shadow: inset 0 -2px 0 var(--accent); }
+    .mind-node mark, .overlap-summary mark { padding: 0 2px; color: inherit; background: var(--highlight); box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+    .mind-node mark.match-branch, .overlap-summary mark.match-branch { background: var(--highlight-branch); box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--accent) 58%, transparent); }
+    .mind-node.root .node-title { color: var(--ink); }
+    .mind-node .node-marker { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--accent); vertical-align: 1px; }
+    .mind-node.root .node-marker { background: var(--accent); }
+    .empty-map { display: grid; place-items: center; min-height: 560px; color: var(--muted); }
+
+    .inspector { min-width: 0; min-height: 0; overflow: auto; background: var(--paper-2); }
+    .inspector-head { padding: 15px 16px 12px; border-bottom: 1px solid var(--rule); }
+    .inspector-head h2 { margin-top: 6px; color: var(--ink); font: 600 18px/1.1 var(--font-display); }
+    .inspector-head p { margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .inspector-body { padding: 15px 16px 28px; }
+    .overlap-summary { padding: 12px; border: 1px solid color-mix(in oklab, var(--accent) 32%, var(--rule)); background: var(--paper); }
+    .overlap-summary .overlap-label { color: var(--muted); font: 600 10px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+    .overlap-summary .overlap-value { margin-top: 7px; color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+    .overlap-summary .overlap-meta { margin-top: 7px; color: var(--muted); font-size: 11px; }
+    .option { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; color: var(--ink-2); font-size: 12px; }
+    .option input { margin-top: 3px; accent-color: var(--accent); }
+    .option span small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .plan-box { margin-top: 18px; padding: 12px; border: 1px solid var(--rule); background: var(--paper); }
+    .plan-box .plan-number { margin-top: 7px; color: var(--ink); font: 600 30px var(--font-display); }
+    .plan-box p { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .plan-items { display: grid; gap: 7px; margin-top: 11px; }
+    .plan-item { padding: 8px; border-left: 2px solid var(--accent); background: var(--accent-soft); font-size: 11px; }
+    .plan-item strong { display: block; color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+    .plan-item span { display: block; margin-top: 3px; color: var(--success); overflow-wrap: anywhere; }
+    .plan-more { color: var(--muted); font-size: 11px; }
+    .final-step { margin-top: 18px; padding: 12px; border: 1px solid color-mix(in oklab, var(--accent) 35%, var(--rule)); background: var(--accent-soft); }
+    .final-step strong { color: var(--ink); font-size: 12px; }
+    .final-step p { margin-top: 5px; color: var(--ink-2); font-size: 11px; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: color-mix(in oklab, var(--graphite) 42%, transparent); }
+    .modal-backdrop[hidden] { display: none; }
+    .modal { width: min(460px, 100%); padding: 18px; border: 1px solid var(--rule-strong); border-radius: 10px; background: var(--paper); box-shadow: 0 18px 50px color-mix(in oklab, var(--graphite) 25%, transparent); }
+    .modal h2 { margin-top: 7px; color: var(--ink); font: 600 21px/1.1 var(--font-display); }
+    .modal p { margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .modal-summary { margin-top: 13px; padding: 10px; border-left: 2px solid var(--accent); color: var(--ink-2); background: var(--accent-soft); font-size: 12px; }
+    .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 17px; }
+    .modal-actions .cancel { grid-column: 1 / -1; color: var(--muted); border-color: transparent; background: transparent; }
+    .footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 47px; padding: 8px 18px; border-top: 1px solid var(--rule); color: var(--muted); background: var(--paper); font-size: 11px; }
+    .footer strong { color: var(--ink-2); font-weight: 600; }
+    .footer-actions { display: flex; align-items: center; gap: 7px; }
+    .toast { position: fixed; right: 18px; bottom: 62px; z-index: 10; max-width: min(430px, calc(100vw - 36px)); padding: 10px 12px; border: 1px solid var(--rule-strong); color: var(--ink); background: var(--paper); box-shadow: 0 5px 18px color-mix(in oklab, var(--ink) 12%, transparent); opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+    .toast.show { opacity: 1; transform: none; }
+    code { font: 10px var(--font-mono); }
+    @media (max-width: 980px) { .main { grid-template-columns: 1fr; } .map-panel { min-height: 660px; border-right: 0; border-bottom: 1px solid var(--rule); } .inspector { min-height: 420px; } .toolbar { flex-wrap: wrap; } .toolbar .count { margin-left: 0; } }
+    @media (max-width: 620px) { .topbar { display: block; padding: 16px; } .top-actions { justify-content: flex-start; margin-top: 14px; } .toolbar { padding: 10px 16px; } .toolbar select, .toolbar input { min-width: 0; width: 100%; } .map-head { display: block; padding: 13px 16px; } .map-hint { margin-top: 8px; text-align: left; } .footer { align-items: flex-start; flex-direction: column; } .footer-actions { width: 100%; } .footer-actions .btn { flex: 1; } }
+    @media (pointer: coarse) { .btn { min-height: 40px; padding: 8px 14px; } .toolbar select, .toolbar input { min-height: 40px; } .option { min-height: 36px; align-items: center; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">MNKnowledgeBase · 标题整理工作台</div>
+        <h1>归类卡片标题整理</h1>
+        <p class="lede">这里只改归类卡片。命题卡和知识点卡片不参与编辑；确认保存时，可同步更新子孙卡片的前缀和链接。</p>
+      </div>
+      <div class="top-actions"><div class="status" id="status">演示数据已载入</div><label class="btn file-btn">载入完整 JSON<input id="fileInput" type="file" accept="application/json,.json"></label><button class="btn" id="resetBtn" type="button">重置预览</button></div>
+    </header>
+    <div class="toolbar"><span class="root-label">根节点</span><input id="rootSearch" type="search" placeholder="筛选归类卡片…" aria-label="筛选归类卡片"><select id="rootSelect" aria-label="选择根节点"></select><span class="count" id="rootCount">—</span></div>
+    <main class="main">
+      <section class="map-panel">
+        <div class="map-head"><div><div class="eyebrow">Classification map</div><h2>归类卡片思维导图</h2><p>按卡片树层级展示父子关系；虚线表示中间隔着未显示的普通卡片。</p></div><div class="map-hint">点击标题直接编辑 · 黄=全部分支 · 蓝=部分分支</div></div>
+        <div class="map-scroll"><div class="mindmap-stage" id="mindmapStage"><svg class="mindmap-lines" id="mindmapLines" aria-hidden="true"></svg><div class="mindmap-nodes" id="mindmapNodes"></div></div></div>
+      </section>
+      <aside class="inspector">
+        <div class="inspector-head"><div class="eyebrow">Live link preview</div><h2>连续公共前缀</h2><p>点击思维导图中的标题直接编辑；黄色部分从标题开头连续匹配，遇到首个差异后停止。</p></div>
+        <div class="inspector-body">
+          <div class="overlap-summary" id="overlapSummary"><div class="overlap-label">当前节点与下级的连续重合</div><div class="overlap-value">—</div><div class="overlap-meta">选择一个节点开始编辑</div></div>
+          <label class="option"><input id="syncChildren" type="checkbox" checked><span>下级归类卡片同步跟随<small>黄色是全部分支共享的前缀，蓝色是仅部分分支共享的延伸；各自遇到差异立即停止。</small></span></label>
+          <div class="plan-box"><div class="mono-label">本次修改</div><div class="plan-number" id="planNumber">0</div><p>张归类卡片会改变；命题/知识点卡片不在本次操作中。</p><div class="plan-items" id="planItems"></div></div>
+          <div class="final-step"><strong>保存时会做什么</strong><p>点击“确定修改”后选择是否立即更新子孙卡片。启用后，命题卡和知识点卡片会自动重新计算前缀并修复双向链接。</p></div>
+        </div>
+      </aside>
+    </main>
+    <footer class="footer"><div><strong>保存策略：</strong>先预览，再确认是否同时更新子孙卡片。</div><div class="footer-actions"><button class="btn" id="undoBtn" type="button">撤销本次预览</button><button class="btn primary" id="applyBtn" type="button">确定修改</button></div></footer>
+  </div>
+  <div class="modal-backdrop" id="batchConfirm" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="batchConfirmTitle">
+      <div class="eyebrow">确认执行</div>
+      <h2 id="batchConfirmTitle">是否同时更新子孙卡片？</h2>
+      <p>归类卡片标题修改后，可以立即重新计算子孙卡片前缀并修复父子双向链接。</p>
+      <div class="modal-summary" id="batchConfirmSummary">—</div>
+      <div class="modal-actions"><button class="btn" id="titleOnlyBtn" type="button">只保存归类标题</button><button class="btn primary" id="titleAndBatchBtn" type="button">保存并更新子孙</button><button class="btn cancel" id="cancelBatchBtn" type="button">返回继续编辑</button></div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const DEMO_ROOT_ID = "demo-root";
+    const DEMO_CARDS = [
+  {
+    "id": "demo-root",
+    "parentId": "",
+    "title": "“示例主题”相关定义",
+    "type": "归类"
+  },
+  {
+    "id": "demo-properties",
+    "parentId": "demo-root",
+    "title": "“示例主题的基本性质”相关命题",
+    "type": "归类"
+  },
+  {
+    "id": "demo-examples",
+    "parentId": "demo-root",
+    "title": "“示例主题的例子”相关命题",
+    "type": "归类"
+  },
+  {
+    "id": "demo-card",
+    "parentId": "demo-properties",
+    "title": "示例命题",
+    "type": "命题"
+  }
+];
+    const state = { cards: [], byId: new Map(), actualChildren: new Map(), classChildren: new Map(), classEdgeMeta: new Map(), rootId: DEMO_ROOT_ID, selectedId: DEMO_ROOT_ID, currentPlan: [], pendingChanges: [], undo: null, drafts: new Map(), draftMeta: new Map(), editingId: null, editingOriginal: '', sourceLabel: '合成演示数据' };
+    const $ = (id) => document.getElementById(id);
+    const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const normalizeCard = (card) => ({ id: String(card.id || ''), parentId: String(card.parentId || ''), title: String(card.title || '未命名卡片'), type: String(card.type || '未知') });
+    const isClassification = (card) => card && (card.type === '归类' || card.type.includes('归类'));
+    function setStatus(text, kind = 'success') { $('status').textContent = text; $('status').dataset.kind = kind; }
+    function toast(text) { const el = $('toast'); el.textContent = text; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 2600); }
+    function loadCards(rawCards, sourceLabel, preferredRootId = '') {
+      state.cards = rawCards.map(normalizeCard).filter((card) => card.id); state.byId = new Map(state.cards.map((card) => [card.id, card])); state.actualChildren = new Map();
+      for (const card of state.cards) { if (!state.actualChildren.has(card.parentId)) state.actualChildren.set(card.parentId, []); state.actualChildren.get(card.parentId).push(card.id); }
+      state.sourceLabel = sourceLabel; state.undo = null; state.drafts = new Map(); state.draftMeta = new Map(); state.editingId = null; state.editingOriginal = ''; const candidates = getRootCandidates(); const preferred = preferredRootId && state.byId.has(preferredRootId) && isClassification(state.byId.get(preferredRootId)) ? preferredRootId : ''; state.rootId = preferred || (state.byId.has(DEMO_ROOT_ID) ? DEMO_ROOT_ID : (candidates[0]?.id || '')); state.selectedId = state.rootId; buildClassProjection(); populateRootSelect(); syncInspector(); render(); setStatus(`${state.cards.length.toLocaleString()} 张卡片 · ${sourceLabel}`);
+    }
+    function getRootCandidates() { return state.cards.filter((card) => isClassification(card) && (state.actualChildren.get(card.id) || []).some((id) => hasClassificationDescendant(id))).sort((a, b) => countClassificationDescendants(b.id) - countClassificationDescendants(a.id)); }
+    function hasClassificationDescendant(id) { return isClassification(state.byId.get(id)) || (state.actualChildren.get(id) || []).some((childId) => hasClassificationDescendant(childId)); }
+    function countClassificationDescendants(id, seen = new Set()) { if (seen.has(id)) return 0; seen.add(id); let count = isClassification(state.byId.get(id)) ? 1 : 0; for (const childId of state.actualChildren.get(id) || []) count += countClassificationDescendants(childId, seen); return count; }
+    function isUnderRoot(id, rootId) { let cursor = id; const seen = new Set(); while (cursor && !seen.has(cursor)) { if (cursor === rootId) return true; seen.add(cursor); cursor = state.byId.get(cursor)?.parentId; } return false; }
+    function nearestClassificationParent(id, rootId, classIds) { let cursor = state.byId.get(id)?.parentId; let hiddenCount = 0; const seen = new Set(); while (cursor && !seen.has(cursor)) { if (cursor === rootId) return { parentId: rootId, hiddenCount }; if (classIds.has(cursor)) return { parentId: cursor, hiddenCount }; seen.add(cursor); hiddenCount += 1; cursor = state.byId.get(cursor)?.parentId; } return { parentId: rootId, hiddenCount }; }
+    function buildClassProjection() { state.classChildren = new Map(); state.classEdgeMeta = new Map(); const root = state.byId.get(state.rootId); if (!root) return; const classIds = new Set(state.cards.filter(isClassification).filter((card) => isUnderRoot(card.id, state.rootId)).map((card) => card.id)); classIds.add(state.rootId); for (const id of classIds) state.classChildren.set(id, []); for (const id of classIds) { if (id === state.rootId) continue; const relation = nearestClassificationParent(id, state.rootId, classIds); if (!state.classChildren.has(relation.parentId)) state.classChildren.set(relation.parentId, []); state.classChildren.get(relation.parentId).push(id); state.classEdgeMeta.set(id, relation); } for (const ids of state.classChildren.values()) ids.sort((a, b) => state.byId.get(a).title.localeCompare(state.byId.get(b).title, 'zh-CN')); }
+    function populateRootSelect() { const query = $('rootSearch').value.trim().toLowerCase(); const candidates = getRootCandidates().filter((card) => !query || card.title.toLowerCase().includes(query)).slice(0, 100); const current = state.byId.get(state.rootId); if (current && !candidates.some((card) => card.id === current.id)) candidates.unshift(current); $('rootSelect').innerHTML = candidates.map((card) => `<option value="${escapeHTML(card.id)}">${escapeHTML(card.title.slice(0, 92))}</option>`).join(''); $('rootSelect').value = state.rootId; if (!$('rootSelect').value && candidates[0]) { state.rootId = candidates[0].id; state.selectedId = state.rootId; buildClassProjection(); $('rootSelect').value = state.rootId; } $('rootCount').textContent = state.rootId ? `${getClassSubtreeIds().length} 张归类卡片` : '—'; }
+    function getClassSubtreeIds(rootId = state.rootId) { const result = []; const queue = [rootId]; const seen = new Set(); while (queue.length) { const id = queue.shift(); if (seen.has(id)) continue; seen.add(id); if (state.classChildren.has(id)) result.push(id); for (const childId of state.classChildren.get(id) || []) queue.push(childId); } return result; }
+    // 与 KnowledgeBaseTemplate.parseNoteTitle/linkParentNote 保持同一套归类标题截取规则：
+    // “父类型”：“真正归类内容”相关命题 取第二段；“归类内容”相关命题 取第一段。
+    function deriveContextInfo(title) {
+      const text = String(title || '');
+      const twoPart = text.match(/^[“「『][^”」』]+[”」』]\s*[:：]\s*[“「『]([^”」』]+)[”」』]\s*相关(?:定义|命题|知识|卡片|归类)?/);
+      if (twoPart) { const start = twoPart.index + twoPart[0].indexOf(twoPart[1]); return { value: twoPart[1].trim(), start, end: start + twoPart[1].trim().length }; }
+      const onePart = text.match(/[“「『]([^”」』]+)[”」』]\s*相关(?:定义|命题|知识|卡片|归类)?/);
+      if (!onePart) return { value: '', start: -1, end: -1 };
+      const value = onePart[1].trim(); const start = onePart.index + onePart[0].indexOf(onePart[1]); return { value, start, end: start + value.length };
+    }
+    function deriveContext(title) { return deriveContextInfo(title).value; }
+    function meaningfulMatch(text) { return String(text || '').replace(/[\s，、；：:,.。、“”「」『』()[\]{}<>/\\|｜_*-]+/g, '').length >= 2; }
+    // 标题联动必须是“从最左侧开始的连续公共前缀”：一旦遇到第一个不同字符，
+    // 当前分支就停止匹配，绝不跳过中间差异去认领后面的相同词。
+    function findCommonSegments(left, right, minLength = 2) {
+      const a = String(left || ''); const b = String(right || ''); let length = 0;
+      while (length < a.length && length < b.length && a[length] === b[length]) length += 1;
+      if (length < minLength || !meaningfulMatch(a.slice(0, length))) return [];
+      return [{ leftStart: 0, leftEnd: length, rightStart: 0, rightEnd: length, text: a.slice(0, length) }];
+    }
+    // 只供父标题自身的新旧版本做差异计算；这里允许寻找后续公共块，
+    // 但这些块不会参与卡片之间的匹配或高亮。
+    function findCommonSegmentsAnywhere(left, right, minLength = 2) {
+      const a = String(left || ''); const b = String(right || ''); const blocks = [];
+      function collect(leftStart, leftEnd, rightStart, rightEnd) {
+        let best = { leftStart: 0, rightStart: 0, length: 0 }; let previous = new Array(rightEnd - rightStart + 1).fill(0);
+        for (let i = leftStart; i < leftEnd; i += 1) {
+          const current = new Array(rightEnd - rightStart + 1).fill(0);
+          for (let j = rightStart; j < rightEnd; j += 1) {
+            if (a[i] !== b[j]) continue; const index = j - rightStart + 1; current[index] = previous[index - 1] + 1;
+            if (current[index] > best.length) best = { leftStart: i - current[index] + 1, rightStart: j - current[index] + 1, length: current[index] };
+          }
+          previous = current;
+        }
+        if (best.length < minLength || !meaningfulMatch(a.slice(best.leftStart, best.leftStart + best.length))) return;
+        collect(leftStart, best.leftStart, rightStart, best.rightStart);
+        blocks.push({ leftStart: best.leftStart, leftEnd: best.leftStart + best.length, rightStart: best.rightStart, rightEnd: best.rightStart + best.length, text: a.slice(best.leftStart, best.leftStart + best.length) });
+        collect(best.leftStart + best.length, leftEnd, best.rightStart + best.length, rightEnd);
+      }
+      collect(0, a.length, 0, b.length); return blocks.sort((x, y) => x.leftStart - y.leftStart);
+    }
+    function mergeRanges(ranges) { const sorted = ranges.filter((range) => range && range.end > range.start).sort((a, b) => a.start - b.start); const merged = []; for (const range of sorted) { const previous = merged[merged.length - 1]; if (previous && range.start <= previous.end) previous.end = Math.max(previous.end, range.end); else merged.push({ start: range.start, end: range.end }); } return merged; }
+    function highlightTitle(title, ranges = []) { const text = String(title || ''); const safeRanges = ranges.filter((range) => range && range.end > range.start).map((range) => ({ start: Math.max(0, range.start), end: Math.min(text.length, range.end), kind: range.kind || 'common' })).sort((a, b) => a.start - b.start || a.end - b.end); if (!safeRanges.length) return escapeHTML(text); let cursor = 0; let html = ''; for (const range of safeRanges) { if (range.start > cursor) html += escapeHTML(text.slice(cursor, range.start)); const start = Math.max(cursor, range.start); if (range.end > start) html += `<mark class="match-${escapeHTML(range.kind)}">${escapeHTML(text.slice(start, range.end))}</mark>`; cursor = Math.max(cursor, range.end); } return html + escapeHTML(text.slice(cursor)); }
+    function getMatchSegmentsForNode(id, working = null) { if (id === state.selectedId) return []; const titles = working || computeWorkingTitles(); const selectedInfo = deriveContextInfo(getEffectiveTitle(state.selectedId, titles)); const childInfo = deriveContextInfo(getEffectiveTitle(id, titles)); if (!selectedInfo.value || !childInfo.value) return []; return findCommonSegments(selectedInfo.value, childInfo.value).map((block) => ({ selectedStart: selectedInfo.start + block.leftStart, selectedEnd: selectedInfo.start + block.leftEnd, childStart: childInfo.start + block.rightStart, childEnd: childInfo.start + block.rightEnd, text: block.text })); }
+    function getPrefixMatchDisplayRanges(working = null) {
+      const titles = working || computeWorkingTitles(); const selectedInfo = deriveContextInfo(getEffectiveTitle(state.selectedId, titles)); if (!selectedInfo.value) return { ranges: [], matches: [], descendantCount: 0 };
+      const descendantIds = getClassSubtreeIds(state.selectedId).filter((id) => id !== state.selectedId); const matches = descendantIds.flatMap((id) => getMatchSegmentsForNode(id, titles).map((segment) => ({ id, segment, length: segment.selectedEnd - selectedInfo.start }))); if (!matches.length) return { ranges: [], matches, descendantCount: descendantIds.length };
+      const boundaries = [...new Set([0, ...matches.map((item) => item.length)])].sort((a, b) => a - b); const ranges = [];
+      for (let index = 0; index < boundaries.length - 1; index += 1) { const start = boundaries[index]; const end = boundaries[index + 1]; if (end <= start) continue; const scope = matches.filter((item) => item.length >= end).length; ranges.push({ start: selectedInfo.start + start, end: selectedInfo.start + end, kind: scope === descendantIds.length ? 'common' : 'branch', scope }); }
+      return { ranges, matches, descendantCount: descendantIds.length };
+    }
+    function getSelectedMatchRanges(working = null) { return getPrefixMatchDisplayRanges(working).ranges; }
+    function getNodeMatchRanges(id, working = null) {
+      if (id === state.selectedId) return getSelectedMatchRanges(working);
+      const titles = working || computeWorkingTitles(); const selectedInfo = deriveContextInfo(getEffectiveTitle(state.selectedId, titles)); const segment = getMatchSegmentsForNode(id, titles)[0]; if (!segment) return [];
+      const details = getPrefixMatchDisplayRanges(titles); const commonLength = details.descendantCount > 0 && details.matches.length === details.descendantCount ? Math.min(...details.matches.map((item) => item.length)) : 0; const ranges = [];
+      if (commonLength > 0) ranges.push({ start: segment.childStart, end: segment.childStart + Math.min(commonLength, segment.childEnd - segment.childStart), kind: 'common' });
+      const branchStart = segment.childStart + commonLength; if (branchStart < segment.childEnd) ranges.push({ start: branchStart, end: segment.childEnd, kind: 'branch' });
+      return ranges;
+    }
+    function buildDiffEdits(oldText, newText) { const blocks = findCommonSegmentsAnywhere(oldText, newText, 1); const edits = []; let oldCursor = 0; let newCursor = 0; for (const block of blocks) { if (oldCursor !== block.leftStart || newCursor !== block.rightStart) edits.push({ oldStart: oldCursor, oldEnd: block.leftStart, replacement: String(newText).slice(newCursor, block.rightStart) }); oldCursor = block.leftEnd; newCursor = block.rightEnd; } if (oldCursor !== String(oldText).length || newCursor !== String(newText).length) edits.push({ oldStart: oldCursor, oldEnd: String(oldText).length, replacement: String(newText).slice(newCursor) }); return edits.filter((edit) => edit.oldStart !== edit.oldEnd || edit.replacement); }
+    function applyContextEditsToChild(oldParentContext, newParentContext, childTitle) { const childInfo = deriveContextInfo(childTitle); if (!childInfo.value) return childTitle; const matches = findCommonSegments(oldParentContext, childInfo.value); const edits = buildDiffEdits(oldParentContext, newParentContext); const replacements = []; for (const edit of edits) { const match = matches.find((block) => edit.oldStart >= block.leftStart && edit.oldEnd <= block.leftEnd && (edit.oldStart !== edit.oldEnd || edit.oldStart < block.leftEnd)); if (!match) continue; replacements.push({ start: childInfo.start + match.rightStart + edit.oldStart - match.leftStart, end: childInfo.start + match.rightStart + edit.oldEnd - match.leftStart, replacement: edit.replacement }); } let next = childTitle; for (const replacement of replacements.sort((a, b) => b.start - a.start)) next = next.slice(0, replacement.start) + replacement.replacement + next.slice(replacement.end); return next; }
+    function computeWorkingTitles() {
+      const working = new Map(state.cards.map((card) => [card.id, state.drafts.has(card.id) ? state.drafts.get(card.id) : card.title]));
+      if (!$('syncChildren')?.checked) return working;
+      const draftIds = [...state.drafts.keys()].filter((id) => state.classChildren.has(id)).sort((a, b) => getClassDepth(a) - getClassDepth(b));
+      for (const parentId of draftIds) {
+        const meta = state.draftMeta.get(parentId) || {};
+        const oldContext = deriveContext(meta.oldTitle || state.byId.get(parentId)?.title || '');
+        const newContext = deriveContext(state.drafts.get(parentId));
+        if (!oldContext || !newContext || oldContext === newContext) continue;
+        for (const childId of getClassSubtreeIds(parentId)) {
+          if (childId === parentId) continue;
+          const current = working.get(childId) || '';
+          const next = applyContextEditsToChild(oldContext, newContext, current); if (next !== current) working.set(childId, next);
+        }
+      }
+      return working;
+    }
+    function getClassDepth(id) { let depth = 0; let cursor = id; const seen = new Set(); while (cursor && !seen.has(cursor)) { seen.add(cursor); const parent = [...state.classChildren.entries()].find(([, ids]) => ids.includes(cursor))?.[0]; if (!parent) break; depth += 1; cursor = parent; } return depth; }
+    function getEffectiveTitle(id, working = null) { const titles = working || computeWorkingTitles(); return titles.get(id) ?? state.byId.get(id)?.title ?? ''; }
+    function buildPlan() {
+      const selected = state.byId.get(state.selectedId); if (!selected) return [];
+      const working = computeWorkingTitles(); const selectedChanged = getEffectiveTitle(state.selectedId, working) !== selected.title;
+      const ids = getClassSubtreeIds(state.rootId); const plan = [];
+      ids.forEach((id) => {
+        const card = state.byId.get(id); const newTitle = getEffectiveTitle(id, working); if (!card || newTitle === card.title) return;
+        plan.push({ id, oldTitle: card.title, newTitle, kind: 'changed', reason: id === state.selectedId ? '当前归类卡片' : (state.drafts.has(id) ? '下级独立编辑' : '跟随连续公共前缀') });
+      });
+      if (selectedChanged && $('syncChildren')?.checked) {
+        const selectedContext = deriveContext(selected.title); const nextContext = deriveContext(getEffectiveTitle(state.selectedId, working));
+        for (const id of getClassSubtreeIds(state.selectedId)) {
+          if (id === state.selectedId || state.drafts.has(id)) continue;
+          const child = state.byId.get(id); if (!child) continue;
+          if (!selectedContext || !nextContext || !getMatchSegmentsForNode(id, working).length) plan.push({ id, oldTitle: child.title, newTitle: child.title, kind: 'warning', reason: '未识别到连续公共前缀，保留原文' });
+        }
+      }
+      return plan;
+    }
+    function renderOverlapSummary() {
+      const selected = state.byId.get(state.selectedId); const summary = $('overlapSummary'); if (!selected || !summary) return;
+      const working = computeWorkingTitles(); const selectedTitle = getEffectiveTitle(state.selectedId, working); const matchDetails = getPrefixMatchDisplayRanges(working); const selectedRanges = matchDetails.ranges; const descendantCount = matchDetails.descendantCount; const hasCommon = selectedRanges.some((range) => range.kind === 'common'); const hasBranch = selectedRanges.some((range) => range.kind === 'branch'); const legend = `${hasCommon ? `黄色：全部 ${descendantCount} 个下级共享` : ''}${hasCommon && hasBranch ? ' · ' : ''}${hasBranch ? '蓝色：仅部分分支共享' : ''}`;
+      summary.innerHTML = `<div class="overlap-label">当前节点与下级的连续重合</div><div class="overlap-value">${selectedRanges.length ? highlightTitle(selectedTitle, selectedRanges) : '暂未识别到连续公共前缀'}</div><div class="overlap-meta">${legend}${legend && descendantCount ? '<br>' : ''}${descendantCount ? `${descendantCount} 张下级归类卡片会实时预览同步结果` : '当前节点没有下级归类卡片'}</div>`;
+    }
+    function syncInspector() { renderOverlapSummary(); renderPlan(); }
+    function layoutTree(rootId) { const positions = new Map(); const nodeWidth = 260; const nodeHeight = 86; const gapY = 22; const gapX = 95; let cursorY = 24; let maxDepth = 0; function place(id, depth) { maxDepth = Math.max(maxDepth, depth); const children = state.classChildren.get(id) || []; if (!children.length) { const y = cursorY; cursorY += nodeHeight + gapY; positions.set(id, { x: 24 + depth * (nodeWidth + gapX), y, depth }); return y; } const ys = children.map((childId) => place(childId, depth + 1)); const y = (ys[0] + ys[ys.length - 1]) / 2; positions.set(id, { x: 24 + depth * (nodeWidth + gapX), y, depth }); return y; } place(rootId, 0); return { positions, width: Math.max(900, (maxDepth + 1) * (nodeWidth + gapX) + 70), height: Math.max(620, cursorY + 30) }; }
+    function placeCaretAtEnd(element) { try { const range = document.createRange(); range.selectNodeContents(element); range.collapse(false); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); } catch (_) {} }
+    function selectNode(id) { state.selectedId = id; state.editingId = null; state.editingOriginal = ''; renderMindMap(); syncInspector(); requestAnimationFrame(() => { const title = [...document.querySelectorAll('.node-title')].find((element) => element.dataset.id === id); if (title) title.focus(); }); }
+    function refreshLivePreview() { const working = computeWorkingTitles(); document.querySelectorAll('.mind-node').forEach((node) => { const id = node.dataset.id; const title = node.querySelector('.node-title'); if (!title || (id === state.editingId && document.activeElement === title)) return; title.innerHTML = highlightTitle(getEffectiveTitle(id, working), getNodeMatchRanges(id, working)); }); renderOverlapSummary(); renderPlan(); }
+    function renderMindMap() {
+      const stage = $('mindmapStage'); const nodes = $('mindmapNodes'); const lines = $('mindmapLines'); const root = state.byId.get(state.rootId); if (!root) { nodes.innerHTML = '<div class="empty-map">没有找到归类卡片树</div>'; lines.innerHTML = ''; return; }
+      const layout = layoutTree(root.id); const working = computeWorkingTitles(); stage.style.width = `${layout.width}px`; stage.style.height = `${layout.height}px`; nodes.innerHTML = ''; lines.setAttribute('width', layout.width); lines.setAttribute('height', layout.height); lines.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`); lines.innerHTML = '';
+      for (const [id, pos] of layout.positions) {
+        const card = state.byId.get(id); const node = document.createElement('div'); node.className = `mind-node ${id === state.rootId ? 'root' : ''} ${id === state.selectedId ? 'selected' : ''}`; node.dataset.id = id; node.tabIndex = 0; node.setAttribute('role', 'button'); node.style.left = `${pos.x}px`; node.style.top = `${pos.y}px`;
+        const childCount = (state.classChildren.get(id) || []).length; node.innerHTML = `<span class="node-top"><span class="node-type"><span class="node-marker"></span>归类卡片</span><span class="node-count">${childCount ? `${childCount} 个下级` : '末端'}</span></span><span class="node-title" data-id="${escapeHTML(id)}" contenteditable="${id === state.selectedId ? 'true' : 'false'}" spellcheck="false">${highlightTitle(getEffectiveTitle(id, working), getNodeMatchRanges(id, working))}</span>`;
+        const title = node.querySelector('.node-title'); title.addEventListener('focus', () => { const wasEditing = state.editingId === id; state.editingId = id; state.editingOriginal = getEffectiveTitle(id, working); if (!state.drafts.has(id)) state.draftMeta.set(id, { oldTitle: state.editingOriginal }); if (!wasEditing) { title.textContent = state.editingOriginal; placeCaretAtEnd(title); } });
+        title.addEventListener('input', () => { if (!state.drafts.has(id)) state.draftMeta.set(id, { oldTitle: state.editingOriginal || state.byId.get(id)?.title || '' }); state.drafts.set(id, title.textContent); refreshLivePreview(); });
+        title.addEventListener('blur', () => { const value = title.textContent.trim(); if (value) state.drafts.set(id, value); else state.drafts.delete(id); state.editingId = null; renderMindMap(); syncInspector(); });
+        title.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); title.blur(); } if (event.key === 'Escape') { event.preventDefault(); state.drafts.delete(id); state.draftMeta.delete(id); state.editingId = null; renderMindMap(); syncInspector(); } });
+        node.addEventListener('click', (event) => { if (event.target === title && id === state.selectedId) return; selectNode(id); }); node.addEventListener('keydown', (event) => { if (event.target === title) return; if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectNode(id); } }); nodes.appendChild(node);
+      }
+      for (const [parentId, childIds] of state.classChildren) { const parentPos = layout.positions.get(parentId); if (!parentPos) continue; for (const childId of childIds) { const childPos = layout.positions.get(childId); if (!childPos) continue; const x1 = parentPos.x + 260; const y1 = parentPos.y + 43; const x2 = childPos.x; const y2 = childPos.y + 43; const bend = Math.max(42, (x2 - x1) * .44); const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('d', `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`); if (state.classEdgeMeta.get(childId)?.hiddenCount > 0) path.classList.add('compressed-path'); if (parentId === state.selectedId || childId === state.selectedId) path.classList.add('selected-path'); lines.appendChild(path); } }
+    }
+    function renderPlan() { state.currentPlan = buildPlan(); const changed = state.currentPlan.filter((item) => item.kind === 'changed'); $('planNumber').textContent = changed.length; $('planItems').innerHTML = changed.slice(0, 4).map((item) => `<div class="plan-item"><strong>${escapeHTML(item.oldTitle)}</strong><span>→ ${escapeHTML(item.newTitle)}</span></div>`).join('') + (changed.length > 4 ? `<div class="plan-more">还有 ${changed.length - 4} 张归类卡片会跟随更新</div>` : '') + (state.currentPlan.some((item) => item.kind === 'warning') ? '<div class="plan-more">另有卡片未找到连续公共前缀，已保留并提示。</div>' : ''); }
+    function render() { buildClassProjection(); populateRootSelect(); $('rootCount').textContent = `${getClassSubtreeIds().length} 张归类卡片`; renderMindMap(); syncInspector(); }
+    function postToNative(action, params = {}) {
+      if (typeof window.__nativeShim === 'function') { try { window.__nativeShim(action, params); return true; } catch (_) { return false; } }
+      try { if (window.MNKBBridge && typeof window.MNKBBridge.postMessage === 'function' && window.MNKBBridge.postMessage(action, params) !== false) return true; } catch (_) {}
+      const query = Object.keys(params).filter((key) => params[key] !== undefined && params[key] !== null).map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(params[key]))}`).join('&');
+      window.location.href = `mnknowledgebase-comment://${action}${query ? `?${query}` : ''}`;
+      return true;
+    }
+    function showBatchConfirm(changes) { state.pendingChanges = changes; $('batchConfirmSummary').textContent = `将保存 ${changes.length} 张归类卡片标题；选择“保存并更新子孙”后，会继续处理该根节点下的命题卡和知识点卡片前缀与链接。`; $('batchConfirm').hidden = false; $('titleAndBatchBtn').focus(); }
+    function hideBatchConfirm() { $('batchConfirm').hidden = true; }
+    function commitLocalPreview(changes) { state.undo = changes.map((item) => ({ id: item.id, title: item.oldTitle })); for (const item of changes) { if (state.byId.has(item.id)) state.byId.get(item.id).title = item.newTitle; state.drafts.delete(item.id); state.draftMeta.delete(item.id); } state.pendingChanges = []; state.editingId = null; render(); }
+    function dispatchTitlePlan(runPrefixRelink) {
+      const changes = state.pendingChanges; if (!changes.length) return;
+      const requestId = `title-refactor-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const dispatched = postToNative('applyClassificationTitlePlan', { id: state.rootId, rootId: state.rootId, requestId, runPrefixRelink, changes: JSON.stringify(changes.map((item) => ({ id: item.id, newTitle: item.newTitle, oldTitle: item.oldTitle }))) });
+      if (dispatched) { setStatus(runPrefixRelink ? '正在保存标题并更新子孙…' : '正在保存归类标题…', 'warning'); toast('已提交修改请求'); } else { commitLocalPreview(changes); toast('当前为离线预览模式，仅更新本页预览'); }
+    }
+    function applyPreview() { const changes = state.currentPlan.filter((item) => item.kind === 'changed'); if (!changes.length) { toast('没有可应用的归类卡片标题变更'); return; } showBatchConfirm(changes); }
+    function undoPreview() {
+      state.closeConfirmArmed = false;
+      clearTimeout(state.closeConfirmTimer);
+      if (state.pendingChanges.length) { state.pendingChanges = []; hideBatchConfirm(); toast('已取消待提交的修改'); return; }
+      if (state.drafts.size > 0 && !state.undo) {
+        state.drafts = new Map();
+        state.draftMeta = new Map();
+        state.editingId = null;
+        setStatus(`${state.cards.length.toLocaleString()} 张卡片 · ${state.sourceLabel}`);
+        render();
+        toast('已清空未保存的标题草稿');
+        return;
+      }
+      if (!state.undo) { toast('当前没有可撤销的预览变更'); return; }
+      for (const item of state.undo) if (state.byId.has(item.id)) state.byId.get(item.id).title = item.title;
+      state.undo = null; state.drafts = new Map(); state.draftMeta = new Map();
+      setStatus(`${state.cards.length.toLocaleString()} 张卡片 · ${state.sourceLabel}`); render(); toast('已撤销本次预览');
+    }
+    function requestCloseTitleRefactorWorkbench() {
+      if (state.pendingChanges.length > 0) {
+        setStatus('有待确认的标题修改', 'warning');
+        toast('有待确认提交的修改，请先处理弹窗后再关闭');
+        return true;
+      }
+      if (state.drafts.size > 0) {
+        if (!state.closeConfirmArmed) {
+          state.closeConfirmArmed = true;
+          clearTimeout(state.closeConfirmTimer);
+          state.closeConfirmTimer = setTimeout(() => { state.closeConfirmArmed = false; }, 2600);
+          setStatus('有未保存标题草稿 · 再点一次关闭将放弃修改', 'warning');
+          toast('当前有未保存的标题草稿，再点一次关闭按钮将放弃修改');
+          return true;
+        }
+        state.closeConfirmArmed = false;
+        clearTimeout(state.closeConfirmTimer);
+        state.drafts.clear();
+        state.draftMeta.clear();
+        return false;
+      }
+      return false;
+    }
+    window.notifyClassificationTitlePlanResult = (payload = {}) => { if (payload.success) { const changes = state.pendingChanges; if (changes.length) commitLocalPreview(changes); const relinkText = payload.prefixRelinkRequested ? `，子孙 ${payload.prefixUpdated || 0} 张` : ''; setStatus(`已完成：标题 ${payload.titleUpdated || 0} 张${relinkText}`, 'success'); toast(payload.message || '批量修改完成'); } else { state.pendingChanges = []; setStatus('保存未完成', 'warning'); toast(payload.message || '批量修改失败'); } };
+    window.Bridge = Object.assign(window.Bridge || {}, {
+      notifyClassificationTitlePlanResult: window.notifyClassificationTitlePlanResult,
+      requestCloseTitleRefactorWorkbench,
+      canReplaceContext: () => state.pendingChanges.length === 0 && state.drafts.size === 0,
+    });
+    window.loadTitleRefactorWorkbenchData = (payload = {}) => {
+      const cards = Array.isArray(payload.cards) ? payload.cards : [];
+      if (!cards.length) return false;
+      const sourceLabel = String(payload.sourceLabel || `当前子树 · ${cards.length} 张卡片`);
+      loadCards(cards, sourceLabel, String(payload.rootId || ''));
+      return true;
+    };
+    $('rootSearch').addEventListener('input', populateRootSelect); $('rootSelect').addEventListener('change', () => { state.rootId = $('rootSelect').value; state.selectedId = state.rootId; state.editingId = null; buildClassProjection(); render(); }); $('syncChildren').addEventListener('change', () => { refreshLivePreview(); }); $('applyBtn').addEventListener('click', applyPreview); $('undoBtn').addEventListener('click', undoPreview); $('resetBtn').addEventListener('click', undoPreview); $('titleOnlyBtn').addEventListener('click', () => { hideBatchConfirm(); dispatchTitlePlan(false); }); $('titleAndBatchBtn').addEventListener('click', () => { hideBatchConfirm(); dispatchTitlePlan(true); }); $('cancelBatchBtn').addEventListener('click', () => { hideBatchConfirm(); state.pendingChanges = []; });
+    $('batchConfirm').addEventListener('click', (event) => { if (event.target === $('batchConfirm')) { hideBatchConfirm(); state.pendingChanges = []; } });
+    document.addEventListener('keydown', (event) => {
+      if (event.isComposing || event.keyCode === 229) return;
+      if (event.key === 'Escape' && !$('batchConfirm').hidden) {
+        event.preventDefault();
+        hideBatchConfirm();
+        state.pendingChanges = [];
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && (event.key.toLowerCase() === 's' || event.key === 'Enter')) {
+        if ($('batchConfirm').hidden) {
+          event.preventDefault();
+          applyPreview();
+        }
+      }
+    });
+    $('fileInput').addEventListener('change', async (event) => { const file = event.target.files?.[0]; if (!file) return; try { const json = JSON.parse(await file.text()); const rawCards = Array.isArray(json) ? json : (json.searchData || json.cards || json.nodes || []); const cards = rawCards.map((card) => ({ ...card, type: card.type || (/^[“「『]/.test(String(card.title || '')) ? '归类' : '普通卡片') })); if (!cards.length) throw new Error('未找到 searchData/cards/nodes 数组'); loadCards(cards, file.name); toast(`已载入 ${cards.length.toLocaleString()} 条索引，并只显示归类卡片`); } catch (error) { setStatus('JSON 读取失败', 'warning'); toast(`载入失败：${error.message}`); } });
+    loadCards(DEMO_CARDS, '合成演示数据');
+    postToNative('ready');
+  </script>
+</body>
+</html>

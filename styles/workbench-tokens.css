@@ -1,0 +1,88 @@
+:root {
+  --color-canvas: oklch(96.5% 0.008 155);
+  --color-paper: oklch(99% 0.004 95);
+  --color-paper-2: oklch(97.5% 0.012 150);
+  --color-paper-3: oklch(94% 0.018 155);
+  --color-ink: oklch(24% 0.025 165);
+  --color-muted: oklch(49% 0.026 165);
+  --color-rule: oklch(86% 0.022 160);
+  --color-rule-strong: oklch(73% 0.04 160);
+  --color-accent: oklch(50% 0.11 170);
+  --color-accent-strong: oklch(37% 0.09 170);
+  --color-accent-soft: oklch(93% 0.045 170);
+  --color-accent-ink: oklch(99% 0.004 95);
+  --color-blue: oklch(48% 0.12 250);
+  --color-blue-soft: oklch(94% 0.035 250);
+  --color-amber: oklch(45% 0.13 70);
+  --color-amber-soft: oklch(95% 0.04 80);
+  --color-red: oklch(48% 0.14 28);
+  --color-red-soft: oklch(95% 0.035 28);
+  --color-violet: oklch(48% 0.11 305);
+  --color-violet-soft: oklch(95% 0.03 305);
+  --color-shadow: oklch(20% 0.03 165 / 0.13);
+  --color-backdrop: oklch(18% 0.02 165 / 0.38);
+  --color-backdrop-soft: oklch(18% 0.02 165 / 0.28);
+  --color-mask: oklch(0% 0 0);
+  --color-toast: oklch(24% 0.025 165);
+  --color-toast-ink: oklch(99% 0.004 95);
+  --color-focus: oklch(45% 0.14 230);
+
+  --font-display: "Avenir Next", "PingFang SC", "Helvetica Neue", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  --font-mono: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  --text-xs: 10px;
+  --text-sm: 12px;
+  --text-md: 14px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --rule-thin: 1px;
+  --rule-strong: 2px;
+  --dur-fast: 120ms;
+  --dur-medium: 180ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: oklch(17% 0.014 165);
+    --color-paper: oklch(21% 0.016 165);
+    --color-paper-2: oklch(24% 0.018 165);
+    --color-paper-3: oklch(28% 0.021 165);
+    --color-ink: oklch(93% 0.012 150);
+    --color-muted: oklch(72% 0.025 155);
+    --color-rule: oklch(34% 0.025 160);
+    --color-rule-strong: oklch(49% 0.04 160);
+    --color-accent: oklch(67% 0.11 170);
+    --color-accent-strong: oklch(82% 0.075 170);
+    --color-accent-soft: oklch(29% 0.05 170);
+    --color-accent-ink: oklch(16% 0.018 165);
+    --color-blue: oklch(72% 0.1 250);
+    --color-blue-soft: oklch(28% 0.045 250);
+    --color-amber: oklch(76% 0.11 75);
+    --color-amber-soft: oklch(29% 0.045 75);
+    --color-red: oklch(72% 0.12 28);
+    --color-red-soft: oklch(28% 0.05 28);
+    --color-violet: oklch(74% 0.1 305);
+    --color-violet-soft: oklch(28% 0.045 305);
+    --color-shadow: oklch(5% 0.01 165 / 0.36);
+    --color-backdrop: oklch(5% 0.01 165 / 0.62);
+    --color-backdrop-soft: oklch(5% 0.01 165 / 0.48);
+    --color-focus: oklch(78% 0.1 230);
+  }
+}

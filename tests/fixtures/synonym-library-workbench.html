@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MNKnowledgeBase · 同义词库工作台</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17212b;
+      --ink-2: #3c4a56;
+      --muted: #7b8792;
+      --paper: #f5f7f8;
+      --surface: #ffffff;
+      --surface-2: #eef2f4;
+      --rule: #dbe2e6;
+      --rule-strong: #bdc8ce;
+      --accent: #296bff;
+      --accent-soft: #e7eeff;
+      --teal: #138a82;
+      --teal-soft: #e1f4f1;
+      --amber: #9a6910;
+      --amber-soft: #fff1cc;
+      --coral: #bd4a4a;
+      --coral-soft: #ffebeb;
+      --shadow: 0 12px 32px rgba(25, 42, 54, .08);
+      --shadow-small: 0 3px 12px rgba(25, 42, 54, .07);
+      --radius: 10px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font: 14px/1.45 var(--sans); }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    .shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 66px; padding: 12px 22px; border-bottom: 1px solid var(--rule); background: rgba(255,255,255,.92); }
+    .brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .brand-mark { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 8px; color: #fff; background: var(--ink); font-weight: 800; }
+    .brand-title { font-weight: 800; letter-spacing: -.02em; }
+    .brand-subtitle { color: var(--muted); font-size: 11px; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .file-status { display: inline-flex; align-items: center; gap: 7px; min-height: 29px; padding: 0 10px; border: 1px solid var(--rule); border-radius: 7px; color: var(--ink-2); background: var(--surface); font: 11px var(--mono); }
+    .file-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+    .file-status.is-dirty::before { background: var(--amber); }
+    .file-status.is-empty::before { background: var(--muted); }
+    .btn { min-height: 34px; padding: 0 12px; border: 1px solid var(--rule-strong); border-radius: 7px; color: var(--ink-2); background: var(--surface); font-weight: 650; }
+    .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .btn.primary { border-color: var(--accent); color: #fff; background: var(--accent); }
+    .btn.primary:hover { border-color: var(--ink); background: var(--ink); }
+    .btn.ghost { border-color: transparent; background: transparent; }
+    .btn.danger:hover { border-color: var(--coral); color: var(--coral); background: var(--coral-soft); }
+
+    .layout { display: grid; grid-template-columns: 210px minmax(440px, 1fr) 350px; flex: 1; min-height: 0; }
+    .rail { padding: 22px 16px; border-right: 1px solid var(--rule); background: #edf1f3; }
+    .rail-title { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .rail-file { margin-top: 8px; padding: 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+    .rail-file-name { overflow-wrap: anywhere; font: 11px var(--mono); }
+    .rail-file-path { margin-top: 5px; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; }
+    .rail-revision { display: flex; justify-content: space-between; margin-top: 10px; color: var(--ink-2); font-size: 11px; }
+    .rail-revision strong { color: var(--accent); font-family: var(--mono); }
+    .steps { display: grid; gap: 6px; margin-top: 28px; }
+    .step { display: grid; grid-template-columns: 25px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 39px; padding: 5px 7px; border-radius: 7px; color: var(--muted); }
+    .step-dot { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--rule-strong); border-radius: 50%; background: var(--surface); font: 10px var(--mono); }
+    .step.is-active { color: var(--accent); background: var(--accent-soft); font-weight: 750; }
+    .step.is-active .step-dot { border-color: var(--accent); color: #fff; background: var(--accent); }
+    .step.is-done { color: var(--teal); }
+    .step.is-done .step-dot { border-color: var(--teal); color: var(--teal); }
+    .rail-note { margin-top: 30px; padding: 10px; border-left: 3px solid var(--teal); color: var(--ink-2); background: var(--teal-soft); font-size: 11px; }
+
+    .workspace { min-width: 0; overflow: auto; padding: 22px; }
+    .workspace-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .eyebrow { color: var(--accent); font: 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+    h1 { margin: 4px 0 0; font-size: 24px; letter-spacing: -.04em; }
+    .intro { max-width: 700px; margin: 6px 0 0; color: var(--ink-2); }
+    .metric-line { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .metric-line strong { color: var(--ink); font: 16px var(--mono); }
+    .work-grid { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(360px, 1.2fr); gap: 16px; margin-top: 22px; }
+    .panel { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-small); }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 15px 16px; border-bottom: 1px solid var(--rule); }
+    .panel-title { font-weight: 800; }
+    .panel-hint { margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .panel-body { padding: 16px; }
+    .ai-panel { border-color: #c9d7ff; box-shadow: 0 10px 26px rgba(41,107,255,.08); }
+    .ai-panel .panel-head { background: #f5f8ff; }
+    .ai-badge { display: inline-flex; align-items: center; min-height: 22px; padding: 0 7px; border-radius: 5px; color: var(--accent); background: var(--accent-soft); font: 10px var(--mono); }
+    label.field-label { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; color: var(--ink-2); font-size: 11px; font-weight: 750; }
+    .field-label span { color: var(--muted); font-weight: 500; }
+    textarea, input[type="text"], select { width: 100%; border: 1px solid var(--rule); border-radius: 7px; outline: 2px solid transparent; outline-offset: 1px; color: var(--ink); background: var(--surface); }
+    textarea:focus, input[type="text"]:focus, select:focus { border-color: var(--accent); outline-color: var(--accent-soft); }
+    textarea { min-height: 102px; resize: vertical; padding: 10px; }
+    input[type="text"], select { height: 34px; padding: 0 9px; }
+    .ai-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+    .shortcut { color: var(--muted); font: 10px var(--mono); }
+    .fixed-prompt { margin-top: 10px; color: var(--muted); font-size: 10px; }
+    .fixed-prompt summary { cursor: pointer; color: var(--ink-2); font-weight: 700; }
+    .fixed-prompt code { display: block; margin-top: 6px; padding: 8px; border-radius: 6px; color: var(--ink-2); background: var(--surface-2); font: 10px/1.5 var(--mono); white-space: pre-wrap; }
+    .ai-result { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rule); }
+    .ai-result.is-visible { display: block; }
+    .result-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; }
+    .result-label em { color: var(--amber); font-style: normal; font-weight: 650; }
+    .term-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+    .term { display: inline-flex; align-items: center; min-height: 25px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 6px; color: var(--ink-2); background: var(--surface-2); font-size: 12px; }
+    .term button { display: grid; width: 16px; height: 16px; margin-left: 5px; place-items: center; padding: 0; border: 0; color: var(--muted); background: transparent; font-size: 14px; }
+    .term button:hover { color: var(--coral); }
+    .match-box { margin-top: 13px; padding: 10px; border: 1px solid #efd48a; border-radius: 8px; background: #fffbef; }
+    .match-title { display: flex; align-items: center; gap: 6px; color: var(--amber); font-size: 11px; font-weight: 800; }
+    .match-title span { color: var(--muted); font-weight: 500; }
+    .match-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f2e3b5; }
+    .match-group-title { font-weight: 750; overflow-wrap: anywhere; }
+    .match-group-meta { margin-top: 2px; color: var(--muted); font-size: 10px; }
+    .match-score { color: var(--amber); font: 10px var(--mono); }
+    .match-actions { display: flex; gap: 5px; margin-top: 6px; }
+    .mini-btn { min-height: 26px; padding: 0 7px; border: 1px solid var(--rule-strong); border-radius: 5px; color: var(--ink-2); background: var(--surface); font-size: 10px; font-weight: 700; }
+    .mini-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .mini-btn.primary { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
+    .mini-btn.danger { color: var(--coral); }
+    .empty-match { margin-top: 9px; color: var(--teal); font-size: 11px; }
+
+    .library-tools { display: flex; align-items: center; gap: 7px; padding: 11px 16px; border-bottom: 1px solid var(--rule); background: #fbfcfc; }
+    .library-tools input { flex: 1; }
+    .filter-count { color: var(--muted); font: 10px var(--mono); white-space: nowrap; }
+    .group-list { display: grid; gap: 7px; max-height: 475px; overflow: auto; padding: 12px; }
+    .group-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+    .group-row:hover { border-color: var(--accent); background: #fbfdff; }
+    .group-row.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .group-main { min-width: 0; }
+    .group-title { overflow: hidden; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+    .group-words { display: flex; gap: 4px; margin-top: 5px; overflow: hidden; }
+    .word-compact { max-width: 140px; overflow: hidden; padding: 2px 5px; border-radius: 4px; color: var(--ink-2); background: var(--surface-2); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .group-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .tag { display: inline-flex; align-items: center; min-height: 19px; padding: 0 5px; border-radius: 4px; color: var(--muted); background: var(--surface-2); font: 9px var(--mono); }
+    .tag.active { color: var(--teal); background: var(--teal-soft); }
+    .tag.pending { color: var(--amber); background: var(--amber-soft); }
+    .tag.context { color: var(--accent); background: var(--accent-soft); }
+    .group-arrow { color: var(--muted); font-size: 17px; }
+    .library-foot { display: flex; justify-content: space-between; gap: 8px; padding: 11px 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 11px; }
+
+    .inspector { min-width: 0; overflow: auto; border-left: 1px solid var(--rule); background: var(--surface); }
+    .inspector-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 20px 18px 15px; border-bottom: 1px solid var(--rule); }
+    .inspector-title { font-size: 16px; font-weight: 800; }
+    .inspector-id { margin-top: 3px; color: var(--muted); font: 9px var(--mono); overflow-wrap: anywhere; }
+    .inspector-body { padding: 16px 18px; }
+    .field + .field { margin-top: 15px; }
+    .chips-editor { display: flex; flex-wrap: wrap; gap: 6px; min-height: 35px; padding: 5px; border: 1px solid var(--rule); border-radius: 7px; background: var(--surface); }
+    .chips-editor:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .chips-editor input { flex: 1 1 90px; min-width: 80px; height: 25px; padding: 0 4px; border: 0; outline: 0; color: var(--ink); background: transparent; }
+    .check-row { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 12px; }
+    .check-row input { accent-color: var(--teal); }
+    .inspector-actions { display: flex; gap: 7px; margin-top: 20px; }
+    .inspector-note { margin-top: 18px; padding: 10px; border-left: 3px solid var(--teal); color: var(--ink-2); background: var(--teal-soft); font-size: 11px; }
+    .change-log { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule); }
+    .change-log-title { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .change-log-list { display: grid; gap: 6px; margin-top: 8px; }
+    .change-item { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 7px; color: var(--ink-2); font-size: 11px; }
+    .change-item::before { content: ''; width: 6px; height: 6px; margin-top: 6px; border-radius: 50%; background: var(--teal); }
+    .toast { position: fixed; right: 20px; bottom: 20px; z-index: 10; max-width: 360px; padding: 10px 14px; border-radius: 7px; color: #fff; background: var(--ink); box-shadow: var(--shadow); opacity: 0; transform: translateY(8px); pointer-events: none; transition: .18s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .file-preview { display: none; position: fixed; inset: 0; z-index: 20; place-items: center; padding: 20px; background: rgba(23,33,43,.38); }
+    .file-preview.is-open { display: grid; }
+    .file-preview-dialog { width: min(720px, 100%); max-height: min(720px, 90vh); overflow: auto; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+    .file-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 15px 17px; border-bottom: 1px solid var(--rule); }
+    .file-preview-body { padding: 16px; }
+    .file-preview-path { padding: 8px 9px; border-radius: 6px; color: var(--ink-2); background: var(--surface-2); font: 10px var(--mono); overflow-wrap: anywhere; }
+    .file-preview pre { max-height: 370px; margin: 12px 0 0; padding: 12px; overflow: auto; border-radius: 7px; color: #dce7ee; background: #18242d; font: 10px/1.55 var(--mono); }
+    @media (max-width: 1120px) { .layout { grid-template-columns: 190px minmax(420px, 1fr); } .inspector { grid-column: 2; border-top: 1px solid var(--rule); border-left: 0; } }
+    @media (max-width: 760px) { .topbar { align-items: flex-start; flex-direction: column; } .top-actions { width: 100%; justify-content: flex-end; } .layout { display: block; } .rail { border-right: 0; border-bottom: 1px solid var(--rule); } .steps { grid-template-columns: repeat(4, 1fr); margin-top: 15px; } .step { grid-template-columns: 1fr; justify-items: center; min-height: 55px; text-align: center; font-size: 10px; } .rail-note { display: none; } .workspace { padding: 15px; } .work-grid { grid-template-columns: 1fr; } .inspector { border-top: 1px solid var(--rule); } }
+  </style>
+</head>
+<body>
+  <div class="shell" id="synonymWorkbench">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">Σ</div>
+        <div>
+          <div class="brand-title">同义词库工作台</div>
+          <div class="brand-subtitle">MNKnowledgeBase · 本地 JSON 生命周期管理</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="file-status" id="fileStatus">固定词库 · 正在加载</span>
+        <button class="btn" id="previewFileBtn" type="button">查看本次变更</button>
+        <button class="btn primary" id="saveFileBtn" type="button" disabled>保存到本地文件</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="rail" aria-label="词库生命周期">
+        <div class="rail-title">Lifecycle</div>
+        <div class="rail-file">
+          <div class="rail-file-name">mnkb-synonym-library.json</div>
+          <div class="rail-file-path" id="filePathLabel">resources/search/mnkb-synonym-library.json</div>
+          <div class="rail-revision"><span>revision</span><strong id="revisionLabel">3</strong></div>
+        </div>
+        <div class="steps" id="steps">
+          <div class="step is-done" data-step="draft"><div class="step-dot">1</div><div>输入草稿</div></div>
+          <div class="step is-active" data-step="match"><div class="step-dot">2</div><div>查重匹配</div></div>
+          <div class="step" data-step="review"><div class="step-dot">3</div><div>人工确认</div></div>
+          <div class="step" data-step="saved"><div class="step-dot">4</div><div>写回本地</div></div>
+        </div>
+        <div class="rail-note">AI 只生成候选词组。是否追加、合并、启用，始终由你确认。</div>
+      </aside>
+
+      <section class="workspace">
+        <div class="workspace-head">
+          <div>
+            <div class="eyebrow">Local synonym system</div>
+            <h1>把“想到一个词”变成可审计的词条</h1>
+            <p class="intro">输入自然语言，先由 AI 解析，再和已有词组做模糊查重；确认后才写入本地 JSON。</p>
+          </div>
+          <div class="metric-line"><strong id="groupCount">124</strong>组 · <strong id="enabledCount">124</strong>启用</div>
+        </div>
+
+        <div class="work-grid">
+          <section class="panel ai-panel" aria-labelledby="aiPanelTitle">
+            <div class="panel-head">
+              <div><div class="panel-title" id="aiPanelTitle">AI 录入候选</div><div class="panel-hint">固定提示词 + 你的输入，只生成候选 JSON</div></div>
+              <span class="ai-badge">AI → DRAFT</span>
+            </div>
+            <div class="panel-body">
+              <label class="field-label" for="aiInput">告诉 AI 你发现的表达 <span>例如：SOT 收敛就是强算子收敛</span></label>
+              <textarea id="aiInput" placeholder="例如：我有时写弱极限，有时写弱收敛极限；它们在泛函分析语境下可以互相检索"></textarea>
+              <details class="fixed-prompt"><summary>查看固定提示词</summary><code>你是同义词库整理器。只根据用户输入提取等价表达，返回 words、relation、contextTriggers、note；不要擅自合并已有词组。</code></details>
+              <div class="ai-actions">
+                <span class="shortcut">⌘ / Ctrl + Enter 发送</span>
+                <button class="btn primary" id="aiSendBtn" type="button">发送并查重</button>
+              </div>
+              <div class="ai-result" id="aiResult" aria-live="polite">
+                <div class="result-label"><span>解析出的候选词组</span><em id="candidateState">待确认</em></div>
+                <div class="term-list" id="candidateTerms"></div>
+                <div class="match-box" id="matchBox"></div>
+                <div class="ai-actions"><span class="shortcut" id="candidateHint">先处理查重建议</span><button class="btn ghost" id="discardCandidateBtn" type="button">丢弃候选</button></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="libraryTitle">
+            <div class="panel-head">
+              <div><div class="panel-title" id="libraryTitle">本地词库</div><div class="panel-hint">固定加载项目词库 · 点击词组，在右侧检查或编辑</div></div>
+              <button class="btn" id="newGroupBtn" type="button">＋ 新建</button>
+            </div>
+            <div class="library-tools"><input id="librarySearch" type="text" placeholder="搜索词组、别名或备注" aria-label="搜索本地词库" /><span class="filter-count" id="filterCount">124 / 124</span></div>
+            <div class="group-list" id="groupList"></div>
+            <div class="library-foot"><span>本地文件是唯一事实来源</span><span id="dirtyLabel">无未保存变更</span></div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-labelledby="inspectorTitle">
+        <div class="inspector-head"><div><div class="inspector-title" id="inspectorTitle">词组详情</div><div class="inspector-id" id="inspectorId"></div></div><button class="btn ghost" id="deleteGroupBtn" type="button" title="删除词组">删除</button></div>
+        <div class="inspector-body" id="inspectorBody"></div>
+      </aside>
+    </main>
+
+    <div class="toast" id="toast" role="status"></div>
+    <div class="file-preview" id="filePreview" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
+      <div class="file-preview-dialog">
+        <div class="file-preview-head"><div class="panel-title" id="filePreviewTitle">即将写回的本地变更</div><button class="btn ghost" id="closePreviewBtn" type="button">关闭</button></div>
+        <div class="file-preview-body"><div class="file-preview-path" id="previewPath">resources/search/mnkb-synonym-library.json</div><pre id="previewContent"></pre></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const root = document.getElementById('synonymWorkbench');
+      const clone = (value) => JSON.parse(JSON.stringify(value));
+      const state = { groups: [], selectedId: '', pending: null, revision: 0, dirty: false, changes: [], fileHandle: null, fileName: '', loaded: false, aiPending: false };
+      // file:// 页面无法稳定读取相邻 JSON，因此保留与资源文件同源的内置副本作为离线回退。
+      const embeddedPayload = JSON.parse(atob('eyIkc2NoZW1hIjoibW5rYi5zeW5vbnltLWxpYnJhcnkudjEiLCJ2ZXJzaW9uIjoxLCJyZXZpc2lvbiI6MywiZGVzY3JpcHRpb24iOiJNTktub3dsZWRnZUJhc2Ug5pys5Zyw57u05oqk55qE56iz5a6a5ZCM5LmJ6K+N5bqT44CC5pen54mIIGtiU2VhcmNoQ29uZmlnLnN5bm9ueW1Hcm91cHMg5LiOIHNlYXJjaC5odG1sIOWbuuWumuWfuuehgOWQjOS5ieivjeW3sui/geenu+WIsOatpOaWh+S7tu+8m+e8lui+keWQjumHjeaWsOaJk+W8gOaQnOe0ouaIlumHjeW7uue0ouW8leWNs+WPr+eUn+aViOOAgiIsImdyb3VwcyI6W3sid29yZHMiOlsi5ZCr5bm6Iiwi5Y2V5L2NIl0sImlkIjoic3luLTY2NjNlOWYzIn0seyJ3b3JkcyI6WyLpl63lh7jljIUiLCLlh7jljIXnmoTpl63ljIUiLCLlh7jnu4TlkIjnmoTpl63ljIUiXSwiaWQiOiJzeW4tOWRjMWY4ODgifSx7IndvcmRzIjpbIuWHuHt7fX3pm4YiLCJ7e3195Ye46ZuGIl0sInBhdHRlcm5Nb2RlIjp0cnVlLCJpZCI6InN5bi0wNGU5YTg4MCJ9LHsid29yZHMiOlsi5bGe5LqOe3t9feWGhemDqCIsIuaYr3t7fX3lhoXngrkiXSwicGF0dGVybk1vZGUiOnRydWUsImlkIjoic3luLTljYWM0OTIyIn0seyJ3b3JkcyI6WyLkuLoiLCLmmK8iXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlLCJpZCI6InN5bi0zNTM3N2RiMSJ9LHsid29yZHMiOlsi5Lik5Lik5LiN5ZCMIiwi5Lik5Lik5LiN562JIiwi5LqS5LiN55u4562JIiwi5ZCE5LiN55u45ZCMIiwi5ZCE5LiN55u4562JIiwi5LqS5byCIiwi5Lik5Lik5LiN5LiA5qC3Il0sInBhcnRpYWxSZXBsYWNlbWVudCI6ZmFsc2UsImlkIjoic3luLTdjNDI2YjIxIn0seyJ3b3JkcyI6WyJ8fCIsIuKAliJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImlkIjoic3luLTY0ODM2MzZlIn0seyJ3b3JkcyI6WyLooajnpLrkuLoiLCLooajnpLrmiJAiLCLlhpnmiJAiLCLlhpnkuLoiXSwicGFydGlhbFJlcGxhY2VtZW50IjpmYWxzZSwiaWQiOiJzeW4tM2I4YWU2ZWEifSx7ImlkIjoiZ3JvdXBfMTc1ODUxMzg2OTAwMyIsIndvcmRzIjpbIuaJqeW8oCIsIuW7tuaLkyJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImNhc2VTZW5zaXRpdmUiOnRydWV9LHsid29yZHMiOlsi57q/5oCn6Zet5YyFIiwi6Zet57q/5oCn5omp5bygIiwi6Zet57q/5oCn5byg5oiQIiwic3BhbiDpl63ljIUiXSwicGFydGlhbFJlcGxhY2VtZW50IjpmYWxzZSwiaWQiOiJzeW4tYTk5ZGIwMzkifSx7IndvcmRzIjpbIuWkjeWPr+a1i+WHveaVsCIsIuWPr+a1i+WkjeWHveaVsCJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOmZhbHNlLCJpZCI6InN5bi1jYWQyNTU1ZSJ9LHsid29yZHMiOlsi5a6e5Y+v5rWL5Ye95pWwIiwi5Y+v5rWL5a6e5Ye95pWwIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6ZmFsc2UsImlkIjoic3luLWE0ZThiZGE2In0seyJ3b3JkcyI6WyLlg4/nqbrpl7QiLCLlgLzln58iXSwicGFydGlhbFJlcGxhY2VtZW50IjpmYWxzZSwiaWQiOiJzeW4tYWY5MTc4ZTYifSx7IndvcmRzIjpbIuaYr+WFqOepuumXtCIsIuetieS6juWFqOepuumXtCJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOmZhbHNlLCJpZCI6InN5bi05MWZkNTFmYSJ9LHsid29yZHMiOlsi6Ieq5bexIiwi6Ieq6LqrIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6ZmFsc2UsImlkIjoic3luLWIyODIxM2FjIn0seyJ3b3JkcyI6WyLlubYiLCLlubbkuIoiLCLlubbpm4YiXSwicGFydGlhbFJlcGxhY2VtZW50IjpmYWxzZSwiaWQiOiJzeW4tODNhMjI2NWIifSx7IndvcmRzIjpbIuS6pCIsIuS6pOS4iiIsIuS6pOmbhiJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOmZhbHNlLCJpZCI6InN5bi1hYmZhNTUxNSJ9LHsid29yZHMiOlsi5LiA5YiXe3t9feeahOW5tiIsInt7fX3nmoTlj6/liJflubYiXSwicGFydGlhbFJlcGxhY2VtZW50IjpmYWxzZSwicGF0dGVybk1vZGUiOnRydWUsImlkIjoic3luLWMzNTZkNDdiIn0seyJ3b3JkcyI6WyLnqKB7e3196ZuGIiwi56ig5a+Ge3t9fembhiIsInt7fX3nqKDpm4YiLCJ7e31956ig5a+G6ZuGIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6ZmFsc2UsInBhdHRlcm5Nb2RlIjp0cnVlLCJpZCI6InN5bi0yODA0NWFlOCJ9LHsid29yZHMiOlsi5LiN55u45LqkIiwi5Lqk6ZuG5Li656m6Iiwi5LqS5LiN55u45LqkIiwi5Lqk5Li656m6Iiwi5Lqk6ZuG5Li66Zu2Iiwi5Lqk6ZuG5Li656m66ZuGIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6ZmFsc2UsImlkIjoic3luLWMxMzAyYzFhIn0seyJ3b3JkcyI6WyJbYWJdIiwiW2EsYl0iLCJbYSwgYl0iXSwicGFydGlhbFJlcGxhY2VtZW50IjpmYWxzZSwiaWQiOiJzeW4tNGJjZGZkNTIifSx7IndvcmRzIjpbIlswMV0iLCJbMCwxXSIsIlswLCAxXSJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOmZhbHNlLCJpZCI6InN5bi00ZjRkMDk2NCJ9LHsid29yZHMiOlsi56ys5LqM57qy56m66Ze0Iiwi56ys5LqM57qy55qE56m66Ze0Il0sInBhcnRpYWxSZXBsYWNlbWVudCI6ZmFsc2UsImlkIjoic3luLTM5YzE1ODVjIn0seyJ3b3JkcyI6WyLnrKzkuIDnurLnqbrpl7QiLCLnrKzkuIDnurLnmoTnqbrpl7QiXSwicGFydGlhbFJlcGxhY2VtZW50IjpmYWxzZSwiaWQiOiJzeW4tYWZjM2I3MDQifSx7IndvcmRzIjpbIuWtkOW8gOmbhiIsIuW8gOWtkOmbhiJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOmZhbHNlLCJpZCI6InN5bi00YjhhMjVjMiJ9LHsid29yZHMiOlsi5a2Q6Zet6ZuGIiwi6Zet5a2Q6ZuGIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6ZmFsc2UsImlkIjoic3luLWJjNTVkMzY4In0seyJ3b3JkcyI6WyLlrZDlvIDnkIMiLCLlvIDlrZDnkIMiXSwicGFydGlhbFJlcGxhY2VtZW50IjpmYWxzZSwiaWQiOiJzeW4tYmIzYzQ1MmUifSx7IndvcmRzIjpbIuWtkOmXreeQgyIsIumXreWtkOeQgyJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOmZhbHNlLCJpZCI6InN5bi1mZGU3YWZmNCJ9LHsid29yZHMiOlsi5a2Y5Zyo5YaF54K5Iiwi5YyF5ZCr5YaF54K5Iiwi5pyJ5YaF54K5Iiwi5YaF6YOo6Z2e56m6Il0sImlkIjoic3luLTc5ODY2NmMyIn0seyJ3b3JkcyI6WyLml6B7e319Iiwi5rKh5pyJe3t9fSJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOmZhbHNlLCJwYXR0ZXJuTW9kZSI6dHJ1ZSwiaWQiOiJzeW4tYmFkMTY3OTQifSx7IndvcmRzIjpbIumXreWMheeCuSIsIuaOpeinpueCuSIsIueymOedgOeCuSJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImlkIjoic3luLWM0NTEzMDlmIn0seyJ3b3JkcyI6WyLkuI3mmK97e319Iiwi6Z2ee3t9fSJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsInBhdHRlcm5Nb2RlIjp0cnVlLCJpZCI6InN5bi03ZDlkYzU1MiJ9LHsiaWQiOiJncm91cF8xNzU0NzU5NzA0ODIwIiwid29yZHMiOlsi4oeUIiwi562J5Lu3Iiwi562J5Lu35Yi755S7Iiwi562J5Lu35p2h5Lu2Iiwi5b2T5LiU5LuF5b2TIiwi562J5Lu35LqOIl19LHsiaWQiOiJncm91cF8xNzU0ODE0NTYzNzc0Iiwid29yZHMiOlsi5L6d6IyD5pWw5pS25pWbIiwi5oyJ6IyD5pWw5pS25pWbIl19LHsiaWQiOiJncm91cF8xNzU0OTExMDgyNDk4Iiwid29yZHMiOlsi8J2ViyIsIuWNleS9jeWchuWRqCJdfSx7ImlkIjoiZ3JvdXBfMTc1NDkxMzYxNDcxNSIsIndvcmRzIjpbIuS4peagvOatoyIsIuS4peagvOmdnui0nyJdfSx7ImlkIjoiZ3JvdXBfMTc1NDkxMzY4NzY4MiIsIndvcmRzIjpbIuS4uumbtiIsIuS4ujAiLCLnrYnkuo7pm7YiLCLnrYnkuo4wIiwiPTAiLCLkuLogMCIsIuetieS6jiAwIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTQ5MTg2OTE1ODkiLCJ3b3JkcyI6WyLpnZ7pm7YiLCLkuI3mmK/pm7YiLCLkuI3nrYnkuo7pm7YiLCLiiaAwIiwi4omgIDAiLCLpnZ4wIiwi6Z2eIDAiLCLkuI3mmK8wIiwi5LiN5pivIDAiLCLkuI3nrYnkuo4wIiwi5LiN562J5LqOIDAiLCIw4omgIiwiMCDiiaAiXX0seyJpZCI6Imdyb3VwXzE3NTQ5NjcyNzUyMzQiLCJ3b3JkcyI6WyLlgoXnq4vlj7YiLCLlgoXph4zlj7YiLCJGb3VyaWVyIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTQ5NjgyNzY4MzkiLCJ3b3JkcyI6WyLiioIiLCLiioYiLCLlrZDpm4YiLCLljIXlkKvkuo4iLCLljIXlkKvlnKgiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NDk2ODc2ODM3MCIsIndvcmRzIjpbIuWunuaVsCIsIuWunuaVsOWfnyIsIuWunuaDheW9oiJdfSx7ImlkIjoiZ3JvdXBfMTc1NDk3OTEyMjEwMiIsIndvcmRzIjpbIuW+hOWQkeaegemZkCIsIui+ueeVjOWAvOWHveaVsCIsIui+ueeVjOWHveaVsCJdfSx7ImlkIjoiZ3JvdXBfMTc1NTIzMDc1ODQxNyIsIndvcmRzIjpbIuaciemZkCIsIjziiJ4iLCLlsI/kuo7ml6DnqbciLCLlsI/kuo7iiJ4iXX0seyJpZCI6Imdyb3VwXzE3NTUyMzEyMzUyNzkiLCJ3b3JkcyI6WyLmr5TovoPliKTliKvms5UiLCLmr5TlgLzliKTliKvms5UiXX0seyJpZCI6Imdyb3VwXzE3NTUzMTMyNDgwMTQiLCJ3b3JkcyI6WyIt4oiePCIsIuWkp+S6jui0n+aXoOeptyIsIj4t4oieIl19LHsiaWQiOiJncm91cF8xNzU1MzI4ODA4NzE1Iiwid29yZHMiOlsi5Li6MSIsIuetieS6jjEiLCI9MSIsIj0gMSIsIuS4uiAxIiwi562J5LqOIDEiXX0seyJpZCI6Imdyb3VwXzE3NTUzMzAzMDUzMzUiLCJ3b3JkcyI6WyLmn6/opb8iLCJDYXVjaHkiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NTMzMzY5MDI5MCIsIndvcmRzIjpbIkJsYXNjaGtlIOenryIsIkJsYXNjaGtlIOS5mOenryJdfSx7ImlkIjoiZ3JvdXBfMTc1NTU2ODYzNzY1OSIsIndvcmRzIjpbIuWvueaVsCIsImxvZyIsImxuIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTU1NzQ5Mjk4NDEiLCJ3b3JkcyI6WyLlsI/kuo7nrYnkuo4iLCLkuI3otoXov4ciLCLiiaQiXX0seyJpZCI6Imdyb3VwXzE3NTU4Mzc2ODg5NjciLCJ3b3JkcyI6WyJMYXBsYWNlIiwiTGFwbGFjaWFuIiwi5ouJ5pmu5ouJ5pavIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTU4Mzg0ODE2MDAiLCJ3b3JkcyI6WyLlvIDlj7PljYrlubPpnaIiLCLihILigooiLCLihI3igooiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NTg2NzY3ODE0NiIsIndvcmRzIjpbIjwwIiwi5bCP5LqO6Zu2Iiwi5bCP5LqOIDAiLCI8IDAiLCLlsI/kuo4wIl19LHsiaWQiOiJncm91cF8xNzU1ODcxMzU5Mjg3Iiwid29yZHMiOlsi5Yeg5LmO5aSE5aSEIiwiYS5lLiJdfSx7ImlkIjoiZ3JvdXBfMTc1NTg3MTY4ODYwOCIsIndvcmRzIjpbIuetieS6jiIsIuebuOetiSIsIuebuOWQjCIsIuS4gOiHtCIsIuS4gOagtyIsIuWwseaYryIsIuWQjOS4gOS4qiJdfSx7ImlkIjoiZ3JvdXBfMTc1NjA5MjY5ODAwMSIsIndvcmRzIjpbIumdnumbtuWkjeWQjOaAgSIsIumdnumbtuWPr+S5mOe6v+aAp+azm+WHvSJdfSx7ImlkIjoiZ3JvdXBfMTc1NjEwODk0OTkzNiIsIndvcmRzIjpbIuaYoOWwhOS4uiIsIuiiq+aYoOaIkCIsIuiiq+aYoOS4uiIsIuaYoOS4uiIsIuaYoOaIkCIsIuaYoOWIsCJdfSx7ImlkIjoiZ3JvdXBfMTc1NjEwOTMzNTA3MCIsIndvcmRzIjpbIuKGkjAiLCLotovkuo7pm7YiLCLotovkuo4gMCIsIui2i+S6jjAiLCLmlLbmlZvliLAwIiwi5pS25pWb5Yiw6Zu2Iiwi5pS25pWb5YiwIDAiLCLliLDpm7YiLCLliLAwIiwi5YiwIDAiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NjExMTY0MzYwNSIsIndvcmRzIjpbIuWMluW9kuS4uiIsIuWMluW9kuWIsCIsIuW9kue7k+S4uiIsIuW9kue7k+WIsCIsIuWMluW9kuaIkCIsIuW9kue7k+aIkCJdfSx7ImlkIjoiZ3JvdXBfMTc1NjExMzY2NDc5NiIsIndvcmRzIjpbIuW8seaUtuaVm+aegemZkCIsIuW8seaegemZkCIsInfmnoHpmZAiLCJ3IOaegemZkCJdfSx7ImlkIjoiZ3JvdXBfMTc1NjEyODA1MTkwMyIsIndvcmRzIjpbIuWIl+e0p+eahCIsIuWIl+e0p+mbhiJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWV9LHsiaWQiOiJncm91cF8xNzU2MTgyNTM2MTczIiwid29yZHMiOlsi6Ieq5Y+N55qEIiwi6Ieq5Y+N56m66Ze0Il0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTYxODczMjgzMTUiLCJ3b3JkcyI6WyLnuqfmlbDlsZXlvIAiLCLnuqfmlbDooajnpLoiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NjE4OTg1OTUyMiIsIndvcmRzIjpbIumdnui0nyIsIuWkp+S6juetieS6jumbtiIsIuWkp+S6juetieS6jjAiLCLlpKfkuo7nrYnkuo4gMCJdfSx7ImlkIjoiZ3JvdXBfMTc1NjE5NDcwNTA3NCIsIndvcmRzIjpbIkJlcmdtYW4g5qC4IiwiQmVyZ21hbiDlho3nlJ/moLgiXX0seyJpZCI6Imdyb3VwXzE3NTYyMTE3NjQ5OTEiLCJ3b3JkcyI6WyLnm7jkuZgiLCLkuZjotbfmnaUiLCLkuZjku6UiLCLkuZjnp68iXX0seyJpZCI6Imdyb3VwXzE3NTY1NTU1MzgyNDciLCJ3b3JkcyI6WyLlvLHmlLbmlZsiLCLih4AiXX0seyJpZCI6Imdyb3VwXzE3NTY2MzA5MzQ0NjAiLCJ3b3JkcyI6WyJHZWxmYW5kIOihqOekuiIsIkdlbGZhbmQg5pig5bCEIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTY2MzEzMjk2MTQiLCJ3b3JkcyI6WyLlj6/mlbDml6DpmZDnu7QiLCLlj6/liJfml6DpmZDnu7QiLCLlj6/mlbDml6Dnqbfnu7QiLCLlj6/liJfml6Dnqbfnu7QiXX0seyJpZCI6Imdyb3VwXzE3NTY2MzE3NDMxMDUiLCJ3b3JkcyI6WyLmoIflh4bmraPkuqQiLCLop4TojIPmraPkuqQiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NjcxMTAzNTI0NSIsIndvcmRzIjpbIktlciIsIumbtuepuumXtCIsIuaguOepuumXtCIsIuaguCJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWV9LHsiaWQiOiJncm91cF8xNzU2OTk2NzYyNDUwIiwid29yZHMiOlsi5q2j5Lqk6ZuGIiwi5q2j5Lqk57O7Il0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTcwNTIwNDA3MDgiLCJ3b3JkcyI6WyLmraPkuqQiLCLlnoLnm7QiLCLmraPkuqTkuo4iLCLlnoLnm7Tkuo4iXX0seyJpZCI6Imdyb3VwXzE3NTcwNTUxMDg3NzMiLCJ3b3JkcyI6WyLkuIDliJfop4TojIPmraPkuqTpm4YiLCLkuIDliJfmoIflh4bmraPkuqTpm4YiLCLop4TojIPmraPkuqTliJciLCLmoIflh4bmraPkuqTliJciXX0seyJpZCI6Imdyb3VwXzE3NTcwNjE2MTg4MTQiLCJ3b3JkcyI6WyJ7MH0iLCLpm7blkJHph4/nmoTljZXngrnpm4YiXX0seyJpZCI6Imdyb3VwXzE3NTcwNzczMjI5ODMiLCJ3b3JkcyI6WyLpl63pm4YiLCLpl63lrZDpm4YiXSwiY29udGV4dFRyaWdnZXJzIjpbIuWtkOmbhiJdLCJjb250ZXh0TW9kZSI6ImFueSJ9LHsiaWQiOiJncm91cF8xNzU3MDc3MzM1ODgyIiwid29yZHMiOlsi5byA5a2Q6ZuGIiwi5byA6ZuGIl0sImNvbnRleHRUcmlnZ2VycyI6WyLlrZDpm4YiXSwiY29udGV4dE1vZGUiOiJhbnkifSx7ImlkIjoiZ3JvdXBfMTc1NzA3NzM0NTY4MCIsIndvcmRzIjpbIue0p+mbhiIsIue0p+WtkOmbhiJdLCJjb250ZXh0VHJpZ2dlcnMiOlsi5a2Q6ZuGIl0sImNvbnRleHRNb2RlIjoiYW55In0seyJpZCI6Imdyb3VwXzE3NTcwODg2NjQ2NTQiLCJ3b3JkcyI6WyLlhYPntKAiLCLlkJHph48iXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlLCJjYXNlU2Vuc2l0aXZlIjp0cnVlLCJjb250ZXh0VHJpZ2dlcnMiOlsi5YaF56ev56m66Ze0IiwiSGlsYmVydCDnqbrpl7QiLCLotYvojIPnur/mgKfnqbrpl7QiLCJCYW5hY2gg56m66Ze0Iiwi57q/5oCn56m66Ze0Il0sImNvbnRleHRNb2RlIjoiYW55In0seyJpZCI6Imdyb3VwXzE3NTcxNDM4MjExNDIiLCJ3b3JkcyI6WyLmraPkuqTooaUiLCJe4oqlIl0sImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU3MTY0NjEzMzI5Iiwid29yZHMiOlsi6Iez5aSa5piv5Y+v5pWwIiwi6Iez5aSa5Y+v5pWwIiwi6Iez5aSa5Y+v5YiXIiwi6Iez5aSa5piv5Y+v5YiXIl19LHsiaWQiOiJncm91cF8xNzU3MzM3MzMyNDkxIiwid29yZHMiOlsiU3BhbiIsIue6v+aAp+aJqeW8oCIsIue6v+aAp+W8oOaIkCJdLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NzQxOTM5MzM4NCIsIndvcmRzIjpbIumdnui0n+aVtOaVsCIsIuKIiOKElSJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU3NDIwOTQwNTY0Iiwid29yZHMiOlsi5Lu75oSPIiwi5Lu75Y+WIiwi5Lu75oSP5LiA5LiqIiwi5Lu75Y+W5LiA5LiqIiwi5q+P5LiqIiwi5q+P5LiA5LiqIl0sImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU3NDcxNTE5OTY4Iiwid29yZHMiOlsiz4Mg5Luj5pWwIiwiz4Pku6PmlbAiLCLPgy3ku6PmlbAiLCLPgy1hbGdlYnJhIiwiz4MgYWxnZWJyYSJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWV9LHsiaWQiOiJncm91cF8xNzU3NDg3MDQ5ODQ1Iiwid29yZHMiOlsi6IyD5pWw5p6B6ZmQIiwi5by65p6B6ZmQIl19LHsiaWQiOiJncm91cF8xNzU3NjY2NDgzMjQ3Iiwid29yZHMiOlsi6Z2e56m6Iiwi6Z2e56m66ZuGIiwi5LiN5piv56m66ZuGIiwi5LiN56m6Iiwi5LiN562J5LqO56m66ZuGIiwi4omg4oiFIiwi4omgIOKIhSJdLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NzY3MzgwOTMxMSIsIndvcmRzIjpbIumbhuS7o+aVsCIsIuW4g+WwlOS7o+aVsCJdLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1NzY3NTU2MzkwMSIsIndvcmRzIjpbIuepuumbhiIsIuKIhSJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU3Njc1NTc3ODEzIiwid29yZHMiOlsi5bGe5LqOIiwi4oiIIiwi5YyF5ZCrIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTc3NTUxODYyMjUiLCJ3b3JkcyI6WyLml6DpmZAiLCLiiJ4iLCLml6DnqbciXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1Nzc1NTcxNDk4OSIsIndvcmRzIjpbIuihpeWwgemXrSIsIuihpembhuWwgemXrSIsIuihpei/kOeul+WwgemXrSIsIuihpembhui/kOeul+WwgemXrSJdfSx7ImlkIjoiZ3JvdXBfMTc1NzkzODYzOTczMyIsIndvcmRzIjpbIlTigoQg56m66Ze0IiwiVOKChCDmraPop4Tnqbrpl7QiLCLmu6HotrMgVOKCgSDlkowgVOKChCDlhaznkIbnmoTmraPop4Tnqbrpl7QiLCLmu6HotrMgVOKCgiDlkowgVOKChCDlhaznkIbnmoTmraPop4Tnqbrpl7QiLCLmu6HotrMgVOKCgSDlkowgVOKChCDlhaznkIbnmoTnqbrpl7QiLCLmu6HotrMgVOKCgiDlkowgVOKChCDlhaznkIbnmoTnqbrpl7QiXSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTgwMDk0OTU5NTciLCJ3b3JkcyI6WyJ7e3195bCB6ZetIiwie3t9fei/kOeul+WwgemXrSJdLCJwYXR0ZXJuTW9kZSI6dHJ1ZSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTgwMTI0NDE2NzkiLCJ3b3JkcyI6WyLljZXkvY3mqKHplb8iLCLmqKHplb/nrYnkuo4xIiwi5qih6ZW/562J5LqO5LiAIiwi5qih6ZW/562J5LqOIDEiLCLmqKHplb/kuLoxIiwi5qih6ZW/5Li6IDEiXSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTgwODc5NTQzNDUiLCJ3b3JkcyI6WyLnqIDnlo8iLCLnlo/mnJciLCLml6DlpITnqKDlr4YiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1ODE1OTAzNjkxNSIsIndvcmRzIjpbIuWkjeWQjOaAgSIsIuWPr+S5mOe6v+aAp+azm+WHvSJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU4Mjg2NDc2NTI0Iiwid29yZHMiOlsi57q/5oCn5Y2V5bCEIiwi5Y2V5bCE57q/5oCnIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTgyODY0OTQ1OTAiLCJ3b3JkcyI6WyLnur/mgKfmu6HlsIQiLCLmu6HlsITnur/mgKciXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1ODI4NzQ2MzQyMSIsIndvcmRzIjpbIuS4reeahHt7fX3pm4YiLCJ7e3195a2Q6ZuGIl0sInBhdHRlcm5Nb2RlIjp0cnVlLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1ODI5MTE4OTkzOSIsIndvcmRzIjpbIuS4rembhuWQiCIsIuS4reeahOmbhuWQiCIsIueahOWtkOmbhiIsIuS4reeahOWtkOmbhiJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU4MzUzNDI1NjY0Iiwid29yZHMiOlsiVFZTIiwi5ouT5omR57q/5oCn56m66Ze0Iiwi5ouT5omR5ZCR6YeP56m66Ze0Iiwi57q/5oCn5ouT5omR56m66Ze0Il0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTgzNzAyNzk5NTAiLCJ3b3JkcyI6WyLmnInpmZDmtYvluqYiLCLmtYvluqbmnInpmZAiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1ODQ0ODk0MjY3MyIsIndvcmRzIjpbIuS7u+aEj+S4qumbhuWQiCIsIuS7u+aEj+WkmuS4qumbhuWQiCIsIuS4gOaXj+mbhuWQiCIsIumbhuWQiOaXjyJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWV9LHsiaWQiOiJncm91cF8xNzU4NDU0MzA1NTIzIiwid29yZHMiOlsi566X5a2Q5aSN5ZCIe3t9feeul+WtkCIsIueul+WtkOS5mOS7pXt7fX3nrpflrZAiXSwicGF0dGVybk1vZGUiOnRydWUsImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU4NTEzNzQ3ODM4Iiwid29yZHMiOlsi562J5Yq/Iiwi5Z+65pWw55u4562JIiwi5Z+65pWw55u45ZCMIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTg1MjgxMTU4MTQiLCJ3b3JkcyI6WyJIaWxiZXJ0LVNjaG1pZHQiLCJIaWxiZXJ04oCTU2NobWlkdCJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU4NTMwNDczMTk4Iiwid29yZHMiOlsiKueQhuaDsyIsIiog55CG5oOzIiwiKi3nkIbmg7MiLCLiiJct55CG5oOzIiwi4oiX55CG5oOzIiwi4oiXIOeQhuaDsyJdLCJwYXJ0aWFsUmVwbGFjZW1lbnQiOnRydWUsImNhc2VTZW5zaXRpdmUiOnRydWV9LHsiaWQiOiJncm91cF8xNzU4ODg1MTcyNDU5Iiwid29yZHMiOlsi5Y+Y5YWDIiwi5Y+Y6YePIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTg4ODYxNzA0MjgiLCJ3b3JkcyI6WyLlpI3mlbDln58iLCLlpI3mlbDpm4YiLCLlpI3lubPpnaIiLCLihIIiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlfSx7ImlkIjoiZ3JvdXBfMTc1ODk4MDYzODczNCIsIndvcmRzIjpbIuafr+ilv+WIlyIsIkNhdWNoeSDliJciLCLmn6/opb/luo/liJciLCJDYXVjaHkg5bqP5YiXIl0sInBhcnRpYWxSZXBsYWNlbWVudCI6dHJ1ZSwiY2FzZVNlbnNpdGl2ZSI6dHJ1ZX0seyJpZCI6Imdyb3VwXzE3NTg5ODIwMjM2MDQiLCJ3b3JkcyI6WyLmlLbmlZsiLCLotovkuo4iLCLpgLzov5EiXSwicGFydGlhbFJlcGxhY2VtZW50Ijp0cnVlLCJjYXNlU2Vuc2l0aXZlIjp0cnVlfSx7ImlkIjoibWF0aC1zb3QtY29udmVyZ2VuY2UiLCJ3b3JkcyI6WyJTT1QiLCJTT1Qg5pS25pWbIiwi5by6566X5a2Q5pS25pWbIiwic3Ryb25nIG9wZXJhdG9yIGNvbnZlcmdlbmNlIl0sInJlbGF0aW9uIjoiYWJicmV2aWF0aW9uIiwiZGlyZWN0aW9uIjoiYmlkaXJlY3Rpb25hbCIsImNvbnRleHRUcmlnZ2VycyI6WyLmlLbmlZsiLCJjb252ZXJnZW5jZSJdLCJjb250ZXh0TW9kZSI6ImFueSIsImVuYWJsZWQiOnRydWUsIm5vdGUiOiJTT1Qg5Y2V54us5Ye6546w5pe25L+d5oyB5q2n5LmJ77yb5LiO5pS25pWb6K+t5aKD5ZCM5pe25Ye6546w5pe25omN5bGV5byA5Li65by6566X5a2Q5pS25pWb44CCIn0seyJpZCI6ImJ1aWx0aW4tbmVnYXRpb24tYnUtZmVpIiwid29yZHMiOlsi5LiNIiwi6Z2eIl19LHsiaWQiOiJidWlsdGluLW51bWJlci0xIiwid29yZHMiOlsiMSIsIu+8kSIsIuS4gCJdfSx7ImlkIjoiYnVpbHRpbi1udW1iZXItMiIsIndvcmRzIjpbIjIiLCLvvJIiLCLkuowiLCLkuKQiXX0seyJpZCI6ImJ1aWx0aW4tbnVtYmVyLTMiLCJ3b3JkcyI6WyIzIiwi77yTIiwi5LiJIl19LHsiaWQiOiJidWlsdGluLW51bWJlci00Iiwid29yZHMiOlsiNCIsIu+8lCIsIuWbmyJdfSx7ImlkIjoiYnVpbHRpbi1udW1iZXItNSIsIndvcmRzIjpbIjUiLCLvvJUiLCLkupQiXX0seyJpZCI6ImJ1aWx0aW4tbnVtYmVyLTYiLCJ3b3JkcyI6WyI2Iiwi77yWIiwi5YWtIl19LHsiaWQiOiJidWlsdGluLW51bWJlci03Iiwid29yZHMiOlsiNyIsIu+8lyIsIuS4gyJdfSx7ImlkIjoiYnVpbHRpbi1udW1iZXItOCIsIndvcmRzIjpbIjgiLCLvvJgiLCLlhasiXX0seyJpZCI6ImJ1aWx0aW4tbnVtYmVyLTkiLCJ3b3JkcyI6WyI5Iiwi77yZIiwi5LmdIl19LHsiaWQiOiJidWlsdGluLW51bWJlci0xMCIsIndvcmRzIjpbIjEwIiwi77yR77yQIiwi5Y2BIl19XX0='));
+      const $ = (selector) => root.querySelector(selector);
+      const normalize = (value) => String(value || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+      const uniqueWords = (values) => Array.from(new Map(values.map(normalize).filter(Boolean).map((value) => [value.toLowerCase(), value])).values());
+      const levenshtein = (left, right) => {
+        const a = left.toLowerCase(); const b = right.toLowerCase();
+        const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+        for (let i = 1; i <= a.length; i += 1) { let previous = row[0]; row[0] = i; for (let j = 1; j <= b.length; j += 1) { const current = row[j]; row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1)); previous = current; } }
+        return row[b.length];
+      };
+      const similarity = (left, right) => {
+        const a = normalize(left).toLowerCase(); const b = normalize(right).toLowerCase();
+        if (!a || !b) return 0; if (a === b) return 1; if (a.includes(b) || b.includes(a)) return .82;
+        return Math.max(0, 1 - levenshtein(a, b) / Math.max(a.length, b.length));
+      };
+      const groupSimilarity = (words, group) => Math.max(...words.flatMap((word) => group.words.map((existing) => similarity(word, existing))), 0);
+      const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+      const currentGroup = () => state.groups.find((group) => group.id === state.selectedId) || state.groups[0];
+      const markDirty = (message) => { state.dirty = true; if (message) state.changes.unshift(message); renderShell(); };
+      const toast = (message) => { const node = $('#toast'); node.textContent = message; node.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => node.classList.remove('show'), 2200); };
+
+      function applyLibraryPayload(payload) {
+        if (!payload || payload.$schema !== 'mnkb.synonym-library.v1' || Number(payload.version) !== 1 || !Array.isArray(payload.groups)) {
+          toast('文件不是受支持的 mnkb 同义词库格式');
+          return false;
+        }
+        state.groups = clone(payload.groups).filter((group) => Array.isArray(group.words) && group.words.length >= 2);
+        state.selectedId = state.groups[0]?.id || '';
+        state.revision = Number.isFinite(Number(payload.revision)) ? Number(payload.revision) : 0;
+        state.pending = null;
+        state.dirty = false;
+        state.loaded = true;
+        state.changes = [`已加载本地词库 · ${state.groups.length} 组`];
+        renderShell();
+        return true;
+      }
+
+      function parseAIResponse(raw) {
+        const text = String(raw || '').replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        if (!text) return null;
+        let parsed = null;
+        try { parsed = JSON.parse(text); } catch (error) {
+          const match = text.match(/\{[\s\S]*\}/);
+          if (match) { try { parsed = JSON.parse(match[0]); } catch (__) {} }
+        }
+        if (Array.isArray(parsed)) parsed = parsed[0];
+        if (!parsed || !Array.isArray(parsed.words)) return null;
+        const words = uniqueWords(parsed.words);
+        if (words.length < 2) return null;
+        return {
+          words,
+          relation: normalize(parsed.relation) || 'synonym',
+          contextTriggers: uniqueWords(parsed.contextTriggers || []),
+          note: normalize(parsed.note) || '由 AI 生成，待人工确认',
+        };
+      }
+
+      async function loadFixedLibrary() {
+        const fixedPath = '../../resources/search/mnkb-synonym-library.json';
+        state.fileName = 'resources/search/mnkb-synonym-library.json';
+        $('#filePathLabel').textContent = state.fileName;
+        $('#previewPath').textContent = state.fileName;
+        try {
+          const response = await fetch(fixedPath, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          if (!applyLibraryPayload(await response.json())) throw new Error('格式校验失败');
+          toast(`已加载固定词库 · ${state.groups.length} 组`);
+        } catch (error) {
+          if (!applyLibraryPayload(embeddedPayload)) return;
+          toast(`已加载固定词库副本 · ${state.groups.length} 组`);
+        }
+      }
+
+      function parseCandidate(text) {
+        const raw = normalize(text);
+        if (!raw) return null;
+        const relation = raw.match(/^(.+?)(?:↔|⇔|=>|＝|=|是|也叫|简称)(.+)$/);
+        const parts = relation ? [relation[1], relation[2]] : raw.split(/[\n,，、;；\/]+/);
+        const words = uniqueWords(parts.flatMap((part) => normalize(part).split(/\s*\|\s*|\s*和\s*|\s*与\s*/))).filter((word) => word.length > 1 || /\d|[A-Za-z]/.test(word));
+        if (words.length < 2) return { words: uniqueWords([raw]), relation: 'synonym', contextTriggers: [] };
+        const contextTriggers = /SOT/i.test(raw) && /收敛|convergence/i.test(raw) ? ['收敛', 'convergence'] : [];
+        return { words, relation: relation ? 'synonym' : 'synonym', contextTriggers, note: '由 AI 根据用户输入生成，待人工确认' };
+      }
+
+      function findMatches(words) {
+        return state.groups.map((group) => ({ group, score: groupSimilarity(words, group) })).filter((item) => item.score >= .34).sort((a, b) => b.score - a.score).slice(0, 4);
+      }
+
+      function renderShell() {
+        $('#revisionLabel').textContent = state.revision;
+        $('#groupCount').textContent = state.groups.length;
+        $('#enabledCount').textContent = state.groups.filter((group) => group.enabled !== false).length;
+        $('#fileStatus').classList.toggle('is-dirty', state.dirty);
+        $('#fileStatus').classList.toggle('is-empty', !state.loaded);
+        $('#fileStatus').textContent = !state.loaded
+          ? '固定词库 · 正在加载'
+          : (state.dirty ? '固定词库 · 有未保存变更' : '固定词库 · 已同步');
+        $('#saveFileBtn').disabled = !state.loaded || !state.dirty;
+        $('#aiSendBtn').disabled = state.aiPending;
+        $('#dirtyLabel').textContent = state.dirty ? `${state.changes.length || 1} 项未保存变更` : '无未保存变更';
+        const activeStep = state.pending ? 'match' : state.dirty ? 'review' : 'saved';
+        ['draft', 'match', 'review', 'saved'].forEach((step, index) => { const node = $(`[data-step="${step}"]`); node.classList.toggle('is-active', step === activeStep); node.classList.toggle('is-done', ['draft', 'match', 'review', 'saved'].indexOf(step) < ['draft', 'match', 'review', 'saved'].indexOf(activeStep)); node.querySelector('.step-dot').textContent = index + 1; });
+        renderGroups(); renderInspector();
+      }
+
+      function renderGroups() {
+        const query = normalize($('#librarySearch').value).toLowerCase();
+        const visible = state.groups.filter((group) => !query || [group.id, group.note, ...(group.words || []), ...(group.contextTriggers || [])].join(' ').toLowerCase().includes(query));
+        $('#filterCount').textContent = `${visible.length} / ${state.groups.length}`;
+        $('#groupList').innerHTML = visible.map((group) => `
+          <button class="group-row ${group.id === state.selectedId ? 'is-selected' : ''}" data-group-id="${escapeHtml(group.id)}" type="button">
+            <span class="group-main"><span class="group-title">${escapeHtml(group.words[0] || group.id)}</span><span class="group-words">${group.words.slice(0, 4).map((word) => `<span class="word-compact">${escapeHtml(word)}</span>`).join('')}</span><span class="group-meta"><span class="tag ${group.enabled === false ? 'pending' : 'active'}">${group.enabled === false ? '已停用' : '已启用'}</span>${group.contextTriggers?.length ? '<span class="tag context">上下文</span>' : ''}${group.patternMode ? '<span class="tag">模式</span>' : ''}</span></span><span class="group-arrow">›</span>
+          </button>`).join('') || '<div class="empty-match">没有匹配的词组</div>';
+      }
+
+      function renderInspector() {
+        const group = currentGroup(); if (!group) { $('#inspectorBody').innerHTML = '<div class="empty-match">还没有词组</div>'; return; }
+        $('#inspectorTitle').textContent = group.words[0] || '词组详情'; $('#inspectorId').textContent = group.id;
+        $('#inspectorBody').innerHTML = `
+          <div class="field"><label class="field-label">词语 <span>回车添加</span></label><div class="chips-editor" id="wordsEditor">${group.words.map((word) => `<span class="term">${escapeHtml(word)}<button type="button" data-remove-word="${escapeHtml(word)}" aria-label="移除 ${escapeHtml(word)}">×</button></span>`).join('')}<input id="wordInput" type="text" placeholder="添加表达" /></div></div>
+          <div class="field"><label class="field-label" for="contextInput">上下文触发词 <span>可选</span></label><input id="contextInput" type="text" value="${escapeHtml((group.contextTriggers || []).join('、'))}" placeholder="例如：收敛、Hilbert 空间" /></div>
+          <div class="field"><label class="field-label" for="relationInput">关系类型</label><select id="relationInput"><option value="synonym">同义</option><option value="abbreviation">缩写</option><option value="contextualSynonym">上下文同义</option><option value="pattern">模式</option><option value="notation">记号</option></select></div>
+          <div class="field"><label class="field-label" for="noteInput">维护备注</label><textarea id="noteInput" style="min-height:70px">${escapeHtml(group.note || '')}</textarea></div>
+          <div class="field"><label class="check-row"><input id="enabledInput" type="checkbox" ${group.enabled !== false ? 'checked' : ''} />参与搜索与 AI 找卡片</label></div>
+          <div class="inspector-actions"><button class="btn primary" id="saveGroupBtn" type="button">保存词组</button><button class="btn" id="duplicateGroupBtn" type="button">复制为新组</button></div>
+          <div class="inspector-note">保存只更新当前页面的变更集；点击顶部“保存到本地文件”才会提交 revision。</div>
+          <div class="change-log"><div class="change-log-title">Recent changes</div><div class="change-log-list">${state.changes.slice(0, 4).map((item) => `<div class="change-item">${escapeHtml(item)}</div>`).join('') || '<div class="panel-hint">暂无变更</div>'}</div></div>`;
+        $('#relationInput').value = group.relation || 'synonym';
+      }
+
+      function renderCandidate(candidate) {
+        const result = $('#aiResult'); result.classList.toggle('is-visible', Boolean(candidate)); if (!candidate) return;
+        $('#candidateTerms').innerHTML = candidate.words.map((word) => `<span class="term">${escapeHtml(word)}<button type="button" data-remove-candidate="${escapeHtml(word)}">×</button></span>`).join('');
+        const matches = findMatches(candidate.words); const box = $('#matchBox');
+        box.innerHTML = matches.length ? `<div class="match-title">发现相似词组 <span>请先决定追加还是新建</span></div>${matches.map(({ group, score }) => `<div class="match-item"><div><div class="match-group-title">${escapeHtml(group.words[0])}</div><div class="match-group-meta">${group.words.slice(1).map(escapeHtml).join(' · ')} · ${group.enabled === false ? '已停用' : '已启用'}</div><div class="match-actions"><button class="mini-btn primary" type="button" data-append-group="${escapeHtml(group.id)}">追加到此词组</button><button class="mini-btn" type="button" data-open-group="${escapeHtml(group.id)}">查看详情</button></div></div><span class="match-score">${Math.round(score * 100)}% 相似</span></div>`).join('')}<div class="match-actions"><button class="mini-btn" type="button" data-create-candidate="true">仍然新建独立词组</button></div>` : '<div class="empty-match">未发现相似词组，可以新建。</div><div class="match-actions"><button class="mini-btn primary" type="button" data-create-candidate="true">新建待确认词组</button></div>';
+        $('#candidateHint').textContent = matches.length ? '处理查重建议后再确认' : '未发现相似词组';
+      }
+
+      function handleAiSend() {
+        const input = normalize($('#aiInput').value);
+        if (!input) { toast('请先输入同义词描述'); return; }
+        const candidate = parseCandidate(input);
+        if (!candidate) { toast('请先输入至少两个表达'); return; }
+        state.pending = candidate; renderCandidate(candidate); renderShell(); toast('已生成候选草稿，请人工确认');
+      }
+      function appendCandidate(groupId) { const group = state.groups.find((item) => item.id === groupId); if (!group || !state.pending) return; group.words = uniqueWords([...group.words, ...state.pending.words]); group.contextTriggers = uniqueWords([...(group.contextTriggers || []), ...(state.pending.contextTriggers || [])]); group.note = group.note || state.pending.note; state.selectedId = group.id; state.pending = null; markDirty(`追加到“${group.words[0]}”：${group.words[group.words.length - 1]}`); renderCandidate(null); toast('已追加到已有词组，等待写回本地'); }
+      function createFromCandidate() { if (!state.pending) return; const words = uniqueWords(state.pending.words); const group = { id: `local-${Date.now()}`, words, enabled: false, relation: state.pending.relation, contextTriggers: state.pending.contextTriggers, note: state.pending.note }; state.groups.unshift(group); state.selectedId = group.id; state.pending = null; markDirty(`新建候选词组：“${words[0]}”`); renderCandidate(null); toast('已新建为待确认词组（默认停用）'); }
+      function saveGroup() { if (!state.loaded) { toast('固定词库尚未加载'); return; } const group = currentGroup(); if (!group) return; const input = $('#wordInput'); if (normalize(input.value)) group.words = uniqueWords([...group.words, input.value]); group.contextTriggers = uniqueWords($('#contextInput').value.split(/[、,，;；]+/)); group.relation = $('#relationInput').value; group.note = normalize($('#noteInput').value); group.enabled = $('#enabledInput').checked; markDirty(`更新词组：“${group.words[0]}”`); toast('词组已更新，尚未保存文件'); }
+      function newGroup() { if (!state.loaded) { toast('固定词库尚未加载'); return; } const group = { id: `local-${Date.now()}`, words: ['新词组'], enabled: false, relation: 'synonym', contextTriggers: [], note: '手动新建，待确认' }; state.groups.unshift(group); state.selectedId = group.id; markDirty('新建空白词组'); toast('已创建待确认词组'); }
+      function duplicateGroup() { const group = currentGroup(); if (!group) return; const copy = { ...clone(group), id: `local-${Date.now()}`, words: [...group.words] }; state.groups.unshift(copy); state.selectedId = copy.id; markDirty(`复制词组：“${copy.words[0]}”`); toast('已复制为新词组'); }
+      function deleteGroup() { const group = currentGroup(); if (!group) return; if (!window.confirm(`确认删除“${group.words[0]}”？`)) return; state.groups = state.groups.filter((item) => item.id !== group.id); state.selectedId = state.groups[0]?.id || ''; markDirty(`删除词组：“${group.words[0]}”`); toast('已删除，尚未写回文件'); }
+      function saveFile() {
+        if (!state.dirty) { toast('当前没有未保存变更'); return; }
+        if (!state.loaded) { toast('固定词库尚未加载'); return; }
+        const payload = { $schema: 'mnkb.synonym-library.v1', version: 1, revision: state.revision + 1, groups: state.groups };
+        const content = JSON.stringify(payload, null, 2);
+        const write = async () => {
+          if (state.fileHandle && typeof state.fileHandle.createWritable === 'function') {
+            const writable = await state.fileHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            return;
+          }
+          const blob = new Blob([content], { type: 'application/json' });
+          const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'mnkb-synonym-library.json'; link.click();
+          setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        };
+        write().then(() => { state.revision += 1; state.dirty = false; state.changes.unshift(`写回本地 JSON · revision ${state.revision}`); renderShell(); toast('已保存到本地 JSON'); }).catch((error) => toast(`保存失败：${error.message || error}`));
+      }
+      function previewFile() { const payload = { $schema: 'mnkb.synonym-library.v1', version: 1, revision: state.dirty ? state.revision + 1 : state.revision, groups: state.groups }; $('#previewPath').textContent = state.fileName || 'resources/search/mnkb-synonym-library.json'; $('#previewContent').textContent = JSON.stringify(payload, null, 2); $('#filePreview').classList.add('is-open'); }
+
+      root.addEventListener('click', (event) => {
+        const groupRow = event.target.closest('[data-group-id]'); if (groupRow) { state.selectedId = groupRow.dataset.groupId; renderShell(); return; }
+        const append = event.target.closest('[data-append-group]'); if (append) { appendCandidate(append.dataset.appendGroup); return; }
+        const create = event.target.closest('[data-create-candidate]'); if (create) { createFromCandidate(); return; }
+        const open = event.target.closest('[data-open-group]'); if (open) { state.selectedId = open.dataset.openGroup; renderShell(); return; }
+        const removeCandidate = event.target.closest('[data-remove-candidate]'); if (removeCandidate && state.pending) { state.pending.words = state.pending.words.filter((word) => word !== removeCandidate.dataset.removeCandidate); renderCandidate(state.pending); return; }
+        const removeWord = event.target.closest('[data-remove-word]'); if (removeWord) { const group = currentGroup(); group.words = group.words.filter((word) => word !== removeWord.dataset.removeWord); markDirty(`移除表达：“${removeWord.dataset.removeWord}”`); return; }
+      });
+      root.addEventListener('keydown', (event) => { if (event.target.id === 'wordInput' && event.key === 'Enter') { event.preventDefault(); saveGroup(); } if (event.target.id === 'aiInput' && event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); handleAiSend(); } });
+      $('#aiSendBtn').addEventListener('click', handleAiSend); $('#discardCandidateBtn').addEventListener('click', () => { state.pending = null; renderCandidate(null); renderShell(); toast('已丢弃候选'); }); $('#newGroupBtn').addEventListener('click', newGroup); $('#deleteGroupBtn').addEventListener('click', deleteGroup); $('#previewFileBtn').addEventListener('click', previewFile); $('#closePreviewBtn').addEventListener('click', () => $('#filePreview').classList.remove('is-open')); $('#saveFileBtn').addEventListener('click', saveFile); $('#librarySearch').addEventListener('input', renderGroups); root.addEventListener('click', (event) => { if (event.target.id === 'saveGroupBtn') saveGroup(); if (event.target.id === 'duplicateGroupBtn') duplicateGroup(); });
+      renderShell();
+      loadFixedLibrary();
+    })();
+  </script>
+</body>
+</html>

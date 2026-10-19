@@ -1,0 +1,14 @@
+{
+  "name": "mnknowledgebase",
+  "private": true,
+  "version": "1.87.0",
+  "description": "Standalone local tooling for the MN KnowledgeBase addon",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "test": "node tests/run.js",
+    "test:integration": "node tests/run.js --integration",
+    "pack": "node build/build.js"
+  }
+}

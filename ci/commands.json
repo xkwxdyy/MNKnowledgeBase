@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "commands": [
+    {
+      "name": "Offline regression suite",
+      "argv": [
+        "node",
+        "tests/run.js"
+      ]
+    },
+    {
+      "name": "Build reviewed local package",
+      "argv": [
+        "node",
+        "build/build.js"
+      ]
+    }
+  ]
+}

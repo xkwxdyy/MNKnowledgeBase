@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MNKnowledgeBase - 问题研究工作台</title>
+  <link rel="stylesheet" href="./styles/question-research-workbench.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="heading">
+        <h1>问题研究工作台</h1>
+        <p id="contextTitle">等待卡片数据…</p>
+      </div>
+      <div class="top-actions">
+        <span class="status" id="statusText" aria-live="polite">初始化中</span>
+        <button type="button" id="discardBtn" class="ghost-danger" hidden>放弃修改</button>
+        <button type="button" id="refreshBtn">刷新</button>
+        <button type="button" id="saveBtn" class="primary">保存修改</button>
+        <button type="button" id="closeBtn">关闭</button>
+      </div>
+    </header>
+
+    <main id="loadingView" class="loading-view">
+      <div class="loading-card">
+        <div class="spinner" aria-hidden="true"></div>
+        <strong>正在读取问题研究上下文</strong>
+        <span>正在同步研究脉络与卡片内容，请稍候。</span>
+      </div>
+    </main>
+
+    <main id="workbenchView" class="workbench" hidden>
+      <aside class="navigation-panel">
+        <div class="panel-title">
+          <span>研究脉络</span>
+          <span id="nodeCount" class="count"></span>
+        </div>
+        <div id="orphanNotice" class="notice warning" hidden>
+          当前卡片没有可识别的问题祖先，仅显示当前卡片。
+        </div>
+        <nav id="nodeList" class="node-list" aria-label="研究卡片列表"></nav>
+      </aside>
+
+      <section class="content-panel">
+        <div id="emptySelection" class="empty-state">没有可显示的研究卡片。</div>
+        <article id="nodeEditor" hidden>
+          <header class="node-header">
+            <div>
+              <div id="nodeRole" class="role-badge"></div>
+              <h2 id="nodeTitle"></h2>
+              <p id="nodeMeta"></p>
+            </div>
+            <button type="button" id="focusBtn">在脑图中定位</button>
+          </header>
+
+          <div id="fieldsContainer" class="fields"></div>
+
+          <section class="create-panel">
+            <div class="panel-title">从当前卡片继续研究</div>
+            <div class="create-type" role="group" aria-label="新卡片类型">
+              <button type="button" class="type-btn active" data-create-type="idea" aria-pressed="true">新建思路</button>
+              <button type="button" class="type-btn" data-create-type="summary" aria-pressed="false">新建总结</button>
+            </div>
+            <label>
+              <span>标题</span>
+              <input id="createTitle" type="text" autocomplete="off" placeholder="输入新卡片标题" />
+            </label>
+            <label>
+              <span>正文（可选）</span>
+              <textarea id="createBody" rows="4" placeholder="写入思路详情或核心总结"></textarea>
+            </label>
+            <div class="create-actions">
+              <button type="button" id="createBtn" class="primary">创建子卡片</button>
+            </div>
+          </section>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="./scripts/question-research-workbench/core.js"></script>
+  <script src="./scripts/question-research-workbench/app.js"></script>
+</body>
+</html>

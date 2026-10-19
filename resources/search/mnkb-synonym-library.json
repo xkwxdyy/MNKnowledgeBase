@@ -1,0 +1,1161 @@
+{
+  "$schema": "mnkb.synonym-library.v1",
+  "version": 1,
+  "revision": 3,
+  "description": "MNKnowledgeBase 本地维护的稳定同义词库。旧版 kbSearchConfig.synonymGroups 与 search.html 固定基础同义词已迁移到此文件；编辑后重新打开搜索或重建索引即可生效。",
+  "groups": [
+    {
+      "words": [
+        "含幺",
+        "单位"
+      ],
+      "id": "syn-6663e9f3"
+    },
+    {
+      "words": [
+        "闭凸包",
+        "凸包的闭包",
+        "凸组合的闭包"
+      ],
+      "id": "syn-9dc1f888"
+    },
+    {
+      "words": [
+        "凸{{}}集",
+        "{{}}凸集"
+      ],
+      "patternMode": true,
+      "id": "syn-04e9a880"
+    },
+    {
+      "words": [
+        "属于{{}}内部",
+        "是{{}}内点"
+      ],
+      "patternMode": true,
+      "id": "syn-9cac4922"
+    },
+    {
+      "words": [
+        "为",
+        "是"
+      ],
+      "partialReplacement": true,
+      "id": "syn-35377db1"
+    },
+    {
+      "words": [
+        "两两不同",
+        "两两不等",
+        "互不相等",
+        "各不相同",
+        "各不相等",
+        "互异",
+        "两两不一样"
+      ],
+      "partialReplacement": false,
+      "id": "syn-7c426b21"
+    },
+    {
+      "words": [
+        "||",
+        "‖"
+      ],
+      "partialReplacement": true,
+      "id": "syn-6483636e"
+    },
+    {
+      "words": [
+        "表示为",
+        "表示成",
+        "写成",
+        "写为"
+      ],
+      "partialReplacement": false,
+      "id": "syn-3b8ae6ea"
+    },
+    {
+      "id": "group_1758513869003",
+      "words": [
+        "扩张",
+        "延拓"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "words": [
+        "线性闭包",
+        "闭线性扩张",
+        "闭线性张成",
+        "span 闭包"
+      ],
+      "partialReplacement": false,
+      "id": "syn-a99db039"
+    },
+    {
+      "words": [
+        "复可测函数",
+        "可测复函数"
+      ],
+      "partialReplacement": false,
+      "id": "syn-cad2555e"
+    },
+    {
+      "words": [
+        "实可测函数",
+        "可测实函数"
+      ],
+      "partialReplacement": false,
+      "id": "syn-a4e8bda6"
+    },
+    {
+      "words": [
+        "像空间",
+        "值域"
+      ],
+      "partialReplacement": false,
+      "id": "syn-af9178e6"
+    },
+    {
+      "words": [
+        "是全空间",
+        "等于全空间"
+      ],
+      "partialReplacement": false,
+      "id": "syn-91fd51fa"
+    },
+    {
+      "words": [
+        "自己",
+        "自身"
+      ],
+      "partialReplacement": false,
+      "id": "syn-b28213ac"
+    },
+    {
+      "words": [
+        "并",
+        "并上",
+        "并集"
+      ],
+      "partialReplacement": false,
+      "id": "syn-83a2265b"
+    },
+    {
+      "words": [
+        "交",
+        "交上",
+        "交集"
+      ],
+      "partialReplacement": false,
+      "id": "syn-abfa5515"
+    },
+    {
+      "words": [
+        "一列{{}}的并",
+        "{{}}的可列并"
+      ],
+      "partialReplacement": false,
+      "patternMode": true,
+      "id": "syn-c356d47b"
+    },
+    {
+      "words": [
+        "稠{{}}集",
+        "稠密{{}}集",
+        "{{}}稠集",
+        "{{}}稠密集"
+      ],
+      "partialReplacement": false,
+      "patternMode": true,
+      "id": "syn-28045ae8"
+    },
+    {
+      "words": [
+        "不相交",
+        "交集为空",
+        "互不相交",
+        "交为空",
+        "交集为零",
+        "交集为空集"
+      ],
+      "partialReplacement": false,
+      "id": "syn-c1302c1a"
+    },
+    {
+      "words": [
+        "[ab]",
+        "[a,b]",
+        "[a, b]"
+      ],
+      "partialReplacement": false,
+      "id": "syn-4bcdfd52"
+    },
+    {
+      "words": [
+        "[01]",
+        "[0,1]",
+        "[0, 1]"
+      ],
+      "partialReplacement": false,
+      "id": "syn-4f4d0964"
+    },
+    {
+      "words": [
+        "第二纲空间",
+        "第二纲的空间"
+      ],
+      "partialReplacement": false,
+      "id": "syn-39c1585c"
+    },
+    {
+      "words": [
+        "第一纲空间",
+        "第一纲的空间"
+      ],
+      "partialReplacement": false,
+      "id": "syn-afc3b704"
+    },
+    {
+      "words": [
+        "子开集",
+        "开子集"
+      ],
+      "partialReplacement": false,
+      "id": "syn-4b8a25c2"
+    },
+    {
+      "words": [
+        "子闭集",
+        "闭子集"
+      ],
+      "partialReplacement": false,
+      "id": "syn-bc55d368"
+    },
+    {
+      "words": [
+        "子开球",
+        "开子球"
+      ],
+      "partialReplacement": false,
+      "id": "syn-bb3c452e"
+    },
+    {
+      "words": [
+        "子闭球",
+        "闭子球"
+      ],
+      "partialReplacement": false,
+      "id": "syn-fde7aff4"
+    },
+    {
+      "words": [
+        "存在内点",
+        "包含内点",
+        "有内点",
+        "内部非空"
+      ],
+      "id": "syn-798666c2"
+    },
+    {
+      "words": [
+        "无{{}}",
+        "没有{{}}"
+      ],
+      "partialReplacement": false,
+      "patternMode": true,
+      "id": "syn-bad16794"
+    },
+    {
+      "words": [
+        "闭包点",
+        "接触点",
+        "粘着点"
+      ],
+      "partialReplacement": true,
+      "id": "syn-c451309f"
+    },
+    {
+      "words": [
+        "不是{{}}",
+        "非{{}}"
+      ],
+      "partialReplacement": true,
+      "patternMode": true,
+      "id": "syn-7d9dc552"
+    },
+    {
+      "id": "group_1754759704820",
+      "words": [
+        "⇔",
+        "等价",
+        "等价刻画",
+        "等价条件",
+        "当且仅当",
+        "等价于"
+      ]
+    },
+    {
+      "id": "group_1754814563774",
+      "words": [
+        "依范数收敛",
+        "按范数收敛"
+      ]
+    },
+    {
+      "id": "group_1754911082498",
+      "words": [
+        "𝕋",
+        "单位圆周"
+      ]
+    },
+    {
+      "id": "group_1754913614715",
+      "words": [
+        "严格正",
+        "严格非负"
+      ]
+    },
+    {
+      "id": "group_1754913687682",
+      "words": [
+        "为零",
+        "为0",
+        "等于零",
+        "等于0",
+        "=0",
+        "为 0",
+        "等于 0"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1754918691589",
+      "words": [
+        "非零",
+        "不是零",
+        "不等于零",
+        "≠0",
+        "≠ 0",
+        "非0",
+        "非 0",
+        "不是0",
+        "不是 0",
+        "不等于0",
+        "不等于 0",
+        "0≠",
+        "0 ≠"
+      ]
+    },
+    {
+      "id": "group_1754967275234",
+      "words": [
+        "傅立叶",
+        "傅里叶",
+        "Fourier"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1754968276839",
+      "words": [
+        "⊂",
+        "⊆",
+        "子集",
+        "包含于",
+        "包含在"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1754968768370",
+      "words": [
+        "实数",
+        "实数域",
+        "实情形"
+      ]
+    },
+    {
+      "id": "group_1754979122102",
+      "words": [
+        "径向极限",
+        "边界值函数",
+        "边界函数"
+      ]
+    },
+    {
+      "id": "group_1755230758417",
+      "words": [
+        "有限",
+        "<∞",
+        "小于无穷",
+        "小于∞"
+      ]
+    },
+    {
+      "id": "group_1755231235279",
+      "words": [
+        "比较判别法",
+        "比值判别法"
+      ]
+    },
+    {
+      "id": "group_1755313248014",
+      "words": [
+        "-∞<",
+        "大于负无穷",
+        ">-∞"
+      ]
+    },
+    {
+      "id": "group_1755328808715",
+      "words": [
+        "为1",
+        "等于1",
+        "=1",
+        "= 1",
+        "为 1",
+        "等于 1"
+      ]
+    },
+    {
+      "id": "group_1755330305335",
+      "words": [
+        "柯西",
+        "Cauchy"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1755333690290",
+      "words": [
+        "Blaschke 积",
+        "Blaschke 乘积"
+      ]
+    },
+    {
+      "id": "group_1755568637659",
+      "words": [
+        "对数",
+        "log",
+        "ln"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1755574929841",
+      "words": [
+        "小于等于",
+        "不超过",
+        "≤"
+      ]
+    },
+    {
+      "id": "group_1755837688967",
+      "words": [
+        "Laplace",
+        "Laplacian",
+        "拉普拉斯"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1755838481600",
+      "words": [
+        "开右半平面",
+        "ℂ₊",
+        "ℍ₊"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1755867678146",
+      "words": [
+        "<0",
+        "小于零",
+        "小于 0",
+        "< 0",
+        "小于0"
+      ]
+    },
+    {
+      "id": "group_1755871359287",
+      "words": [
+        "几乎处处",
+        "a.e."
+      ]
+    },
+    {
+      "id": "group_1755871688608",
+      "words": [
+        "等于",
+        "相等",
+        "相同",
+        "一致",
+        "一样",
+        "就是",
+        "同一个"
+      ]
+    },
+    {
+      "id": "group_1756092698001",
+      "words": [
+        "非零复同态",
+        "非零可乘线性泛函"
+      ]
+    },
+    {
+      "id": "group_1756108949936",
+      "words": [
+        "映射为",
+        "被映成",
+        "被映为",
+        "映为",
+        "映成",
+        "映到"
+      ]
+    },
+    {
+      "id": "group_1756109335070",
+      "words": [
+        "→0",
+        "趋于零",
+        "趋于 0",
+        "趋于0",
+        "收敛到0",
+        "收敛到零",
+        "收敛到 0",
+        "到零",
+        "到0",
+        "到 0"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1756111643605",
+      "words": [
+        "化归为",
+        "化归到",
+        "归结为",
+        "归结到",
+        "化归成",
+        "归结成"
+      ]
+    },
+    {
+      "id": "group_1756113664796",
+      "words": [
+        "弱收敛极限",
+        "弱极限",
+        "w极限",
+        "w 极限"
+      ]
+    },
+    {
+      "id": "group_1756128051903",
+      "words": [
+        "列紧的",
+        "列紧集"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1756182536173",
+      "words": [
+        "自反的",
+        "自反空间"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1756187328315",
+      "words": [
+        "级数展开",
+        "级数表示"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1756189859522",
+      "words": [
+        "非负",
+        "大于等于零",
+        "大于等于0",
+        "大于等于 0"
+      ]
+    },
+    {
+      "id": "group_1756194705074",
+      "words": [
+        "Bergman 核",
+        "Bergman 再生核"
+      ]
+    },
+    {
+      "id": "group_1756211764991",
+      "words": [
+        "相乘",
+        "乘起来",
+        "乘以",
+        "乘积"
+      ]
+    },
+    {
+      "id": "group_1756555538247",
+      "words": [
+        "弱收敛",
+        "⇀"
+      ]
+    },
+    {
+      "id": "group_1756630934460",
+      "words": [
+        "Gelfand 表示",
+        "Gelfand 映射"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1756631329614",
+      "words": [
+        "可数无限维",
+        "可列无限维",
+        "可数无穷维",
+        "可列无穷维"
+      ]
+    },
+    {
+      "id": "group_1756631743105",
+      "words": [
+        "标准正交",
+        "规范正交"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1756711035245",
+      "words": [
+        "Ker",
+        "零空间",
+        "核空间",
+        "核"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1756996762450",
+      "words": [
+        "正交集",
+        "正交系"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1757052040708",
+      "words": [
+        "正交",
+        "垂直",
+        "正交于",
+        "垂直于"
+      ]
+    },
+    {
+      "id": "group_1757055108773",
+      "words": [
+        "一列规范正交集",
+        "一列标准正交集",
+        "规范正交列",
+        "标准正交列"
+      ]
+    },
+    {
+      "id": "group_1757061618814",
+      "words": [
+        "{0}",
+        "零向量的单点集"
+      ]
+    },
+    {
+      "id": "group_1757077322983",
+      "words": [
+        "闭集",
+        "闭子集"
+      ],
+      "contextTriggers": [
+        "子集"
+      ],
+      "contextMode": "any"
+    },
+    {
+      "id": "group_1757077335882",
+      "words": [
+        "开子集",
+        "开集"
+      ],
+      "contextTriggers": [
+        "子集"
+      ],
+      "contextMode": "any"
+    },
+    {
+      "id": "group_1757077345680",
+      "words": [
+        "紧集",
+        "紧子集"
+      ],
+      "contextTriggers": [
+        "子集"
+      ],
+      "contextMode": "any"
+    },
+    {
+      "id": "group_1757088664654",
+      "words": [
+        "元素",
+        "向量"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true,
+      "contextTriggers": [
+        "内积空间",
+        "Hilbert 空间",
+        "赋范线性空间",
+        "Banach 空间",
+        "线性空间"
+      ],
+      "contextMode": "any"
+    },
+    {
+      "id": "group_1757143821142",
+      "words": [
+        "正交补",
+        "^⊥"
+      ],
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757164613329",
+      "words": [
+        "至多是可数",
+        "至多可数",
+        "至多可列",
+        "至多是可列"
+      ]
+    },
+    {
+      "id": "group_1757337332491",
+      "words": [
+        "Span",
+        "线性扩张",
+        "线性张成"
+      ],
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757419393384",
+      "words": [
+        "非负整数",
+        "∈ℕ"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757420940564",
+      "words": [
+        "任意",
+        "任取",
+        "任意一个",
+        "任取一个",
+        "每个",
+        "每一个"
+      ],
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757471519968",
+      "words": [
+        "σ 代数",
+        "σ代数",
+        "σ-代数",
+        "σ-algebra",
+        "σ algebra"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1757487049845",
+      "words": [
+        "范数极限",
+        "强极限"
+      ]
+    },
+    {
+      "id": "group_1757666483247",
+      "words": [
+        "非空",
+        "非空集",
+        "不是空集",
+        "不空",
+        "不等于空集",
+        "≠∅",
+        "≠ ∅"
+      ],
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757673809311",
+      "words": [
+        "集代数",
+        "布尔代数"
+      ],
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757675563901",
+      "words": [
+        "空集",
+        "∅"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757675577813",
+      "words": [
+        "属于",
+        "∈",
+        "包含"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757755186225",
+      "words": [
+        "无限",
+        "∞",
+        "无穷"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1757755714989",
+      "words": [
+        "补封闭",
+        "补集封闭",
+        "补运算封闭",
+        "补集运算封闭"
+      ]
+    },
+    {
+      "id": "group_1757938639733",
+      "words": [
+        "T₄ 空间",
+        "T₄ 正规空间",
+        "满足 T₁ 和 T₄ 公理的正规空间",
+        "满足 T₂ 和 T₄ 公理的正规空间",
+        "满足 T₁ 和 T₄ 公理的空间",
+        "满足 T₂ 和 T₄ 公理的空间"
+      ],
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758009495957",
+      "words": [
+        "{{}}封闭",
+        "{{}}运算封闭"
+      ],
+      "patternMode": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758012441679",
+      "words": [
+        "单位模长",
+        "模长等于1",
+        "模长等于一",
+        "模长等于 1",
+        "模长为1",
+        "模长为 1"
+      ],
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758087954345",
+      "words": [
+        "稀疏",
+        "疏朗",
+        "无处稠密"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758159036915",
+      "words": [
+        "复同态",
+        "可乘线性泛函"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758286476524",
+      "words": [
+        "线性单射",
+        "单射线性"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758286494590",
+      "words": [
+        "线性满射",
+        "满射线性"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758287463421",
+      "words": [
+        "中的{{}}集",
+        "{{}}子集"
+      ],
+      "patternMode": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758291189939",
+      "words": [
+        "中集合",
+        "中的集合",
+        "的子集",
+        "中的子集"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758353425664",
+      "words": [
+        "TVS",
+        "拓扑线性空间",
+        "拓扑向量空间",
+        "线性拓扑空间"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758370279950",
+      "words": [
+        "有限测度",
+        "测度有限"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758448942673",
+      "words": [
+        "任意个集合",
+        "任意多个集合",
+        "一族集合",
+        "集合族"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1758454305523",
+      "words": [
+        "算子复合{{}}算子",
+        "算子乘以{{}}算子"
+      ],
+      "patternMode": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758513747838",
+      "words": [
+        "等势",
+        "基数相等",
+        "基数相同"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758528115814",
+      "words": [
+        "Hilbert-Schmidt",
+        "Hilbert–Schmidt"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758530473198",
+      "words": [
+        "*理想",
+        "* 理想",
+        "*-理想",
+        "∗-理想",
+        "∗理想",
+        "∗ 理想"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758885172459",
+      "words": [
+        "变元",
+        "变量"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758886170428",
+      "words": [
+        "复数域",
+        "复数集",
+        "复平面",
+        "ℂ"
+      ],
+      "partialReplacement": true
+    },
+    {
+      "id": "group_1758980638734",
+      "words": [
+        "柯西列",
+        "Cauchy 列",
+        "柯西序列",
+        "Cauchy 序列"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "group_1758982023604",
+      "words": [
+        "收敛",
+        "趋于",
+        "逼近"
+      ],
+      "partialReplacement": true,
+      "caseSensitive": true
+    },
+    {
+      "id": "math-sot-convergence",
+      "words": [
+        "SOT",
+        "SOT 收敛",
+        "强算子收敛",
+        "strong operator convergence"
+      ],
+      "relation": "abbreviation",
+      "direction": "bidirectional",
+      "contextTriggers": [
+        "收敛",
+        "convergence"
+      ],
+      "contextMode": "any",
+      "enabled": true,
+      "note": "SOT 单独出现时保持歧义；与收敛语境同时出现时才展开为强算子收敛。"
+    },
+    {
+      "id": "builtin-negation-bu-fei",
+      "words": [
+        "不",
+        "非"
+      ]
+    },
+    {
+      "id": "builtin-number-1",
+      "words": [
+        "1",
+        "１",
+        "一"
+      ]
+    },
+    {
+      "id": "builtin-number-2",
+      "words": [
+        "2",
+        "２",
+        "二",
+        "两"
+      ]
+    },
+    {
+      "id": "builtin-number-3",
+      "words": [
+        "3",
+        "３",
+        "三"
+      ]
+    },
+    {
+      "id": "builtin-number-4",
+      "words": [
+        "4",
+        "４",
+        "四"
+      ]
+    },
+    {
+      "id": "builtin-number-5",
+      "words": [
+        "5",
+        "５",
+        "五"
+      ]
+    },
+    {
+      "id": "builtin-number-6",
+      "words": [
+        "6",
+        "６",
+        "六"
+      ]
+    },
+    {
+      "id": "builtin-number-7",
+      "words": [
+        "7",
+        "７",
+        "七"
+      ]
+    },
+    {
+      "id": "builtin-number-8",
+      "words": [
+        "8",
+        "８",
+        "八"
+      ]
+    },
+    {
+      "id": "builtin-number-9",
+      "words": [
+        "9",
+        "９",
+        "九"
+      ]
+    },
+    {
+      "id": "builtin-number-10",
+      "words": [
+        "10",
+        "１０",
+        "十"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>模板工作台</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --line: #d9e0ea;
+      --text: #1d2330;
+      --muted: #697386;
+      --blue: #2f6fed;
+      --blue-soft: #e8f0ff;
+      --green: #1f8f62;
+      --orange: #c46a17;
+      --danger: #b42318;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body,
+    button {
+      touch-action: manipulation;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      min-width: 270px;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .target {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .status {
+      min-width: 160px;
+      color: var(--muted);
+      text-align: right;
+      font-size: 13px;
+    }
+
+    .close-mode-btn {
+      min-width: 112px;
+      border-color: #bfd2ff;
+      color: #174ea6;
+      background: #eef4ff;
+      font-weight: 650;
+    }
+
+    .close-mode-btn.active {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .workspace {
+      padding: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      max-width: 920px;
+      margin: 0 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .panel__header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .panel__body {
+      padding: 14px;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-weight: 650;
+      margin-bottom: 6px;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 150px;
+      line-height: 1.55;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .base-title-input {
+      min-height: 128px;
+      font-family: inherit;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .template-input {
+      min-height: 132px;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12);
+    }
+
+    .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      min-height: 36px;
+      padding: 8px 10px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: #b8c4d9;
+      background: #f8faff;
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .quick-btn {
+      text-align: left;
+      background: var(--blue-soft);
+      border-color: #bfd2ff;
+      color: #173f91;
+      font-weight: 650;
+    }
+
+    .quick-btn:hover:not(:disabled) {
+      background: #e1ecff;
+      border-color: #9cbcf8;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .mode-btn[aria-pressed="true"] {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .mode-btn[aria-pressed="true"]:hover:not(:disabled) {
+      border-color: #245cd1;
+      background: #245cd1;
+    }
+
+    .mode-btn.confirm-pending,
+    .mode-btn.confirm-pending:hover:not(:disabled) {
+      border-color: var(--orange);
+      background: #fff7ed;
+      color: #9a4a09;
+      font-weight: 700;
+      box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
+    }
+
+    .preview-block {
+      margin: 14px 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fbfcff;
+    }
+
+    .preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      font-weight: 700;
+    }
+
+    .preview-body {
+      padding: 12px;
+    }
+
+    .preview-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .preview-item {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 10px;
+      background: #fbfcff;
+    }
+
+    .preview-title {
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    .preview-meta {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+      font-weight: 650;
+    }
+
+    .primary:hover:not(:disabled) {
+      border-color: #245cd1;
+      background: #245cd1;
+    }
+
+    .secondary {
+      color: var(--blue);
+      border-color: #bfd2ff;
+    }
+
+    .empty {
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .ok {
+      color: var(--green);
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    @media (pointer: coarse) {
+      button {
+        min-height: 44px;
+        padding: 10px 12px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .quick-grid,
+      .segmented {
+        grid-template-columns: 1fr 1fr;
+      }
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .top-actions {
+        justify-content: space-between;
+        width: 100%;
+        min-width: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0s !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <div class="title">模板工作台</div>
+        <div class="target" id="targetInfo">等待卡片数据...</div>
+      </div>
+      <div class="top-actions">
+        <button class="close-mode-btn" id="closeModeBtn" type="button" aria-pressed="false">保持打开</button>
+        <div class="status" id="statusText" role="status" aria-live="polite">初始化中</div>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel">
+        <div class="panel__header">
+          <span>模板生成</span>
+        </div>
+        <div class="panel__body">
+          <div class="field">
+            <label for="baseTitleInput">基准标题</label>
+            <textarea class="base-title-input" id="baseTitleInput" spellcheck="false" placeholder="例如：赋范空间上的有界线性算子"></textarea>
+          </div>
+
+          <div class="quick-grid">
+            <button class="quick-btn" type="button" data-preset="basic">基本性质</button>
+            <button class="quick-btn" type="button" data-preset="sufficient">判定：充分条件</button>
+            <button class="quick-btn" type="button" data-preset="equivalent">判定：等价刻画</button>
+          </div>
+
+          <div class="field">
+            <label for="chainInput">标题模板</label>
+            <textarea class="template-input" id="chainInput" spellcheck="false" placeholder="{base} 判定//{prev}：充分条件"></textarea>
+          </div>
+
+          <div class="preview-block">
+            <div class="preview-head">
+              <span>创建预览</span>
+              <span id="previewCount">0 张</span>
+            </div>
+            <div class="preview-body">
+              <div id="previewEmpty" class="empty">输入标题链后显示预览</div>
+              <ol id="previewList" class="preview-list"></ol>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>生成模式</label>
+            <div class="segmented" id="modeButtons">
+              <button class="mode-btn" type="button" data-mode="down-sequential" data-label="向下顺序" aria-pressed="true">向下顺序</button>
+              <button class="mode-btn" type="button" data-mode="down-reverse" data-label="向下倒序" aria-pressed="false">向下倒序</button>
+              <button class="mode-btn" type="button" data-mode="sibling" data-label="兄弟层级" aria-pressed="false">兄弟层级</button>
+              <button class="mode-btn" type="button" data-mode="up" data-label="向上层" aria-pressed="false">向上层</button>
+            </div>
+            <div class="hint" id="actionHint">单击切换预览；再次点击当前生成模式（或点下方主按钮）立即创建。</div>
+          </div>
+
+          <div class="footer-actions">
+            <button class="secondary" id="resetBtn" type="button">重置</button>
+            <button class="primary" id="createBtn" type="button" disabled>按当前模式创建</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    'use strict';
+
+    const MODE_CONFIRM_WINDOW_MS = 2400;
+
+    const state = {
+      noteId: '',
+      noteTitle: '',
+      baseTitle: '',
+      mode: 'down-sequential',
+      closeAfterCreate: false,
+      pendingModeTap: {
+        mode: '',
+        time: 0,
+      },
+      pendingModeTimer: null,
+      preview: [],
+    };
+
+    const dom = {
+      targetInfo: document.getElementById('targetInfo'),
+      statusText: document.getElementById('statusText'),
+      baseTitleInput: document.getElementById('baseTitleInput'),
+      chainInput: document.getElementById('chainInput'),
+      modeButtons: document.getElementById('modeButtons'),
+      closeModeBtn: document.getElementById('closeModeBtn'),
+      previewCount: document.getElementById('previewCount'),
+      previewEmpty: document.getElementById('previewEmpty'),
+      previewList: document.getElementById('previewList'),
+      resetBtn: document.getElementById('resetBtn'),
+      createBtn: document.getElementById('createBtn'),
+      actionHint: document.getElementById('actionHint'),
+    };
+
+    function postToNative(action, params = {}) {
+      const query = Object.keys(params)
+        .filter((key) => params[key] !== undefined && params[key] !== null)
+        .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(params[key]))}`)
+        .join('&');
+      window.location.href = `mnknowledgebase-comment://${action}${query ? `?${query}` : ''}`;
+      return true;
+    }
+
+    function setStatus(text, tone) {
+      dom.statusText.textContent = text || '';
+      dom.statusText.className = `status${tone ? ` ${tone}` : ''}`;
+    }
+
+    function normalizeText(text) {
+      return String(text || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function getBaseTitle() {
+      return normalizeText(dom.baseTitleInput.value);
+    }
+
+    function getLastVisibleChar(text) {
+      const chars = Array.from(String(text || '').trim());
+      return chars.length ? chars[chars.length - 1] : '';
+    }
+
+    function endsWithChinese(text) {
+      const lastChar = getLastVisibleChar(text);
+      return /[\u3400-\u9fff\uf900-\ufaff]/.test(lastChar);
+    }
+
+    function appendBaseSuffix(baseTitle, suffix) {
+      const base = normalizeText(baseTitle);
+      if (!base) return suffix;
+      return `${base}${endsWithChinese(base) ? '' : ' '}${suffix}`;
+    }
+
+    function splitLine(line) {
+      return String(line || '').split('//').map(normalizeText).filter(Boolean);
+    }
+
+    function startsWithConnector(text) {
+      return /^(的|之|：|:|，|,|、|；|;)/.test(String(text || '').trim());
+    }
+
+    function replaceTitleTokens(text, baseTitle, prevTitle) {
+      return normalizeText(text)
+        .replace(/\{(?:base|target|基准|目标)\}/gi, baseTitle || '')
+        .replace(/\{(?:prev|previous|parent|上一层|上层)\}/gi, prevTitle || baseTitle || '');
+    }
+
+    function resolveTitlePart(part, baseTitle, prevTitle) {
+      const raw = normalizeText(part);
+      if (!raw) return '';
+      const hasToken = /\{(?:base|target|基准|目标|prev|previous|parent|上一层|上层)\}/i.test(raw);
+      const replaced = replaceTitleTokens(raw, baseTitle, prevTitle);
+      if (hasToken) return normalizeText(replaced);
+      const anchor = prevTitle || baseTitle || '';
+      if (anchor && startsWithConnector(raw)) {
+        return normalizeText(anchor + raw);
+      }
+      return replaced;
+    }
+
+    function buildTitles(line, mode, baseTitle) {
+      const parts = splitLine(line);
+      if (!parts.length) return [];
+      const base = normalizeText(baseTitle);
+      const sequential = [];
+      const head = resolveTitlePart(parts[0], base, '');
+      if (!head) return [];
+      sequential.push(head);
+      for (let i = 1; i < parts.length; i += 1) {
+        const title = resolveTitlePart(parts[i], base, sequential[sequential.length - 1]);
+        if (title) sequential.push(title);
+      }
+
+      if (mode === 'down-reverse') {
+        return sequential.slice().reverse();
+      }
+      return sequential;
+    }
+
+    function getLines() {
+      return String(dom.chainInput.value || '').split(/\r?\n/).map(normalizeText).filter(Boolean);
+    }
+
+    function buildPreview() {
+      const baseTitle = getBaseTitle();
+      const lines = getLines();
+      const preview = [];
+      lines.forEach((line, lineIndex) => {
+        buildTitles(line, state.mode, baseTitle).forEach((title, depth) => {
+          preview.push({ title, lineIndex, depth });
+        });
+      });
+      state.preview = preview;
+      renderPreview();
+    }
+
+    function renderPreview() {
+      dom.previewList.innerHTML = '';
+      dom.previewCount.textContent = `${state.preview.length} 张`;
+      dom.previewEmpty.style.display = state.preview.length ? 'none' : 'block';
+      if (dom.createBtn) {
+        dom.createBtn.disabled = !state.noteId || state.preview.length === 0;
+      }
+
+      state.preview.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'preview-item';
+        li.innerHTML = `
+          <div class="preview-title">${index + 1}. ${escapeHTML(item.title)}</div>
+          <div class="preview-meta">第 ${item.lineIndex + 1} 行 · 层级 ${item.depth + 1}</div>
+        `;
+        dom.previewList.appendChild(li);
+      });
+    }
+
+    function escapeHTML(text) {
+      return String(text || '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[char]));
+    }
+
+    function applyPreset(preset) {
+      const base = normalizeText(dom.baseTitleInput.value || state.baseTitle || 'X');
+      if (preset === 'basic') {
+        dom.chainInput.value = appendBaseSuffix(base, '的基本性质');
+      } else if (preset === 'sufficient') {
+        const judgement = appendBaseSuffix(base, '判定');
+        dom.chainInput.value = `${judgement}//{prev}：充分条件`;
+      } else if (preset === 'equivalent') {
+        const judgement = appendBaseSuffix(base, '判定');
+        dom.chainInput.value = `${judgement}//{prev}：等价刻画`;
+      }
+      dom.baseTitleInput.value = base;
+      buildPreview();
+      setStatus('已更新预览', 'ok');
+    }
+
+    function setMode(mode) {
+      state.mode = mode || 'down-sequential';
+      dom.modeButtons.querySelectorAll('.mode-btn').forEach((btn) => {
+        btn.setAttribute('aria-pressed', btn.dataset.mode === state.mode ? 'true' : 'false');
+      });
+      buildPreview();
+    }
+
+    function clearPendingMode() {
+      if (state.pendingModeTimer) {
+        clearTimeout(state.pendingModeTimer);
+        state.pendingModeTimer = null;
+      }
+      state.pendingModeTap = { mode: '', time: 0 };
+      dom.modeButtons.querySelectorAll('.mode-btn').forEach((btn) => {
+        btn.classList.remove('confirm-pending');
+        if (btn.dataset.label) {
+          btn.textContent = btn.dataset.label;
+        }
+      });
+      if (dom.actionHint) {
+        dom.actionHint.textContent = '单击切换预览；再次点击当前生成模式（或点下方主按钮）立即创建。';
+      }
+    }
+
+    function resetForm() {
+      clearPendingMode();
+      dom.baseTitleInput.value = state.baseTitle || '';
+      dom.chainInput.value = '';
+      state.closeAfterCreate = false;
+      updateCloseModeButton();
+      setMode('down-sequential');
+      setStatus('已重置', '');
+    }
+
+    function executeCreate() {
+      if (!state.noteId || state.preview.length === 0) {
+        setStatus(!state.noteId ? '缺少目标卡' : '没有可创建内容', 'error');
+        return;
+      }
+      clearPendingMode();
+      dom.modeButtons.querySelectorAll('.mode-btn').forEach((btn) => {
+        btn.disabled = true;
+      });
+      if (dom.createBtn) {
+        dom.createBtn.disabled = true;
+      }
+      setStatus('创建中', '');
+      postToNative('createTemplateChainForTargetNote', {
+        id: state.noteId,
+        titleInput: dom.chainInput.value,
+        baseTitle: dom.baseTitleInput.value,
+        mode: state.mode,
+        closeAfterCreate: state.closeAfterCreate ? '1' : '0',
+      });
+      setTimeout(() => {
+        dom.modeButtons.querySelectorAll('.mode-btn').forEach((btn) => {
+          btn.disabled = false;
+        });
+        buildPreview();
+      }, 1200);
+    }
+
+    function handleModeActivate(mode) {
+      const now = Date.now();
+      const shouldCreate = state.pendingModeTap.mode === mode && now - state.pendingModeTap.time < MODE_CONFIRM_WINDOW_MS;
+      setMode(mode);
+      if (shouldCreate) {
+        executeCreate();
+        return;
+      }
+      clearPendingMode();
+      state.pendingModeTap = { mode, time: now };
+      const activeBtn = dom.modeButtons.querySelector(`[data-mode="${mode}"]`);
+      const label = activeBtn ? (activeBtn.dataset.label || activeBtn.textContent) : mode;
+      if (activeBtn) {
+        activeBtn.classList.add('confirm-pending');
+        activeBtn.textContent = `${label} · 再点创建`;
+      }
+      if (dom.actionHint) {
+        dom.actionHint.textContent = `已选「${label}」预览，再点一次该按钮或按 ⌘/Ctrl+Enter 立即创建（Esc 取消）。`;
+      }
+      setStatus(`再点一次「${label}」创建`, '');
+      state.pendingModeTimer = setTimeout(clearPendingMode, MODE_CONFIRM_WINDOW_MS);
+    }
+
+    function updateCloseModeButton() {
+      dom.closeModeBtn.classList.toggle('active', state.closeAfterCreate);
+      dom.closeModeBtn.setAttribute('aria-pressed', state.closeAfterCreate ? 'true' : 'false');
+      if (state.closeAfterCreate) {
+        dom.closeModeBtn.textContent = '创建后关闭';
+        dom.closeModeBtn.title = '当前：创建后自动关闭窗口\n点击切换为：保持打开';
+      } else {
+        dom.closeModeBtn.textContent = '保持打开';
+        dom.closeModeBtn.title = '当前：创建后继续保持窗口打开\n点击切换为：创建后关闭';
+      }
+    }
+
+    function toggleCloseMode() {
+      state.closeAfterCreate = !state.closeAfterCreate;
+      updateCloseModeButton();
+      setStatus(state.closeAfterCreate ? '创建后关闭' : '创建后保持打开', '');
+    }
+
+    function loadTemplateWorkbenchData(data) {
+      clearPendingMode();
+      const payload = data || {};
+      state.noteId = String(payload.noteId || '');
+      state.noteTitle = String(payload.noteTitle || '');
+      state.baseTitle = normalizeText(payload.baseTitle || payload.noteTitle || '');
+      dom.baseTitleInput.value = state.baseTitle;
+      dom.targetInfo.textContent = state.noteTitle
+        ? `目标卡：${state.noteTitle}`
+        : '未识别目标卡';
+      setStatus(state.noteId ? '已就绪' : '缺少目标卡', state.noteId ? 'ok' : 'error');
+      buildPreview();
+    }
+
+    window.loadTemplateWorkbenchData = loadTemplateWorkbenchData;
+
+    document.querySelectorAll('[data-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+    });
+    dom.baseTitleInput.addEventListener('input', buildPreview);
+    dom.chainInput.addEventListener('input', buildPreview);
+    dom.modeButtons.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-mode]');
+      if (btn) {
+        event.preventDefault();
+        handleModeActivate(btn.dataset.mode);
+      }
+    });
+    dom.modeButtons.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+    });
+    dom.closeModeBtn.addEventListener('click', toggleCloseMode);
+    dom.resetBtn.addEventListener('click', resetForm);
+    if (dom.createBtn) {
+      dom.createBtn.addEventListener('click', executeCreate);
+    }
+    document.addEventListener('keydown', (event) => {
+      if (event.isComposing || event.keyCode === 229) return;
+      if (event.key === 'Escape' && state.pendingModeTap.mode) {
+        event.preventDefault();
+        clearPendingMode();
+        setStatus(state.noteId ? '已取消创建确认' : '已取消', '');
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        executeCreate();
+      }
+    });
+
+    updateCloseModeButton();
+    postToNative('ready');
+  </script>
+</body>
+</html>

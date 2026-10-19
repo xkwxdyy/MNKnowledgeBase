@@ -1,0 +1,41 @@
+name: Validate release draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate:
+        description: Repository-relative candidate archive produced by the reviewed build commands
+        required: true
+        default: artifacts/candidate.mnaddon
+      manifest:
+        description: Repository-relative source manifest
+        required: true
+        default: mnaddon.json
+      source_root:
+        description: Repository-relative source or dist directory matching the archive
+        required: true
+        default: dist
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, node24
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0, node24
+        with:
+          node-version: '24'
+      - name: Run source checks
+        run: node ci/run-checks.mjs ci/commands.json
+      - name: Build a local candidate using the reviewed explicit command list
+        run: node ci/run-checks.mjs ci/candidate-commands.json
+      - name: Verify archive, identity, version, and file parity
+        env:
+          CANDIDATE: ${{ inputs.candidate }}
+          MANIFEST: ${{ inputs.manifest }}
+          SOURCE_ROOT: ${{ inputs.source_root }}
+        run: python3 ci/validate-candidate.py --archive "$CANDIDATE" --manifest "$MANIFEST" --source-root "$SOURCE_ROOT"

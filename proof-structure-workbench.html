@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MNKnowledgeBase - 证明阅读</title>
+  <link rel="stylesheet" href="./styles/workbench-tokens.css" />
+  <link rel="stylesheet" href="./styles/proof-structure-workbench.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="title-wrap">
+        <div class="eyebrow">MNKNOWLEDGEBASE</div>
+        <h1 id="fieldTitle">证明阅读</h1>
+        <p class="subtitle" id="noteTitle">正在读取卡片…</p>
+      </div>
+      <div class="stats" aria-label="解析统计">
+        <span id="contentCount">0 条评论</span>
+        <span id="structureCount">0 个章节与步骤</span>
+      </div>
+      <div class="top-actions">
+        <button type="button" id="backBtn">返回评论</button>
+        <button type="button" id="closeBtn" class="icon-btn" title="关闭" aria-label="关闭">×</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <button id="outlineToggle" type="button" aria-expanded="false" aria-controls="sidebar">目录</button>
+      <div class="view-switch" aria-label="阅读视图">
+        <button id="readMode" type="button" aria-pressed="true">阅读全文</button>
+        <button id="mapMode" type="button" aria-pressed="false">路线图</button>
+      </div>
+      <span class="toolbar-caption" id="viewCaption">按原评论顺序阅读</span>
+      <button id="refreshBtn" type="button">刷新</button>
+    </div>
+
+    <main id="loadingView" class="loading-view">
+      <strong>正在读取证明内容</strong>
+      <span>文字、图片与手写将一起显示。</span>
+    </main>
+
+    <main id="workbenchView" class="workspace" hidden>
+      <aside class="sidebar" id="sidebar" aria-label="证明目录">
+        <div class="panel-heading"><strong>证明目录</strong><button id="outlineClose" class="icon-btn" type="button" aria-label="关闭目录">×</button></div>
+        <div class="field-contract">
+          <strong id="fieldName">证明</strong>
+          <span class="field-range" id="fieldRange"></span>
+        </div>
+        <nav class="outline" id="outline" aria-label="字段评论列表"></nav>
+      </aside>
+      <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="关闭目录" hidden></button>
+
+      <section class="reader-panel" id="readerPanel" aria-label="证明正文" tabindex="-1">
+        <div class="reading-heading">
+          <span id="readingContext">完整证明</span>
+          <button id="showAllBtn" type="button" hidden>显示全文</button>
+          <div class="reading-navigation" aria-label="逐段阅读">
+            <button id="previousEntry" class="icon-btn" type="button" aria-label="上一段" title="上一段" disabled>↑</button>
+            <span id="readingPosition" aria-label="当前阅读位置">—</span>
+            <button id="nextEntry" class="icon-btn" type="button" aria-label="下一段" title="下一段" disabled>↓</button>
+          </div>
+          <div class="reading-progress" aria-hidden="true"><span id="readingProgress"></span></div>
+        </div>
+        <div id="readerBody" class="reader-body"></div>
+      </section>
+
+      <section class="canvas-panel" id="canvasPanel" aria-label="证明路线图" hidden>
+        <div class="canvas-header">
+          <strong>证明路线图</strong>
+          <span id="canvasMeta"></span>
+          <div class="map-tools">
+            <button class="icon-btn" id="zoomOut" type="button" title="缩小" aria-label="缩小">−</button>
+            <span id="mapScale" aria-label="路线图缩放比例">100%</span>
+            <button class="icon-btn" id="zoomIn" type="button" title="放大" aria-label="放大">+</button>
+            <button id="mapLocate" type="button" title="在路线图中定位当前阅读位置">当前位置</button>
+            <button id="fitMap" type="button">总览</button>
+          </div>
+        </div>
+        <div class="map-viewport" id="viewport" tabindex="0" aria-label="证明路线图画布，可拖动或双指缩放">
+          <div class="map-stage" id="stage">
+            <div class="map-grid"></div>
+            <svg class="connectors" id="connectors" aria-hidden="true"></svg>
+            <div id="nodesLayer"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="media-viewer" id="mediaViewer" role="dialog" aria-modal="true" aria-labelledby="mediaTitle" hidden>
+    <div class="media-toolbar">
+      <strong id="mediaTitle">查看手写</strong>
+      <div class="media-navigation" aria-label="图片切换">
+        <button id="mediaPrevious" class="icon-btn" type="button" aria-label="上一张" title="上一张（←）">←</button>
+        <span id="mediaPosition" role="status" aria-live="polite"></span>
+        <button id="mediaNext" class="icon-btn" type="button" aria-label="下一张" title="下一张（→）">→</button>
+      </div>
+      <button id="mediaSize" type="button">原始大小</button><button id="mediaClose" type="button">关闭</button>
+    </div>
+    <div class="media-scroll" id="mediaScroll"><img id="mediaImage" alt="" /></div>
+  </div>
+  <script src="./scripts/proof-structure-workbench/vendor/marked.js"></script>
+  <script src="./scripts/proof-structure-workbench/core.js"></script>
+  <script src="./scripts/proof-structure-workbench/app.js"></script>
+  <script defer src="./scripts/proof-structure-workbench/vendor/mathjax-tex-svg.js"></script>
+</body>
+</html>

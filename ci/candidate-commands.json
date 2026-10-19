@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "commands": [
+    {
+      "name": "Build reviewed candidate",
+      "argv": [
+        "node",
+        "build/build.js"
+      ]
+    }
+  ]
+}

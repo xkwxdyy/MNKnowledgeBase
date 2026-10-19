@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>MNKnowledgeBase - 评论管理器</title>
+  <link rel="stylesheet" href="./styles/workbench-tokens.css" />
+  <link rel="stylesheet" href="./styles/comment-manager.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- 左侧工具栏 -->
+    <aside class="sidebar" id="selectionToolsPanel" aria-label="选择与高级功能">
+      <div class="compact-panel-header">
+        <strong><span class="panel-index">01</span>选择与处理</strong>
+        <button type="button" class="compact-panel-close" data-close-compact-panel aria-label="关闭工具面板">×</button>
+      </div>
+      <!-- 选择方式分组 -->
+      <div class="tool-group">
+        <div class="tool-group-title">选择方式</div>
+        <button class="tool-btn active" id="manualSelectBtn" title="点击评论卡片进行单选或多选">
+          <span class="tool-glyph" aria-hidden="true">✓</span>手动点选
+        </button>
+        <button class="tool-btn" id="rangeSelectBtn" title="点击起始和结束评论，中间自动全选">
+          <span class="tool-glyph" aria-hidden="true">↔</span>范围选择
+        </button>
+        <button class="tool-btn" id="autoNewBtn" title="自动选择最近添加的评论">
+          <span class="tool-glyph" aria-hidden="true">＋</span>自动新内容
+        </button>
+        <button class="tool-btn" id="last1Btn" title="快速选择最后一条评论">
+          <span class="tool-glyph" aria-hidden="true">1</span>最后1条
+        </button>
+        <button class="tool-btn" id="last2Btn" title="快速选择最后两条评论">
+          <span class="tool-glyph" aria-hidden="true">2</span>最后2条
+        </button>
+      </div>
+
+      <!-- 快捷操作分组 -->
+	      <div class="tool-group">
+	        <div class="tool-group-title">快捷操作</div>
+	        <button class="tool-btn" id="selectAllBtn" title="选择所有评论">
+	          <span class="tool-glyph" aria-hidden="true">✓</span>全选
+	        </button>
+	        <button class="tool-btn" id="invertBtn" title="反向选择">
+	          <span class="tool-glyph" aria-hidden="true">◐</span>反选
+	        </button>
+	        <button class="tool-btn" id="clearBtn" title="清空所有选择">
+	          <span class="tool-glyph" aria-hidden="true">×</span>清空
+	        </button>
+	      </div>
+
+	      <!-- 高级功能分组 -->
+	      <div class="tool-group">
+	        <div class="tool-group-title">高级功能</div>
+	        <button class="tool-btn" id="updateLinkBtn" title="更新选中的链接评论（需先复制新链接到剪贴板）">
+	          <span class="tool-glyph" aria-hidden="true">↻</span>更新链接
+	        </button>
+	        <button class="tool-btn" id="convertLinksToInlineBtn" title="将选中的链接评论批量转换为 Markdown 无序列表行内链接">
+	          <span class="tool-glyph" aria-hidden="true">↗</span>转行内链接
+	        </button>
+	        <button class="tool-btn" id="mergeInlineLinksBtn" title="将连续选中的文本/链接评论合并为一条 Markdown 行内链接评论">
+	          <span class="tool-glyph" aria-hidden="true">＋</span>合并行内链接
+	        </button>
+	        <button class="tool-btn" id="mergeTextCommentsBtn" title="将连续选中的文本/Markdown 评论合并为一条 Markdown 评论">
+	          <span class="tool-glyph" aria-hidden="true">≡</span>合并文本评论
+	        </button>
+	        <button class="tool-btn" id="batchDeleteBtn" title="按类型批量删除当前卡片中的评论">
+	          <span class="tool-glyph danger" aria-hidden="true">−</span>批量删除
+	        </button>
+	      </div>
+	    </aside>
+
+    <!-- 右侧主内容区 -->
+    <div class="main-content">
+      <!-- 顶部栏 -->
+      <div class="topbar">
+      <div class="topbar-title">
+        <span class="topbar-icon"><img src="./logo.png" width="36" height="36" alt=""></span>
+        <div>
+          <div class="topbar-kicker">MNKnowledgeBase / COMMENT WORKBENCH</div>
+          <div class="topbar-heading">评论管理器</div>
+          <div class="note-title" id="noteTitle">加载中...</div>
+        </div>
+      </div>
+      <button class="close-btn" id="closeBtn" title="关闭" aria-label="关闭评论管理器">×</button>
+    </div>
+
+      <!-- 状态栏 -->
+	      <div class="statusbar">
+	        <div class="status-info">
+	          <div class="status-item">
+	            <span class="status-symbol" aria-hidden="true">Σ</span>当前卡片：<span class="status-value" id="totalCount">0</span> 条评论
+	          </div>
+	          <div class="status-item">
+	            <span class="status-symbol" aria-hidden="true">✓</span>已选择：<span class="status-value" id="selectedCount">0</span> 条
+	          </div>
+	          <div class="status-item">
+	            <span class="status-symbol" aria-hidden="true">§</span>当前字段：<span class="status-value" id="currentField">-</span>
+	          </div>
+	        </div>
+	        <button class="status-refresh-btn" id="refreshCurrentNoteBtn" title="同步当前选中卡片">
+	          <span aria-hidden="true">↻</span><span>同步</span>
+	        </button>
+	      </div>
+
+      <nav class="compact-tools-tabs" aria-label="评论管理工具">
+        <button type="button" class="compact-tool-tab" data-compact-panel="selection" aria-controls="selectionToolsPanel" aria-expanded="false">
+          <span aria-hidden="true">✓</span><span>选择</span>
+        </button>
+        <button type="button" class="compact-tool-tab" data-compact-panel="organize" aria-controls="organizeToolsPanel" aria-expanded="false">
+          <span aria-hidden="true">↕</span><span>整理</span>
+        </button>
+        <button type="button" class="compact-tool-tab" data-compact-panel="fields" aria-controls="organizeToolsPanel" aria-expanded="false">
+          <span aria-hidden="true">⌘</span><span>字段</span>
+        </button>
+      </nav>
+
+      <!-- 范围选择提示 -->
+      <div class="range-select-hint" id="rangeSelectHint">
+        <div class="range-hint-text">
+          <span class="range-hint-icon" aria-hidden="true">↔</span>
+          <span id="rangeHintText">请点击起始评论</span>
+        </div>
+        <div class="range-hint-buttons">
+          <button class="hint-btn confirm" id="rangeConfirmBtn">✓ 完成</button>
+          <button class="hint-btn cancel" id="rangeCancelBtn">✗ 取消</button>
+        </div>
+      </div>
+
+    <!-- 评论列表 -->
+    <div class="comments-section">
+      <div class="comments-list" id="commentsList">
+        <!-- 评论卡片将在这里渲染 -->
+        <div class="empty-state loading-state">
+          <div class="empty-icon">⏳</div>
+          <div>正在读取当前卡片…</div>
+        </div>
+      </div>
+    </div>
+
+      <!-- 底部操作区 -->
+	      <div class="footer">
+	        <div class="main-actions">
+	          <button class="main-action-btn move" id="moveBtn" disabled>
+	            <span aria-hidden="true">→</span>移动
+	          </button>
+	          <button class="main-action-btn extract" id="extractBtn" disabled>
+	            <span aria-hidden="true">↗</span>提取
+	          </button>
+		          <button class="main-action-btn delete" id="deleteBtn" title="单击：双向删除（删除反向链接）；长按：普通删除（不删除反向链接）" disabled>
+	            <span aria-hidden="true">−</span>删除
+	          </button>
+        </div>
+      </div>
+    </div> <!-- 关闭 .main-content -->
+
+	    <!-- 右侧功能栏 -->
+		    <aside class="right-sidebar" id="organizeToolsPanel" aria-label="整理与字段导航">
+		      <div class="compact-panel-header">
+		        <strong id="compactPanelTitle"><span class="panel-index">02</span>整理与定位</strong>
+		        <button type="button" class="compact-panel-close" data-close-compact-panel aria-label="关闭工具面板">×</button>
+		      </div>
+		      <!-- 移动分组 -->
+		      <div class="tool-group compact-organize-group">
+		        <div class="tool-group-title">移动</div>
+		        <button class="tool-btn" id="moveTopBtn" title="将选中的评论移动到卡片最顶端">
+		          <span class="tool-glyph" aria-hidden="true">⇡</span>置顶
+		        </button>
+		        <button class="tool-btn" id="moveBottomBtn" title="将选中的评论移动到卡片最底端">
+		          <span class="tool-glyph" aria-hidden="true">⇣</span>置底
+		        </button>
+		        <button class="tool-btn" id="moveExcerptBottomBtn" title="移动到摘录区底部（第一个字段标题之前）">
+		          <span class="tool-glyph" aria-hidden="true">§</span>摘录区底部
+		        </button>
+		        <button class="tool-btn" id="moveProofTopBtn" title="移动到「证明」字段顶部">
+		          <span class="tool-glyph" aria-hidden="true">⇧</span>证明顶部
+		        </button>
+		        <button class="tool-btn" id="moveProofBottomBtn" title="移动到「证明」字段底部">
+		          <span class="tool-glyph" aria-hidden="true">⇩</span>证明底部
+		        </button>
+		        <button class="tool-btn" id="moveUpBtn" title="将连续选中的评论整体上移一位（快捷键：Alt + ↑）">
+		          <span class="tool-glyph" aria-hidden="true">↑</span>上移一位
+		        </button>
+		        <button class="tool-btn" id="moveDownBtn" title="将连续选中的评论整体下移一位（快捷键：Alt + ↓）">
+		          <span class="tool-glyph" aria-hidden="true">↓</span>下移一位
+		        </button>
+		        <button class="tool-btn" id="customMoveBtn" title="显示插入点，选择移动到的位置">
+		          <span class="tool-glyph" aria-hidden="true">◎</span>选择位置
+		        </button>
+		        <button class="tool-btn" id="cancelMoveBtn" title="退出移动模式" style="display:none">
+		          <span class="tool-glyph" aria-hidden="true">×</span>取消移动
+		        </button>
+		      </div>
+		      <!-- 字段目录 -->
+		      <div class="tool-group compact-fields-group">
+		        <div class="tool-group-title">字段目录</div>
+		        <div id="fieldNavList"></div>
+		      </div>
+	    </aside> <!-- 关闭 .right-sidebar -->
+
+    <button type="button" class="compact-panel-backdrop" id="compactPanelBackdrop" aria-label="关闭工具面板" aria-hidden="true"></button>
+
+  </div> <!-- 关闭 .container -->
+
+  <!-- 手动合并行内链接模态框 -->
+  <div class="modal-overlay" id="mergeInlineModal" aria-hidden="true">
+    <div class="modal merge-inline-modal" role="dialog" aria-modal="true" aria-labelledby="mergeInlineModalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="mergeInlineModalTitle">手动合并行内链接</div>
+      </div>
+      <div class="modal-body">
+        <section class="merge-section">
+          <div class="merge-section-title">待合并评论</div>
+          <div class="merge-material-list" id="mergeMaterialList"></div>
+        </section>
+        <section class="merge-section">
+          <div class="merge-section-title">生成行内链接</div>
+          <div class="merge-builder-row">
+            <input type="text" id="mergeBuilderText" class="edit-input merge-builder-input" placeholder="显示文本">
+            <input type="text" id="mergeBuilderLink" class="edit-input merge-builder-input" placeholder="链接地址">
+          </div>
+          <div class="edit-field-actions merge-builder-actions">
+            <button type="button" class="text-btn" id="mergeInsertTextBtn">插入文本</button>
+            <button type="button" class="text-btn" id="mergeInsertInlineLinkBtn">插入行内链接</button>
+            <button type="button" class="text-btn" id="mergeClearBuilderBtn">清空输入</button>
+          </div>
+        </section>
+        <section class="merge-section">
+          <div class="merge-section-title">合并结果编辑</div>
+          <textarea id="mergeCookingText" class="merge-cooking-textarea" spellcheck="false"></textarea>
+          <div class="edit-field-actions merge-cooking-actions">
+            <button type="button" class="text-btn" id="mergeClearCookingBtn">清空内容</button>
+          </div>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" id="mergeInlineCancelBtn">取消</button>
+        <button class="modal-btn confirm" id="mergeInlineConfirmBtn" disabled>确认合并</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 合并文本评论模态框 -->
+  <div class="modal-overlay" id="mergeTextModal" aria-hidden="true">
+    <div class="modal merge-text-modal" role="dialog" aria-modal="true" aria-labelledby="mergeTextModalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="mergeTextModalTitle">合并文本评论</div>
+      </div>
+      <div class="modal-body">
+        <section class="merge-section">
+          <div class="merge-section-title">待合并评论</div>
+          <div class="merge-material-list" id="textMergeMaterialList"></div>
+        </section>
+        <section class="merge-section">
+          <div class="merge-section-title">拼接方式</div>
+          <div class="text-merge-separator-row" id="textMergeSeparatorGroup">
+            <button type="button" class="text-merge-separator active" data-separator-kind="space">空格</button>
+            <button type="button" class="text-merge-separator" data-separator-kind="comma">，</button>
+            <button type="button" class="text-merge-separator" data-separator-kind="semicolon">；</button>
+            <button type="button" class="text-merge-separator" data-separator-kind="period">。</button>
+            <button type="button" class="text-merge-separator" data-separator-kind="newline">换行</button>
+            <input type="text" id="textMergeCustomSeparator" class="edit-input text-merge-custom-separator" placeholder="自定义">
+          </div>
+          <div class="edit-field-actions merge-builder-actions">
+            <button type="button" class="text-btn" id="textMergeLoadBtn">按顺序载入</button>
+            <button type="button" class="text-btn" id="textMergeRebuildBtn">用分隔符重排</button>
+            <button type="button" class="text-btn" id="textMergeClearBtn">清空</button>
+          </div>
+        </section>
+        <section class="merge-section">
+          <div class="merge-section-title">合并结果编辑</div>
+          <textarea id="textMergeCookingText" class="merge-cooking-textarea" spellcheck="false"></textarea>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" id="mergeTextCancelBtn">取消</button>
+        <button class="modal-btn confirm" id="mergeTextConfirmBtn" disabled>确认合并</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量删除模态框 -->
+  <div class="modal-overlay" id="batchDeleteModal" aria-hidden="true">
+    <div class="modal batch-delete-modal" role="dialog" aria-modal="true" aria-labelledby="batchDeleteModalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="batchDeleteModalTitle">批量删除</div>
+      </div>
+      <div class="modal-body">
+        <div class="batch-delete-list" id="batchDeleteTypeList">
+          <label class="batch-delete-option">
+            <input type="checkbox" value="links">
+            <span class="batch-delete-option-main">所有链接</span>
+            <span class="batch-delete-option-count" data-count-key="links">0</span>
+          </label>
+          <label class="batch-delete-option">
+            <input type="checkbox" value="drawings">
+            <span class="batch-delete-option-main">所有手写内容</span>
+            <span class="batch-delete-option-count" data-count-key="drawings">0</span>
+          </label>
+          <label class="batch-delete-option">
+            <input type="checkbox" value="excerpts">
+            <span class="batch-delete-option-main">所有摘录</span>
+            <span class="batch-delete-option-count" data-count-key="excerpts">0</span>
+          </label>
+          <label class="batch-delete-option">
+            <input type="checkbox" value="markdown">
+            <span class="batch-delete-option-main">所有 Markdown 评论</span>
+            <span class="batch-delete-option-count" data-count-key="markdown">0</span>
+          </label>
+          <label class="batch-delete-option">
+            <input type="checkbox" value="html">
+            <span class="batch-delete-option-main">所有 HTML/HtmlMD 评论</span>
+            <span class="batch-delete-option-count" data-count-key="html">0</span>
+          </label>
+        </div>
+        <div class="batch-delete-summary" id="batchDeleteSummary">请选择要删除的评论类型</div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" id="batchDeleteCancelBtn">取消</button>
+        <button class="modal-btn confirm danger" id="batchDeleteConfirmBtn" disabled>删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 链接编辑模态框 -->
+  <div class="modal-overlay" id="editLinkModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editLinkModalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="editLinkModalTitle">编辑 Markdown 链接</div>
+      </div>
+      <div class="modal-body">
+        <!-- 当前链接预览 -->
+        <div class="edit-preview">
+          <div class="edit-preview-label">当前链接：</div>
+          <div class="edit-preview-content" id="editLinkPreview"></div>
+        </div>
+
+        <!-- 显示文本输入框 -->
+        <div class="edit-field">
+          <label class="edit-field-label">显示文本：</label>
+          <input type="text" id="editDisplayText" class="edit-input" placeholder="输入显示文本">
+          <div class="edit-field-actions">
+            <button type="button" class="text-btn" id="copyDisplayTextBtn" title="复制当前显示文本输入框内容">
+              复制
+            </button>
+            <button type="button" class="text-btn" id="pasteDisplayTextBtn" title="用剪贴板内容替换当前显示文本">
+              粘贴替换
+            </button>
+            <button type="button" class="text-btn" id="useSelectionBtn" title="读取当前正在编辑文本框中的选中文本">
+              使用当前选区文本
+            </button>
+          </div>
+        </div>
+
+        <!-- URL 输入框 -->
+        <div class="edit-field">
+          <label class="edit-field-label">链接地址：</label>
+          <input type="text" id="editLinkUrl" class="edit-input" placeholder="输入链接地址（MarginNote 链接或普通 URL）">
+          <div class="edit-field-actions">
+            <button type="button" class="text-btn" id="copyLinkUrlBtn" title="复制当前链接地址输入框内容">
+              复制
+            </button>
+            <button type="button" class="text-btn" id="pasteLinkUrlBtn" title="用剪贴板内容替换当前链接地址">
+              粘贴替换
+            </button>
+          </div>
+          <div class="edit-field-hint">
+            MarginNote 格式：marginnote4app://note/{卡片ID}<br>
+            普通 URL：https://example.com
+          </div>
+        </div>
+
+        <div class="edit-mode-divider" aria-hidden="true"><span>或</span></div>
+
+        <div class="edit-field edit-direct-link-field">
+          <label class="edit-field-label" for="editReplacementMarkdown">完整 Markdown 链接（优先）：</label>
+          <input type="text" id="editReplacementMarkdown" class="edit-input" placeholder="[显示文本](链接地址)" autocomplete="off" spellcheck="false">
+          <div class="edit-field-actions">
+            <button type="button" class="text-btn" id="pasteReplacementMarkdownBtn" title="用剪贴板内容替换完整 Markdown 链接">
+              粘贴替换
+            </button>
+          </div>
+          <div class="edit-field-error" id="editReplacementMarkdownError" role="status"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" id="editLinkCancelBtn">取消</button>
+        <button class="modal-btn confirm" id="editLinkConfirmBtn" disabled>确认</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通用确认模态框 -->
+  <div class="modal-overlay" id="confirmModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="confirmModalTitle">确认操作</div>
+      </div>
+      <div class="modal-body">
+        <p class="modal-message" id="confirmModalMessage">确认继续？</p>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" id="confirmModalCancelBtn">取消</button>
+        <button class="modal-btn confirm" id="confirmModalConfirmBtn">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="./scripts/comment-manager/core.js"></script>
+  <script src="./scripts/comment-manager/data-native.js"></script>
+  <script src="./scripts/comment-manager/data-fields.js"></script>
+  <script src="./scripts/comment-manager/render-list.js"></script>
+  <script src="./scripts/comment-manager/render-cards.js"></script>
+  <script src="./scripts/comment-manager/selection.js"></script>
+  <script src="./scripts/comment-manager/actions-move.js"></script>
+  <script src="./scripts/comment-manager/actions-danger.js"></script>
+  <script src="./scripts/comment-manager/actions-edit.js"></script>
+  <script src="./scripts/comment-manager/actions-merge.js"></script>
+  <script src="./scripts/comment-manager/actions-text-merge.js"></script>
+  <script src="./scripts/comment-manager/events-list.js"></script>
+  <script src="./scripts/comment-manager/events-bind.js"></script>
+  <script src="./scripts/comment-manager/bridge-utils.js"></script>
+  <script src="./scripts/comment-manager/bridge-api.js"></script>
+  <script src="./scripts/comment-manager/boot.js"></script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+{
+  "$schema": "mnkb.ai-answer-card-rerank-gold.v1",
+  "limitations": [
+    "Synthetic identifiers replace local notebook identifiers."
+  ],
+  "cases": [
+    {
+      "id": "property-sot-uniform-boundedness",
+      "query": "强算子拓扑收敛的算子是范数有界的吗？",
+      "queryPlan": {
+        "intent": "verify_property",
+        "subject": "强算子拓扑收敛的有界线性算子列",
+        "predicate": "算子范数一致有界",
+        "relation": "SOT 收敛是否蕴含 sup_n ||A_n|| < +∞",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "命题",
+          "反例"
+        ]
+      },
+      "recallTerms": [
+        "强算子",
+        "SOT",
+        "收敛",
+        "范数一致有界",
+        "Banach-Steinhaus"
+      ],
+      "expectedIds": [
+        "fixture-card-1",
+        "fixture-card-2"
+      ],
+      "expectedTop1Types": [
+        "命题"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "property-sot-implies-wot",
+      "query": "强算子收敛一定能推出弱算子收敛吗？",
+      "queryPlan": {
+        "intent": "verify_implication",
+        "subject": "强算子收敛的有界线性算子列",
+        "predicate": "弱算子收敛",
+        "relation": "SOT convergence implies WOT convergence",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "命题",
+          "反例"
+        ]
+      },
+      "recallTerms": [
+        "强算子收敛",
+        "弱算子收敛",
+        "SOT",
+        "WOT"
+      ],
+      "expectedIds": [
+        "fixture-card-3"
+      ],
+      "expectedTop1Types": [
+        "命题"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "property-norm-implies-sot",
+      "query": "算子范数收敛是否一定推出强算子收敛？",
+      "queryPlan": {
+        "intent": "verify_implication",
+        "subject": "依算子范数收敛的有界线性算子列",
+        "predicate": "强算子收敛",
+        "relation": "operator norm convergence implies SOT convergence",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "命题",
+          "反例"
+        ]
+      },
+      "recallTerms": [
+        "范数收敛",
+        "强算子收敛",
+        "有界线性算子列"
+      ],
+      "expectedIds": [
+        "fixture-card-4"
+      ],
+      "expectedTop1Types": [
+        "命题"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "property-l1-weak-implies-norm",
+      "query": "l1 空间中的弱收敛序列会自动依范数收敛吗？",
+      "queryPlan": {
+        "intent": "verify_property",
+        "subject": "l1 空间中的弱收敛序列",
+        "predicate": "依范数收敛",
+        "relation": "weak convergence implies norm convergence in l1",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "命题",
+          "反例"
+        ]
+      },
+      "recallTerms": [
+        "𝓁¹",
+        "l1",
+        "弱收敛",
+        "依范数收敛"
+      ],
+      "expectedIds": [
+        "fixture-card-5"
+      ],
+      "expectedTop1Types": [
+        "命题"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "criterion-compact-weak-to-norm",
+      "query": "紧算子会把弱收敛序列变成范数收敛序列吗？",
+      "queryPlan": {
+        "intent": "verify_property",
+        "subject": "Hilbert 空间上的紧算子",
+        "predicate": "把弱收敛序列映为强收敛序列",
+        "relation": "compact operator maps weak convergence to norm convergence",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "命题",
+          "反例"
+        ]
+      },
+      "recallTerms": [
+        "紧算子",
+        "弱收敛",
+        "强收敛",
+        "范数收敛"
+      ],
+      "expectedIds": [
+        "fixture-card-6",
+        "fixture-card-7"
+      ],
+      "expectedTop1Types": [
+        "命题"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "property-compact-toeplitz-zero-symbol",
+      "query": "H2 上的 Toeplitz 算子 T_phi 如果是紧算子，phi 必须恒为零吗？",
+      "queryPlan": {
+        "intent": "verify_property",
+        "subject": "H2 上由 phi 诱导的 Toeplitz 算子",
+        "predicate": "紧性蕴含符号 phi 恒为零",
+        "relation": "compact Toeplitz operator implies zero symbol",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "命题",
+          "反例"
+        ]
+      },
+      "recallTerms": [
+        "Toeplitz",
+        "紧算子",
+        "ϕ 恒为零",
+        "H²"
+      ],
+      "expectedIds": [
+        "fixture-card-8"
+      ],
+      "expectedTop1Types": [
+        "命题"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "counterexample-nonzero-derivative-univalent",
+      "query": "解析函数的导函数处处不为零，就一定是单叶函数吗？",
+      "queryPlan": {
+        "intent": "verify_property",
+        "subject": "区域上的解析函数",
+        "predicate": "导函数处处不为零蕴含单叶",
+        "relation": "nonvanishing derivative implies univalence",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "反例",
+          "命题"
+        ]
+      },
+      "recallTerms": [
+        "解析函数",
+        "导函数处处不为零",
+        "单叶函数",
+        "不一定"
+      ],
+      "expectedIds": [
+        "fixture-card-9"
+      ],
+      "expectedTop1Types": [
+        "反例"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "counterexample-measure-carrier-closed",
+      "query": "复 Borel 测度的承载集一定是闭集吗？",
+      "queryPlan": {
+        "intent": "verify_property",
+        "subject": "单位圆周上的复 Borel 测度的承载集",
+        "predicate": "是闭集",
+        "relation": "carrier set is necessarily closed",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "反例",
+          "命题"
+        ]
+      },
+      "recallTerms": [
+        "Borel 测度",
+        "承载集",
+        "闭集",
+        "不一定"
+      ],
+      "expectedIds": [
+        "fixture-card-10"
+      ],
+      "expectedTop1Types": [
+        "反例"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "counterexample-abel-converse",
+      "query": "级数 Abel 可和是否一定普通收敛？",
+      "queryPlan": {
+        "intent": "verify_converse",
+        "subject": "Abel 可和的实数项级数",
+        "predicate": "普通收敛",
+        "relation": "converse of ordinary convergence implies Abel summability",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "反例",
+          "命题"
+        ]
+      },
+      "recallTerms": [
+        "Abel 可和",
+        "普通收敛",
+        "反之",
+        "不一定"
+      ],
+      "expectedIds": [
+        "fixture-card-11"
+      ],
+      "expectedTop1Types": [
+        "反例"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "counterexample-minkowski-p-less-than-one",
+      "query": "当 0<p<1 时，Minkowski 不等式还一定成立吗？",
+      "queryPlan": {
+        "intent": "verify_condition",
+        "subject": "0<p<1 时的级数形式 Minkowski 不等式",
+        "predicate": "仍然成立",
+        "relation": "validity outside the standard p range",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "反例",
+          "命题"
+        ]
+      },
+      "recallTerms": [
+        "Minkowski 不等式",
+        "0<p<1",
+        "不一定成立"
+      ],
+      "expectedIds": [
+        "fixture-card-12"
+      ],
+      "expectedTop1Types": [
+        "反例"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "definition-compact-operator",
+      "query": "什么是 Hilbert 空间之间的紧算子？",
+      "queryPlan": {
+        "intent": "find_definition",
+        "subject": "Hilbert 空间之间的算子",
+        "predicate": "紧算子的定义",
+        "relation": "definition",
+        "polarity": "none",
+        "preferredCardTypes": [
+          "定义"
+        ]
+      },
+      "recallTerms": [
+        "Hilbert 空间",
+        "紧算子",
+        "compact operator"
+      ],
+      "expectedIds": [
+        "fixture-card-13",
+        "fixture-card-14"
+      ],
+      "expectedTop1Types": [
+        "定义"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "criterion-uniform-boundedness-family",
+      "query": "怎样判断一族有界线性算子的算子范数一致有界？",
+      "queryPlan": {
+        "intent": "find_criterion",
+        "subject": "Banach 空间之间的有界线性算子族",
+        "predicate": "算子范数一致有界",
+        "relation": "necessary and sufficient criterion",
+        "polarity": "none",
+        "preferredCardTypes": [
+          "命题"
+        ]
+      },
+      "recallTerms": [
+        "有界线性算子族",
+        "算子范数一致有界",
+        "Banach-Steinhaus",
+        "充要条件"
+      ],
+      "expectedIds": [
+        "fixture-card-1",
+        "fixture-card-2",
+        "fixture-card-15"
+      ],
+      "expectedTop1Types": [
+        "命题"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "property-sot-hausdorff",
+      "query": "B(H) 上的强算子拓扑是 Hausdorff 拓扑吗？",
+      "queryPlan": {
+        "intent": "verify_property",
+        "subject": "B(H) 上的强算子拓扑 SOT",
+        "predicate": "Hausdorff",
+        "relation": "topological property",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "命题",
+          "反例"
+        ]
+      },
+      "recallTerms": [
+        "强算子拓扑",
+        "SOT",
+        "Hausdorff",
+        "B(H)"
+      ],
+      "expectedIds": [
+        "fixture-card-16",
+        "fixture-card-17"
+      ],
+      "expectedTop1Types": [
+        "命题"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    },
+    {
+      "id": "counterexample-hp-ap-converse",
+      "query": "Bergman 空间 A^p 中的函数一定属于 Hardy 空间 H^p 吗？",
+      "queryPlan": {
+        "intent": "verify_converse",
+        "subject": "Bergman 空间 A^p 中的函数",
+        "predicate": "属于 Hardy 空间 H^p",
+        "relation": "converse of H^p subset A^p",
+        "polarity": "unknown",
+        "preferredCardTypes": [
+          "反例",
+          "命题"
+        ]
+      },
+      "recallTerms": [
+        "Hᵖ⊂Aᵖ",
+        "Bergman 空间",
+        "Hardy 空间",
+        "反向不成立"
+      ],
+      "expectedIds": [
+        "fixture-card-18"
+      ],
+      "expectedTop1Types": [
+        "反例"
+      ],
+      "labelSource": "synthetic-contract-fixture"
+    }
+  ]
+}
