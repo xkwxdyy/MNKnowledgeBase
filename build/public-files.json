@@ -138,6 +138,7 @@
     "tests/ocr-title-punctuation-regression.js",
     "tests/piecewise-ocr-prompt-regression.js",
     "tests/private-reference-configuration-regression.js",
+    "tests/private-reference-migration-regression.js",
     "tests/problem-chain-make-card-regression.js",
     "tests/proof-link-index-regression.js",
     "tests/proof-reader-data-regression.js",

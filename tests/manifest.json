@@ -35,6 +35,7 @@
     "ocr-provider-credentials-regression.js",
     "ocr-theorem-heading-label-order-regression.js",
     "private-reference-configuration-regression.js",
+    "private-reference-migration-regression.js",
     "proof-link-index-regression.js",
     "proof-merge-check-fold-regression.js",
     "proof-reader-data-regression.js",

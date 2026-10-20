@@ -1489,12 +1489,18 @@ const kbOCRConfig = {
 // 📦 类定义区（使用上面的配置）
 // ============================================
 
+// Personal builds inject only notebook references; public source has no personal defaults.
+const kbBundledReferenceNoteIds = {};
+
 class KnowledgeBaseTemplate {
   static getConfiguredReference(section, key) {
     const config = typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig
       ? KnowledgeBaseConfig.config || {} : {}
     const references = config.referenceNoteIds || {}
-    const value = key === undefined ? references[section] : (references[section] || {})[key]
+    const saved = key === undefined ? references : references[section] || {}
+    const bundled = key === undefined ? kbBundledReferenceNoteIds : kbBundledReferenceNoteIds[section] || {}
+    const name = key === undefined ? section : key
+    const value = Object.prototype.hasOwnProperty.call(saved, name) ? saved[name] : bundled[name]
     return typeof value === 'string' ? value.trim() : ''
   }
 
@@ -1506,6 +1512,15 @@ class KnowledgeBaseTemplate {
       throw new Error(message)
     }
     return id
+  }
+
+  static getConfiguredReferenceList(section, key) {
+    const config = typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig
+      ? KnowledgeBaseConfig.config || {} : {}
+    const saved = (config.referenceNoteIds || {})[section] || {}
+    const bundled = kbBundledReferenceNoteIds[section] || {}
+    const value = Object.prototype.hasOwnProperty.call(saved, key) ? saved[key] : bundled[key]
+    return Array.isArray(value) ? value.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim()) : []
   }
 
   /**
@@ -3182,7 +3197,10 @@ class KnowledgeBaseTemplate {
    */
   static requireMakeCardTemplate(templateId, noteType = "") {
     let template = null
-    try { template = templateId ? MNUtil.getNoteById(templateId) : null } catch (_) {}
+    try {
+      const noteId = this.extractNoteIdFromLinkUrl(templateId) || templateId
+      template = noteId ? MNUtil.getNoteById(noteId) : null
+    } catch (_) {}
     if (!template) {
       const error = new Error(`缺少${noteType || "制卡"}模板，未执行制卡；请先导入并配置模板`)
       error.code = "KB_TEMPLATE_MISSING"
@@ -17284,9 +17302,19 @@ class KnowledgeBaseTemplate {
    */
   static loadSearchConfig() {
     try {
+      const parseSaved = (raw, storeName) => {
+        if (!raw) return null;
+        try {
+          const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (value && typeof value === 'object' && !Array.isArray(value) &&
+            value.roots && typeof value.roots === 'object' && !Array.isArray(value.roots)) return value;
+        } catch (_) {}
+        KnowledgeBaseUtils.emitRuntimeLog('ERROR', `无法解析${storeName}搜索根目录配置，保留原始存储并尝试其他副本`);
+        return null;
+      };
       // 先尝试从本地加载
       const localConfig = NSUserDefaults.standardUserDefaults().objectForKey("KnowledgeBaseTemplate_SearchConfig");
-      let config = localConfig ? JSON.parse(localConfig) : null;
+      let config = parseSaved(localConfig, '本地');
       
       // 如果开启了 iCloud 同步，尝试从 iCloud 加载
       if (typeof toolbarConfig !== 'undefined' && toolbarConfig.iCloudSync) {
@@ -17294,9 +17322,9 @@ class KnowledgeBaseTemplate {
         if (cloudStore) {
           const cloudConfig = cloudStore.objectForKey("KnowledgeBaseTemplate_SearchConfig");
           if (cloudConfig) {
-            const cloudData = JSON.parse(cloudConfig);
+            const cloudData = parseSaved(cloudConfig, '云端');
             // 比较时间戳，使用较新的配置
-            if (!config || (cloudData.lastModified > config.lastModified)) {
+            if (cloudData && (!config || (cloudData.lastModified > config.lastModified))) {
               config = cloudData;
             }
           }
@@ -17306,9 +17334,7 @@ class KnowledgeBaseTemplate {
       // 如果没有配置，使用默认配置
       if (!config) {
         config = {
-          roots: {},
-          rootsOrder: [],
-          lastUsedRoot: "",
+          ...this.getDefaultSearchRootSelection(),
           includeClassification: true,  // 默认包含归类卡片
           ignorePrefix: false,  // 默认搜索完整标题
           searchInKeywords: false,  // 默认不搜索关键词字段
@@ -17317,6 +17343,10 @@ class KnowledgeBaseTemplate {
           enableRegexSearch: false,  // 默认不启用正则表达式搜索
           lastModified: Date.now()
         };
+      }
+
+      if (Object.keys(config.roots).length === 0 && !config.personalReferenceDefaultsVersion) {
+        Object.assign(config, this.getDefaultSearchRootSelection());
       }
       
       // 确保旧配置有这些字段（向后兼容）
@@ -17366,9 +17396,7 @@ class KnowledgeBaseTemplate {
       KnowledgeBaseUtils.emitRuntimeLog('ERROR', "加载搜索配置失败: " + error.toString());
       // 返回默认配置
       return {
-        roots: {},
-        rootsOrder: [],
-        lastUsedRoot: "",
+        ...this.getDefaultSearchRootSelection(),
         includeClassification: true,  // 默认包含归类卡片
         ignorePrefix: false,  // 默认搜索完整标题
         searchInKeywords: false,  // 默认不搜索关键词字段
@@ -17378,6 +17406,16 @@ class KnowledgeBaseTemplate {
         lastModified: Date.now()
       };
     }
+  }
+
+  static getDefaultSearchRootSelection() {
+    const reference = this.getConfiguredReference('roots', 'defaultKnowledgeBase');
+    if (!reference) return { roots: {}, rootsOrder: [], lastUsedRoot: '' };
+    const id = this.extractNoteIdFromLinkUrl(reference) || reference;
+    return {
+      roots: { default: { id, name: '数学知识库', isDefault: true, skipEmptyTitleByDefault: false } },
+      rootsOrder: ['default'], lastUsedRoot: 'default', personalReferenceDefaultsVersion: 1,
+    };
   }
   
   /**
@@ -32582,8 +32620,8 @@ class KnowledgeBaseConfig {
       // 🆕 中间知识库索引调试
       intermediateIndexTrace: false,
       intermediateIndexTraceInterval: 1,
-      researchProcessRootIds: [],
-      literatureClassificationRootIds: [],
+      researchProcessRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'researchProcessRootIds'),
+      literatureClassificationRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'literatureClassificationRootIds'),
       intermediateIndexDebug: {
         safeTraversal: true,
         showNoteIdInHUD: true,
@@ -32619,7 +32657,7 @@ class KnowledgeBaseConfig {
       aiSearchModel: "deepseek-chat",
       aiSearchModelExplicitlySelected: false,
       referenceNoteIds: {},
-      circularScanRootIds: [],
+      circularScanRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'circularScanRootIds'),
     }
   }
   
@@ -32737,12 +32775,17 @@ class KnowledgeBaseConfig {
         this.config = this.defaultConfig
       }
       let changed = false
-      if (!Array.isArray(this.config.researchProcessRootIds) || this.config.researchProcessRootIds.length === 0) {
-        this.config.researchProcessRootIds = this.defaultConfig.researchProcessRootIds.slice()
-        changed = true
+      const scopeKeys = ['researchProcessRootIds', 'literatureClassificationRootIds', 'circularScanRootIds']
+      const defaults = this.defaultConfig
+      const recoverEmptyScopes = !this.config.personalReferenceDefaultsVersion && scopeKeys.some(key => defaults[key].length > 0)
+      for (const key of scopeKeys) {
+        if (!Array.isArray(this.config[key]) || (recoverEmptyScopes && this.config[key].length === 0 && defaults[key].length > 0)) {
+          this.config[key] = defaults[key].slice()
+          changed = true
+        }
       }
-      if (!Array.isArray(this.config.literatureClassificationRootIds) || this.config.literatureClassificationRootIds.length === 0) {
-        this.config.literatureClassificationRootIds = this.defaultConfig.literatureClassificationRootIds.slice()
+      if (recoverEmptyScopes) {
+        this.config.personalReferenceDefaultsVersion = 1
         changed = true
       }
       const debugDefaults = this.defaultConfig.intermediateIndexDebug || {}

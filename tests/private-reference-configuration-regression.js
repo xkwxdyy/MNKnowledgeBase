@@ -70,4 +70,28 @@ assert.equal(removals, 0, 'missing keyword template must preserve the existing c
 assert.equal(nativeCalls.length, 0);
 assert(messages.some(message => /模板/.test(message)));
 assert(messages.some(message => /根目录/.test(message)));
+// An upgrade from the personal addon has no persisted referenceNoteIds yet.
+const bundledReferences = {
+  templates: { '定义': 'legacy-definition', '命题': 'legacy-proposition' },
+  htmlCommentTemplates: { '证明': 'legacy-proof' },
+  roots: { preExcerpt: 'legacy-pre-excerpt' },
+};
+const bundledSource = source.replace(
+  'const kbBundledReferenceNoteIds = {};',
+  'const kbBundledReferenceNoteIds = ' + JSON.stringify(bundledReferences) + ';',
+);
+assert(bundledSource !== source, 'personal packages must carry a separate reference profile');
+const upgrade = vm.createContext({ KnowledgeBaseConfig: { config: {} } });
+vm.runInContext(bundledSource.slice(0, bundledSource.indexOf('\nclass KnowledgeBaseIndexer')) +
+  '\nthis.Template = KnowledgeBaseTemplate;', upgrade);
+assert.equal(upgrade.Template.types.定义.templateNoteId, 'legacy-definition');
+assert.equal(upgrade.Template.singleHtmlCommentTemplateNoteIds.证明, 'legacy-proof');
+assert.equal(upgrade.Template.getConfiguredReference('roots', 'preExcerpt'), 'legacy-pre-excerpt');
+upgrade.KnowledgeBaseConfig.config.referenceNoteIds = {
+  templates: { '定义': 'user-definition', '命题': '' },
+};
+assert.equal(upgrade.Template.types.定义.templateNoteId, 'user-definition');
+assert.equal(upgrade.Template.types.命题.templateNoteId, '', 'an explicit empty override must remain empty');
+assert.equal(upgrade.Template.singleHtmlCommentTemplateNoteIds.证明, 'legacy-proof');
+assert.equal(upgrade.KnowledgeBaseConfig.config.referenceNoteIds.templates.命题, '');
 console.log('private reference defaults, persisted settings and mutation guards: ok');
