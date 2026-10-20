@@ -36,6 +36,7 @@
     "ocr-theorem-heading-label-order-regression.js",
     "private-reference-configuration-regression.js",
     "proof-link-index-regression.js",
+    "proof-merge-check-fold-regression.js",
     "proof-reader-data-regression.js",
     "proof-structure-workbench-regression.js",
     "question-research-workbench-regression.js",
