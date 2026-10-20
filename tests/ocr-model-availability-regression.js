@@ -34,7 +34,8 @@ function loadKnowledgeBaseConfig(modelSource) {
     },
   });
   vm.runInContext(
-    `${utilsSource.slice(start, end)}\nthis.KnowledgeBaseConfig = KnowledgeBaseConfig;`,
+    `${utilsSource.slice(0, utilsSource.indexOf('\nclass KnowledgeBaseIndexer'))}\n` +
+      `${utilsSource.slice(start, end)}\nthis.KnowledgeBaseConfig = KnowledgeBaseConfig;`,
     context,
   );
   return context.KnowledgeBaseConfig;

@@ -4875,7 +4875,7 @@ JSB.newAddon = function(mainPath){
 
       // 获取过程知识库根卡片
       const configuredRoots = KnowledgeBaseConfig.config && KnowledgeBaseConfig.config.circularScanRootIds;
-      const intermediateRootIds = Array.isArray(configuredRoots) ? configuredRoots : [];
+      const intermediateRootIds = Array.isArray(configuredRoots) ? configuredRoots : KnowledgeBaseConfig.defaultConfig.circularScanRootIds;
       if (!intermediateRootIds.length) { MNUtil.showHUD('请先配置循环引用扫描的根目录'); return; }
 
       const rootNotes = []

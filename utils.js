@@ -1489,12 +1489,18 @@ const kbOCRConfig = {
 // 📦 类定义区（使用上面的配置）
 // ============================================
 
+// Personal builds inject only notebook references; public source has no personal defaults.
+const kbBundledReferenceNoteIds = {};
+
 class KnowledgeBaseTemplate {
   static getConfiguredReference(section, key) {
     const config = typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig
       ? KnowledgeBaseConfig.config || {} : {}
     const references = config.referenceNoteIds || {}
-    const value = key === undefined ? references[section] : (references[section] || {})[key]
+    const saved = key === undefined ? references : references[section] || {}
+    const bundled = key === undefined ? kbBundledReferenceNoteIds : kbBundledReferenceNoteIds[section] || {}
+    const name = key === undefined ? section : key
+    const value = Object.prototype.hasOwnProperty.call(saved, name) ? saved[name] : bundled[name]
     return typeof value === 'string' ? value.trim() : ''
   }
 
@@ -1506,6 +1512,15 @@ class KnowledgeBaseTemplate {
       throw new Error(message)
     }
     return id
+  }
+
+  static getConfiguredReferenceList(section, key) {
+    const config = typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig
+      ? KnowledgeBaseConfig.config || {} : {}
+    const saved = (config.referenceNoteIds || {})[section] || {}
+    const bundled = kbBundledReferenceNoteIds[section] || {}
+    const value = Object.prototype.hasOwnProperty.call(saved, key) ? saved[key] : bundled[key]
+    return Array.isArray(value) ? value.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim()) : []
   }
 
   /**
@@ -3182,7 +3197,10 @@ class KnowledgeBaseTemplate {
    */
   static requireMakeCardTemplate(templateId, noteType = "") {
     let template = null
-    try { template = templateId ? MNUtil.getNoteById(templateId) : null } catch (_) {}
+    try {
+      const noteId = this.extractNoteIdFromLinkUrl(templateId) || templateId
+      template = noteId ? MNUtil.getNoteById(noteId) : null
+    } catch (_) {}
     if (!template) {
       const error = new Error(`缺少${noteType || "制卡"}模板，未执行制卡；请先导入并配置模板`)
       error.code = "KB_TEMPLATE_MISSING"
@@ -17284,9 +17302,19 @@ class KnowledgeBaseTemplate {
    */
   static loadSearchConfig() {
     try {
+      const parseSaved = (raw, storeName) => {
+        if (!raw) return null;
+        try {
+          const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (value && typeof value === 'object' && !Array.isArray(value) &&
+            value.roots && typeof value.roots === 'object' && !Array.isArray(value.roots)) return value;
+        } catch (_) {}
+        KnowledgeBaseUtils.emitRuntimeLog('ERROR', `无法解析${storeName}搜索根目录配置，保留原始存储并尝试其他副本`);
+        return null;
+      };
       // 先尝试从本地加载
       const localConfig = NSUserDefaults.standardUserDefaults().objectForKey("KnowledgeBaseTemplate_SearchConfig");
-      let config = localConfig ? JSON.parse(localConfig) : null;
+      let config = parseSaved(localConfig, '本地');
       
       // 如果开启了 iCloud 同步，尝试从 iCloud 加载
       if (typeof toolbarConfig !== 'undefined' && toolbarConfig.iCloudSync) {
@@ -17294,9 +17322,9 @@ class KnowledgeBaseTemplate {
         if (cloudStore) {
           const cloudConfig = cloudStore.objectForKey("KnowledgeBaseTemplate_SearchConfig");
           if (cloudConfig) {
-            const cloudData = JSON.parse(cloudConfig);
+            const cloudData = parseSaved(cloudConfig, '云端');
             // 比较时间戳，使用较新的配置
-            if (!config || (cloudData.lastModified > config.lastModified)) {
+            if (cloudData && (!config || (cloudData.lastModified > config.lastModified))) {
               config = cloudData;
             }
           }
@@ -17306,9 +17334,7 @@ class KnowledgeBaseTemplate {
       // 如果没有配置，使用默认配置
       if (!config) {
         config = {
-          roots: {},
-          rootsOrder: [],
-          lastUsedRoot: "",
+          ...this.getDefaultSearchRootSelection(),
           includeClassification: true,  // 默认包含归类卡片
           ignorePrefix: false,  // 默认搜索完整标题
           searchInKeywords: false,  // 默认不搜索关键词字段
@@ -17317,6 +17343,10 @@ class KnowledgeBaseTemplate {
           enableRegexSearch: false,  // 默认不启用正则表达式搜索
           lastModified: Date.now()
         };
+      }
+
+      if (Object.keys(config.roots).length === 0 && !config.personalReferenceDefaultsVersion) {
+        Object.assign(config, this.getDefaultSearchRootSelection());
       }
       
       // 确保旧配置有这些字段（向后兼容）
@@ -17366,9 +17396,7 @@ class KnowledgeBaseTemplate {
       KnowledgeBaseUtils.emitRuntimeLog('ERROR', "加载搜索配置失败: " + error.toString());
       // 返回默认配置
       return {
-        roots: {},
-        rootsOrder: [],
-        lastUsedRoot: "",
+        ...this.getDefaultSearchRootSelection(),
         includeClassification: true,  // 默认包含归类卡片
         ignorePrefix: false,  // 默认搜索完整标题
         searchInKeywords: false,  // 默认不搜索关键词字段
@@ -17378,6 +17406,16 @@ class KnowledgeBaseTemplate {
         lastModified: Date.now()
       };
     }
+  }
+
+  static getDefaultSearchRootSelection() {
+    const reference = this.getConfiguredReference('roots', 'defaultKnowledgeBase');
+    if (!reference) return { roots: {}, rootsOrder: [], lastUsedRoot: '' };
+    const id = this.extractNoteIdFromLinkUrl(reference) || reference;
+    return {
+      roots: { default: { id, name: '数学知识库', isDefault: true, skipEmptyTitleByDefault: false } },
+      rootsOrder: ['default'], lastUsedRoot: 'default', personalReferenceDefaultsVersion: 1,
+    };
   }
   
   /**
@@ -32582,8 +32620,8 @@ class KnowledgeBaseConfig {
       // 🆕 中间知识库索引调试
       intermediateIndexTrace: false,
       intermediateIndexTraceInterval: 1,
-      researchProcessRootIds: [],
-      literatureClassificationRootIds: [],
+      researchProcessRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'researchProcessRootIds'),
+      literatureClassificationRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'literatureClassificationRootIds'),
       intermediateIndexDebug: {
         safeTraversal: true,
         showNoteIdInHUD: true,
@@ -32619,7 +32657,7 @@ class KnowledgeBaseConfig {
       aiSearchModel: "deepseek-chat",
       aiSearchModelExplicitlySelected: false,
       referenceNoteIds: {},
-      circularScanRootIds: [],
+      circularScanRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'circularScanRootIds'),
     }
   }
   
@@ -32737,12 +32775,17 @@ class KnowledgeBaseConfig {
         this.config = this.defaultConfig
       }
       let changed = false
-      if (!Array.isArray(this.config.researchProcessRootIds) || this.config.researchProcessRootIds.length === 0) {
-        this.config.researchProcessRootIds = this.defaultConfig.researchProcessRootIds.slice()
-        changed = true
+      const scopeKeys = ['researchProcessRootIds', 'literatureClassificationRootIds', 'circularScanRootIds']
+      const defaults = this.defaultConfig
+      const recoverEmptyScopes = !this.config.personalReferenceDefaultsVersion && scopeKeys.some(key => defaults[key].length > 0)
+      for (const key of scopeKeys) {
+        if (!Array.isArray(this.config[key]) || (recoverEmptyScopes && this.config[key].length === 0 && defaults[key].length > 0)) {
+          this.config[key] = defaults[key].slice()
+          changed = true
+        }
       }
-      if (!Array.isArray(this.config.literatureClassificationRootIds) || this.config.literatureClassificationRootIds.length === 0) {
-        this.config.literatureClassificationRootIds = this.defaultConfig.literatureClassificationRootIds.slice()
+      if (recoverEmptyScopes) {
+        this.config.personalReferenceDefaultsVersion = 1
         changed = true
       }
       const debugDefaults = this.defaultConfig.intermediateIndexDebug || {}
@@ -32936,7 +32979,369 @@ class KnowledgeBaseConfig {
   }
 }
 
+// A source index remains its identity even when several CHECKs or drawings are identical.
+class ProofMergeCheckFoldSession {
+  constructor(rootNote, sourceNotes) {
+    this.rootNote = rootNote;
+    this.records = new Map();
+    this.restores = [];
+    this.mergedCount = 0;
+    this.foldedCount = 0;
+    const sources = new Set(sourceNotes.map(note => this.noteId(note)));
+    this.enabled = sourceNotes.some(note => this.comments(note).some(comment => this.isCheck(comment)));
+    [rootNote].concat(sourceNotes).forEach(note => {
+      const id = this.noteId(note);
+      if (!id) throw new Error("证明合并缺少稳定的卡片标识，尚未合并");
+      if (this.records.has(id)) return;
+      const comments = this.comments(note);
+      const checks = comments.map((comment, index) => this.isCheck(comment) ? index : -1)
+        .filter(index => index >= 0);
+      if (sources.has(id) && checks.length > 1) {
+        throw new Error("同一张证明卡片存在多个 Check，请整理为一个后再合并，尚未合并");
+      }
+      const checkIndex = sources.has(id) && checks.length === 1 ? checks[0] : -1;
+      const ids = this.enabled ? this.commentIds(note, comments) : comments.map(comment => this.valueText(comment.commentId));
+      this.records.set(id, {
+        note,
+        busy: false,
+        excerptFold: checkIndex >= 0,
+        tokens: comments.map((_, index) => ({ originNoteId: id, originalIndex: index, fold: index <= checkIndex, commentId: ids[index] })),
+        keys: comments.map(comment => this.key(comment)),
+      });
+    });
+    this.enabled = Array.from(this.records.values()).some(record => record.excerptFold);
+    if (this.enabled) this.readFoldState();
+  }
+
+  isNativeNull(value) {
+    return value === undefined || value === null ||
+      (typeof value === "object" && String(value) === "[object NSNull]");
+  }
+
+  valueText(value) { return this.isNativeNull(value) ? "" : String(value); }
+
+  noteId(note) { return this.valueText(note && (note.noteId || note.id)); }
+
+  comments(note) {
+    const comments = note && note.comments;
+    if (!comments || typeof comments.length !== "number") throw new Error("无法读取证明评论，已停止自动折叠");
+    return Array.from(comments);
+  }
+
+  isCheck(comment) {
+    return comment && (String(comment.type) === "TextNote" ? !this.isNativeNull(comment.markdown) && !!comment.markdown :
+      ["markdownComment", "mergedMarkdownComment"].includes(String(comment.type))) &&
+      /<span\b[^>]*\bid\s*=\s*["']check["'][^>]*>/i.test(String(comment.text || ""));
+  }
+
+  key(comment) {
+    const primitive = value => {
+      if (this.isNativeNull(value)) return "";
+      try {
+        return typeof value === "object" ? JSON.stringify(value, (_, item) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+          return Object.keys(item).sort().reduce((sorted, key) => { sorted[key] = item[key]; return sorted; }, {});
+        }) : String(value);
+      }
+      catch (_) { throw new Error("无法核对证明媒体内容，已停止自动折叠"); }
+    };
+    // mergeInto rewrites/removes note links in place, without changing their positions.
+    const normalizeLinks = value => this.valueText(value)
+      .replace(/\[[^\]]*\]\(marginnote[34]app:\/\/[^)]+\)/g, "")
+      .replace(/marginnote[34]app:\/\/[^\s)]+/g, "");
+    // Native merge writes the source noteid onto ordinary comments as provenance.
+    // Only LinkNote uses this field to identify linked content; original indices track other comments.
+    const linkedNoteId = String(comment.type) === "LinkNote" ? comment.noteid || comment.noteId : "";
+    return [comment.type, normalizeLinks(comment.text), comment.markdown, linkedNoteId,
+      comment.paint, comment.drawing, comment.audio, normalizeLinks(comment.q_htext), comment.q_hpic,
+      comment.q_hblank].map(primitive).join("\u001f");
+  }
+
+  commentIds(note, comments) {
+    const raw = note.note || note;
+    if (typeof raw.commentState === "function") {
+      const state = raw.commentState();
+      if (state && state.ok === true && Array.isArray(state.comments) && state.comments.length === comments.length &&
+          state.comments.every((comment, index) => comment.index === index + 1)) {
+        return state.comments.map(comment => this.valueText(comment.commentId));
+      }
+    }
+    return comments.map(comment => this.valueText(comment.commentId));
+  }
+
+  verifyIds(record, comments, tokens) {
+    const ids = this.commentIds(record.note, comments);
+    tokens.forEach((token, index) => {
+      if (token.commentId && token.commentId !== ids[index]) {
+        throw new Error("评论稳定标识与记录的位置不一致，已停止自动折叠");
+      }
+      if (ids[index]) token.commentId = ids[index];
+    });
+  }
+
+  requireUnambiguousMove(record, name, args) {
+    const length = record.tokens.length;
+    const order = Array.from({ length }, (_, index) => index);
+    if (name === "moveComment" && length) {
+      const clamp = value => Math.max(0, Math.min(length - 1, Number(value)));
+      order.splice(clamp(args[1]), 0, order.splice(clamp(args[0]), 1)[0]);
+    } else if (name === "sortCommentsByNewIndices" && Array.isArray(args[0])) {
+      args[0].forEach((destination, index) => { order[destination] = index; });
+    }
+    // A swallowed no-op cannot be detected by values when only identical comments swap.
+    if (order.every((source, index) => record.keys[source] === record.keys[index]) &&
+        order.some((source, index) => record.tokens[source].fold !== record.tokens[index].fold &&
+          (!record.tokens[source].commentId || !record.tokens[index].commentId))) {
+      throw new Error("重复评论缺少稳定标识，无法确认移动后的折叠范围，已停止处理");
+    }
+  }
+
+  check(record) {
+    if (this.failure) throw this.failure;
+    const comments = this.comments(record.note);
+    const keys = comments.map(comment => this.key(comment));
+    if (keys.length !== record.tokens.length || keys.some((key, index) => key !== record.keys[index])) {
+      throw new Error("证明评论出现未记录的插入、删除或重排，已停止自动折叠");
+    }
+    this.verifyIds(record, comments, record.tokens);
+    return comments;
+  }
+
+  commit(record, tokens, expectedKeys) {
+    const comments = this.comments(record.note);
+    const keys = comments.map(comment => this.key(comment));
+    if (tokens.length !== keys.length || expectedKeys.length !== keys.length ||
+        keys.some((key, index) => key !== expectedKeys[index])) {
+      throw new Error("证明合并后的评论位置无法确认，已停止自动折叠");
+    }
+    this.verifyIds(record, comments, tokens);
+    record.tokens = tokens;
+    record.keys = keys;
+  }
+
+  observe(record, name, original, args, receiver) {
+    if (record.busy) return original.apply(receiver, args);
+    const before = this.check(record);
+    if (name === "moveComment" || name === "sortCommentsByNewIndices") this.requireUnambiguousMove(record, name, args);
+    let tokens = record.tokens.slice();
+    let keys = record.keys.slice();
+    const length = tokens.length;
+    const clamp = value => Math.max(0, Math.min(length - 1, Number(value)));
+    const generated = () => ({ originNoteId: "", originalIndex: -1, fold: false });
+    let sourceRecord;
+    let sourceComments;
+    let legacyTargets;
+    if (name === "merge") {
+      sourceRecord = this.records.get(this.noteId(args[0]));
+      if (!sourceRecord || sourceRecord === record) throw new Error("证明合并来源不在已记录范围内，已停止合并");
+      sourceComments = this.check(sourceRecord);
+    }
+    if (name === "convertLinksToNewVersion") {
+      legacyTargets = before.map(comment => {
+        const match = String(comment.text || "").match(/^marginnote3app:\/\/note\/(.*)$/);
+        if (String(comment.type) !== "TextNote" || !match) return undefined;
+        const target = MNNote.new(match[1], false);
+        return target ? String(target.noteURL || "") : null;
+      });
+    }
+    record.busy = true;
+    let result;
+    try { result = original.apply(receiver, args); }
+    finally { record.busy = false; }
+    const after = this.comments(record.note);
+    const afterKeys = after.map(comment => this.key(comment));
+
+    if (name === "merge") {
+      this.mergedCount++;
+      const extra = after.length - before.length - sourceComments.length;
+      if (extra !== 0 && extra !== 1) throw new Error("合并摘录的实际评论数量异常，已停止自动折叠");
+      if (extra === 1) {
+        const excerpt = after[before.length];
+        if (!excerpt || String(excerpt.type) !== "LinkNote" ||
+            String(excerpt.noteid || excerpt.noteId || "").toUpperCase() !== this.noteId(sourceRecord.note).toUpperCase()) {
+          throw new Error("合并摘录的来源无法验证，已停止自动折叠");
+        }
+        tokens.push({ originNoteId: this.noteId(sourceRecord.note), originalIndex: "excerpt", fold: sourceRecord.excerptFold });
+        keys.push(afterKeys[before.length]);
+      } else if (sourceRecord.excerptFold && this.hasExcerpt(sourceRecord.note)) {
+        throw new Error("原卡片摘录没有出现在合并结果中，已停止自动折叠");
+      }
+      tokens = tokens.concat(sourceRecord.tokens);
+      keys = keys.concat(sourceRecord.keys);
+    } else if (name === "removeCommentByIndex") {
+      const index = Math.min(Number(args[0]), length - 1);
+      if (!Number.isInteger(index) || index < 0) throw new Error("删除评论的索引无效，已停止自动折叠");
+      tokens.splice(index, 1);
+      keys.splice(index, 1);
+    } else if (name === "removeCommentsByIndices") {
+      const indices = Array.from(new Set(args[0])).map(clamp).sort((a, b) => b - a);
+      indices.forEach(index => { tokens.splice(index, 1); keys.splice(index, 1); });
+    } else if (name === "moveComment") {
+      const from = clamp(args[0]);
+      const to = clamp(args[1]);
+      if (length) {
+        tokens.splice(to, 0, tokens.splice(from, 1)[0]);
+        keys.splice(to, 0, keys.splice(from, 1)[0]);
+      }
+    } else if (name === "sortCommentsByNewIndices") {
+      const order = args[0];
+      if (!Array.isArray(order) || order.length !== length || new Set(order).size !== length ||
+          order.some(index => !Number.isInteger(index) || index < 0 || index >= length)) {
+        throw new Error("评论重排的索引无效，已停止自动折叠");
+      }
+      const newTokens = [], newKeys = [];
+      order.forEach((destination, index) => { newTokens[destination] = tokens[index]; newKeys[destination] = keys[index]; });
+      tokens = newTokens;
+      keys = newKeys;
+    } else if (name === "convertLinksToNewVersion") {
+      const newTokens = [], newKeys = [];
+      legacyTargets.forEach((target, index) => {
+        if (target === null) return;
+        if (target === undefined) {
+          newTokens.push(tokens[index]); newKeys.push(keys[index]);
+        } else {
+          const destination = newTokens.length;
+          if (!target || !after[destination] || String(after[destination].text || "") !== target) {
+            throw new Error("旧版卡片链接转换位置无法确认，已停止自动折叠");
+          }
+          newTokens.push({ ...tokens[index], commentId: "" });
+          newKeys.push(afterKeys[destination]);
+        }
+      });
+      tokens = newTokens;
+      keys = newKeys;
+    } else if (name === "replaceWithMarkdownComment" || name === "replaceWithTextComment") {
+      const index = args[1];
+      const valid = String(args[0] || "").trim();
+      if (index !== undefined) {
+        const actual = Math.min(Number(index), length - 1);
+        const token = tokens.splice(actual, 1)[0];
+        keys.splice(actual, 1);
+        if (valid) {
+          const destination = Math.max(0, Math.min(tokens.length, Number(index)));
+          tokens.splice(destination, 0, { ...token, commentId: "" });
+          keys.splice(destination, 0, afterKeys[destination]);
+        }
+      } else if (valid) {
+        tokens.push(generated()); keys.push(afterKeys[afterKeys.length - 1]);
+      }
+    } else {
+      const extra = after.length - length;
+      if (extra !== 0 && extra !== 1) throw new Error("新增证明评论数量异常，已停止自动折叠");
+      if (extra === 1) {
+        const destination = name === "appendNoteLink" || args[1] === undefined
+          ? length : Math.max(0, Math.min(length, Number(args[1])));
+        tokens.splice(destination, 0, generated());
+        keys.splice(destination, 0, afterKeys[destination]);
+      }
+    }
+    this.commit(record, tokens, keys);
+    return result;
+  }
+
+  hasExcerpt(note) {
+    return !!(this.valueText(note.excerptText).trim() || (!this.isNativeNull(note.excerptPic) && note.excerptPic));
+  }
+
+  install() {
+    const names = ["appendMarkdownComment", "appendTextComment", "appendNoteLink", "removeCommentByIndex",
+      "removeCommentsByIndices", "moveComment", "sortCommentsByNewIndices", "replaceWithMarkdownComment",
+      "replaceWithTextComment", "convertLinksToNewVersion", "merge"];
+    const installed = new Map();
+    this.records.forEach(record => names.forEach(name => {
+      let owner = record.note;
+      while (owner && !Object.prototype.hasOwnProperty.call(owner, name)) owner = Object.getPrototypeOf(owner);
+      if (!owner || typeof owner[name] !== "function") return;
+      if (!installed.has(owner)) installed.set(owner, new Set());
+      if (installed.get(owner).has(name)) return;
+      const descriptor = Object.getOwnPropertyDescriptor(owner, name);
+      const original = descriptor.value;
+      if (typeof original !== "function") return;
+      const session = this;
+      // childNotes/parentNote create fresh MNNote wrappers; dispatch by noteId, not wrapper identity.
+      Object.defineProperty(owner, name, { ...descriptor,
+        value: function (...args) {
+          const tracked = session.records.get(session.noteId(this));
+          if (!tracked) return original.apply(this, args);
+          try { return session.observe(tracked, name, original, args, this); }
+          catch (error) { session.failure = session.failure || error; throw error; }
+        } });
+      installed.get(owner).add(name);
+      this.restores.push(() => Object.defineProperty(owner, name, descriptor));
+    }));
+  }
+
+  readFoldState() {
+    const raw = this.rootNote.note || this.rootNote;
+    if (typeof raw.commentState !== "function" || typeof raw.setCommentsCollapsed !== "function") {
+      throw new Error("当前宿主不支持评论自动折叠，尚未开始证明合并");
+    }
+    const state = raw.commentState();
+    const record = this.records.get(this.noteId(this.rootNote));
+    if (!state || state.ok !== true || String(state.noteid || "").toUpperCase() !== this.noteId(this.rootNote).toUpperCase() ||
+        typeof state.revision !== "string" || !state.revision || !Array.isArray(state.comments) ||
+        state.comments.length !== record.tokens.length || state.comments.some((comment, index) =>
+          !comment || comment.index !== index + 1 || typeof comment.collapsed !== "boolean")) {
+      throw new Error("无法核对宿主的评论折叠索引，已停止自动折叠");
+    }
+    return state;
+  }
+
+  finish() {
+    const record = this.records.get(this.noteId(this.rootNote));
+    this.check(record);
+    const indices = record.tokens.map((token, index) => token.fold ? index : -1).filter(index => index >= 0);
+    if (!indices.length) return;
+    let state = this.readFoldState();
+    const expected = state.comments.map(comment => comment.collapsed);
+    const raw = this.rootNote.note || this.rootNote;
+    for (let start = 0; start < indices.length; start += 200) {
+      this.check(record);
+      const batch = indices.slice(start, start + 200);
+      const receipt = raw.setCommentsCollapsed(batch.map(index => ({ index: index + 1 })), true, state.revision);
+      if (!receipt || receipt.ok !== true || receipt.persisted !== true || receipt.collapsed !== true ||
+          receipt.requestedCount !== batch.length || !Number.isSafeInteger(receipt.changedCount) ||
+          receipt.changedCount < 0 || receipt.changedCount > batch.length) {
+        throw new Error("无法确认评论折叠已经保存，已停止后续折叠");
+      }
+      batch.forEach(index => { expected[index] = true; });
+      state = this.readFoldState();
+      if (state.revision !== receipt.revision || state.comments.some((comment, index) => comment.collapsed !== expected[index])) {
+        throw new Error("评论折叠读回结果不一致，已停止后续折叠");
+      }
+      this.foldedCount += batch.length;
+    }
+    this.check(record);
+  }
+
+  run(operation) {
+    if (!this.enabled) return operation();
+    try {
+      this.install();
+      const result = operation();
+      if (result && typeof result.then === "function") throw new Error("证明合并必须同步完成，已停止自动折叠");
+      this.finish();
+      return result;
+    } catch (error) {
+      throw new Error(`${error.message || error}；已合并 ${this.mergedCount} 张卡片，已核对折叠 ${this.foldedCount} 条评论`);
+    } finally {
+      this.restores.reverse().forEach(restore => restore());
+    }
+  }
+}
+
 class HtmlMarkdownUtils {
+  static runProofMergeWithCheckFolding(rootNote, sourceNotes, operation) {
+    if (!Array.isArray(sourceNotes)) {
+      const tree = rootNote.descendantNodes;
+      const children = rootNote.childNotes || [];
+      sourceNotes = tree.descendant.filter((note, index) => {
+        const child = children[tree.treeIndex[index][0]];
+        return child && !KnowledgeBaseTemplate.isClassificationNote(child) && !KnowledgeBaseTemplate.isKnowledgeNote(child);
+      });
+    }
+    return new ProofMergeCheckFoldSession(rootNote, sourceNotes).run(operation);
+  }
   static icons = {
     // step: '🚩',
     // point: '▸',
