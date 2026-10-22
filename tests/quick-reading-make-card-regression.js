@@ -1329,7 +1329,7 @@ function assertToolbarDelegatesQuickReadingBeforeLegacyPreProcessPath() {
 function assertToolbarUsesConvertedClassificationNote() {
   assert.match(
     toolbarSource,
-    /const processedNote = KnowledgeBaseTemplate\.makeNote\(note, true, true, true, \{[\s\S]*?undoGrouping:\s*false,[\s\S]*?deferFinalIndexSync:\s*true,[\s\S]*?\}\);/,
+    /const processedNote = KnowledgeBaseTemplate\.makeNote\(note, true, false, true, \{[\s\S]*?undoGrouping:\s*false,[\s\S]*?deferFinalIndexSync:\s*true,[\s\S]*?\}\);/,
     'toolbar make-card must retain the classification note returned by makeNote',
   );
   assert.match(
@@ -1344,12 +1344,12 @@ function assertToolbarUsesConvertedClassificationNote() {
   );
   assert.match(
     toolbarSource,
-    /const processedNote = KnowledgeBaseTemplate\.makeCard\(targetNote, false\) \|\| targetNote;[\s\S]*?refreshedNotes\.push\(processedNote\)/,
+    /const processedNote = KnowledgeBaseTemplate\.makeCard\(targetNote, false, true, \{ silent: true \}\) \|\| targetNote;[\s\S]*?refreshedNotes\.push\(processedNote\)/,
     'double-click make-card must refresh the returned classification target',
   );
   assert.match(
     toolbarSource,
-    /const processedNote = KnowledgeBaseTemplate\.makeNote\([\s\S]*?childNote,[\s\S]*?\{ undoGrouping: false \},[\s\S]*?\);[\s\S]*?madeNotes\.push\(processedNote\)/,
+    /const processedNote = KnowledgeBaseTemplate\.makeNote\([\s\S]*?childNote,[\s\S]*?\{ undoGrouping: false, silent: true \},[\s\S]*?\);[\s\S]*?madeNotes\.push\(processedNote\)/,
     'batch child make-card must collect the returned classification target',
   );
 }

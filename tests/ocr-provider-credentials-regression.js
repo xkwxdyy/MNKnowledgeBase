@@ -16,7 +16,8 @@ async function check(modelConfig, subscription, expected) {
     ocrNetwork: { initRequestForChatGPT(key, url) { sent.push({ key, url }); return {}; }, async sendRequest() { return { choices: [{ message: { content: 'recognized text' } }] }; } },
   };
   vm.createContext(context);
-  vm.runInContext('class Network {\n' + source.slice(start, end) + '\n}; this.Network = Network;', context);
+  const transport = source.slice(source.indexOf('  static logOCRStage('), source.indexOf('  static async OCR('));
+  vm.runInContext('class Network {\n' + transport + source.slice(start, end) + '\n}; this.Network = Network;', context);
   const diagnostic = {};
   const result = await context.Network.ChatGPTVision('image', 'fixture-source', 'prompt', false, { attemptDiagnosticTarget: diagnostic });
   if (expected) {

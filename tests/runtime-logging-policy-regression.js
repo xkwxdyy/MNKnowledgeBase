@@ -98,8 +98,17 @@ const quickReadingLogEnd = mainSource.indexOf(
 )
 assert(quickReadingLogStart >= 0 && quickReadingLogEnd > quickReadingLogStart)
 assert(!mainSource.slice(quickReadingLogStart, quickReadingLogEnd).includes('MNLog.info'))
+// Explicit, bounded metadata diagnostics remain visible for the current research failure investigation.
+// No other method bypasses the ordinary runtime logging policy.
+const visibleDiagnosticMethods = [
+  ['  static _logMakeCardPerf(', '  static _beginMakeCardPerf('],
+  ['  static logOCRStage(', '  static async waitForOCRNetwork('],
+  ['  static async presentOCRResult(', '  static refreshNoteLocally('],
+]
+let ordinaryUtilsSource = utilsSource
+for (const [start, end] of visibleDiagnosticMethods) ordinaryUtilsSource = ordinaryUtilsSource.replace(sourceSlice(utilsSource, start, end), '')
 assert(!/\bMNUtil\.log\(|\bMNLog\.(?:log|info|debug)\(/.test(
-  [mainSource, utilsSource, controllerSource].join('\n')
+  [mainSource, ordinaryUtilsSource, controllerSource].join('\n')
 ), 'native ordinary logs must route through the shared policy')
 
 const proofParserSource = utilsSource.slice(utilsSource.indexOf('class ProofParser {'))

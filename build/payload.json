@@ -1,5 +1,8 @@
 [
+  "KnowledgeBaseDefinitionConcept.js",
   "KnowledgeBaseHandwritingOCR.js",
+  "KnowledgeBaseOCRPostprocess.js",
+  "KnowledgeBaseResearchCore.js",
   "close.png",
   "comment-manager.html",
   "definition-merge-workbench.html",

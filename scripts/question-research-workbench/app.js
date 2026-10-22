@@ -136,6 +136,7 @@
       button.type = 'button';
       button.className = `node-button${noteId === state.selectedId ? ' active' : ''}${dirty ? ' has-dirty' : ''}`;
       button.dataset.noteId = noteId;
+      button.setAttribute('aria-current', noteId === state.selectedId ? 'true' : 'false');
       const title = document.createElement('strong');
       title.textContent = node.title || '(无标题)';
       const meta = document.createElement('span');
@@ -340,6 +341,43 @@
     state.selectedId = String(button.dataset.noteId || '');
     render();
   });
+
+  dom.nodeList.addEventListener('keydown', (event) => {
+    if (event.isComposing || event.keyCode === 229) return;
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    const button = event.target.closest('[data-note-id]');
+    if (!button) return;
+    const buttons = Array.from(dom.nodeList.querySelectorAll('[data-note-id]'));
+    const idx = buttons.indexOf(button);
+    if (idx === -1 || buttons.length === 0) return;
+    event.preventDefault();
+    let nextIdx = idx;
+    if (event.key === 'ArrowDown') nextIdx = Math.min(buttons.length - 1, idx + 1);
+    else if (event.key === 'ArrowUp') nextIdx = Math.max(0, idx - 1);
+    else if (event.key === 'Home') nextIdx = 0;
+    else if (event.key === 'End') nextIdx = buttons.length - 1;
+    const nextBtn = buttons[nextIdx];
+    if (nextBtn) {
+      state.selectedId = String(nextBtn.dataset.noteId || '');
+      render();
+      const refreshed = dom.nodeList.querySelector(`[data-note-id="${CSS.escape(state.selectedId)}"]`);
+      if (refreshed) refreshed.focus();
+    }
+  });
+
+  if (dom.createTitle) {
+    dom.createTitle.addEventListener('keydown', (event) => {
+      if (event.isComposing || event.keyCode === 229) return;
+      if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+        event.preventDefault();
+        if (dom.createBody && !String(dom.createBody.value || '').trim()) {
+          dom.createBody.focus();
+        } else if (!dom.createBtn.disabled) {
+          createNode();
+        }
+      }
+    });
+  }
 
   dom.fieldsContainer.addEventListener('input', (event) => {
     const textarea = event.target.closest('.comment-editor');

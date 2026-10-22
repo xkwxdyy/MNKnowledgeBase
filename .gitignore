@@ -2,6 +2,8 @@ dist/
 .tmp/
 node_modules/
 MEMORY/
+# Local scene research includes private discussion transcripts.
+Resources/scene-workflow-design/
 # Private migration materials belong outside this public repository.
 *.mnaddon
 .env*

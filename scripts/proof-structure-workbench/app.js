@@ -623,6 +623,7 @@
     else image.replaceWith(message);
   }, true);
   document.addEventListener('keydown', event => {
+    if (event.isComposing || event.keyCode === 229) return;
     if (!dom.mediaViewer.hidden) {
       if (event.key === 'Escape') { event.preventDefault(); closeMedia(); return; }
       if (event.key === 'ArrowLeft') { event.preventDefault(); displayMedia(mediaIndex - 1); }
@@ -643,6 +644,23 @@
         const next = index < 0 ? 0 : (index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length;
         event.preventDefault();
         buttons[next].focus();
+        return;
+      }
+    }
+    if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) && event.target && event.target.closest) {
+      const outlineBtn = event.target.closest('.outline-btn');
+      if (outlineBtn && dom.outline) {
+        const items = Array.from(dom.outline.querySelectorAll('.outline-btn')).filter(el => el.getClientRects().length);
+        const idx = items.indexOf(outlineBtn);
+        if (idx !== -1 && items.length > 0) {
+          event.preventDefault();
+          let nextIdx = idx;
+          if (event.key === 'ArrowDown') nextIdx = Math.min(items.length - 1, idx + 1);
+          else if (event.key === 'ArrowUp') nextIdx = Math.max(0, idx - 1);
+          else if (event.key === 'Home') nextIdx = 0;
+          else if (event.key === 'End') nextIdx = items.length - 1;
+          if (items[nextIdx]) items[nextIdx].focus();
+        }
       }
     }
   });

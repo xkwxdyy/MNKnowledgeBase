@@ -18,7 +18,11 @@ JSB.newAddon = function(mainPath){
     runtimeRoot.global = runtimeRoot
   }
   JSB.require('KnowledgeBaseHandwritingOCR');
+  JSB.require('KnowledgeBaseDefinitionConcept');
+  JSB.require('KnowledgeBaseOCRPostprocess');
   JSB.require('utils');
+  JSB.require('KnowledgeBaseResearchCore');
+  KnowledgeBaseResearchCore.trace('addon.loaded')
   JSB.require('toolbarUsageExport');
   JSB.require('knowledgebaseWebController');
 
@@ -198,8 +202,22 @@ JSB.newAddon = function(mainPath){
      * 注意：此时可能还没有笔记本或文档打开
      */
     sceneWillConnect: function() {
+      var researchInitStage = 'observer.register'
+      KnowledgeBaseResearchCore.trace('scene.connect.started')
+      // Keep research communication available when unrelated saved-mode initialization fails.
+      try {
+        NSNotificationCenter.defaultCenter().addObserverSelectorName(self, 'onResearchCoreCommand:', 'MNKBResearchCommand')
+        KnowledgeBaseResearchCore.trace('observer.registered')
+        researchInitStage = 'runtime.connect'
+        KnowledgeBaseResearchCore.getRuntime().connect(self)
+      } catch (error) {
+        KnowledgeBaseResearchCore.trace('scene.research.failed', { initStage: researchInitStage, errorCode: String(error && error.name || 'init-error') })
+        KnowledgeBaseUtils.addErrorLog(error, 'sceneWillConnect.research')
+      }
+      researchInitStage = 'config.init'
       try {
         KnowledgeBaseConfig.init(mainPath)
+        researchInitStage = 'legacy.roots'
         self.preExcerptRootNote = resolveAvailableNote(ROOT_NOTE_IDS.preExcerpt)
         self.classInputRootNote = resolveAvailableNote(ROOT_NOTE_IDS.classInput)
         self.readingAutoRootNote = resolveAvailableNote(ROOT_NOTE_IDS.readingAuto)
@@ -218,6 +236,7 @@ JSB.newAddon = function(mainPath){
 
         // 注册插件通信观察者
         MNUtil.addObserver(self, 'onAddonBroadcast:', 'AddonBroadcast')
+        researchInitStage = 'legacy.observers'
         // MNUtil.addObserver(self, 'onOpenKnowledgeBaseSearch:', 'openKnowledgeBaseSearch')
 
         // 注册文本编辑生命周期观察者（用于检测新卡片创建）
@@ -261,7 +280,9 @@ JSB.newAddon = function(mainPath){
             }
           }
         }
+        KnowledgeBaseResearchCore.trace('scene.connect.ready')
       } catch (error) {
+        KnowledgeBaseResearchCore.trace('scene.legacy.failed', { initStage: researchInitStage, errorCode: String(error && error.name || 'init-error') })
         KnowledgeBaseUtils.addErrorLog(error, "sceneWillConnect")
       }
     },
@@ -275,10 +296,23 @@ JSB.newAddon = function(mainPath){
      * - 释放占用的资源
      */
     sceneDidDisconnect: function() {
+      // Unregister even when Core or legacy cleanup cannot finish.
+      try {
+        NSNotificationCenter.defaultCenter().removeObserverName(self, 'MNKBResearchCommand')
+        KnowledgeBaseResearchCore.trace('observer.removed')
+      } catch (error) {
+        KnowledgeBaseResearchCore.trace('observer.remove-failed', { errorCode: 'observer-remove-failed' })
+      }
+      try {
+        if (typeof KnowledgeBaseResearchCore !== 'undefined') KnowledgeBaseResearchCore.getRuntime().disconnect(self)
+      } catch (error) {
+        KnowledgeBaseResearchCore.trace('scene.research.disconnect-failed', { errorCode: String(error && error.name || 'disconnect-error') })
+      }
       MNUtil.undoGrouping(()=>{
         try {
           MNUtil.removeObservers(self, [
             'AddonBroadcast',
+            'MNKBResearchCommand',
             'ProcessNewExcerpt',
             'UITextViewTextDidBeginEditingNotification',
             'UITextViewTextDidEndEditingNotification',
@@ -339,6 +373,9 @@ JSB.newAddon = function(mainPath){
      * @param {String} notebookid 笔记本的唯一标识符
      */
     notebookWillClose: function(notebookid) {
+      if (typeof KnowledgeBaseResearchCore !== 'undefined') {
+        KnowledgeBaseResearchCore.getRuntime().close(self, notebookid)
+      }
       JSB.log('MNLOG Close Notebook: %@',notebookid);
     },
     
@@ -445,6 +482,9 @@ JSB.newAddon = function(mainPath){
         if (self.window !== MNUtil.currentWindow) {
           return;
         }
+        // Research keeps manually created cards in place; saved Inbox/classification flags stay intact.
+        if (typeof KnowledgeBaseResearchCore !== 'undefined' &&
+            KnowledgeBaseResearchCore.getRuntime().isSceneActive(self)) return
 
         // 2. 检查是否是新卡片编辑结束
         if (!self.isCreatingNewNote || !self.newNoteCreatedFromMindMap) {
@@ -484,6 +524,14 @@ JSB.newAddon = function(mainPath){
      * @param {{userInfo:{noteid:String}}} sender
      * @returns
      */
+    onResearchCoreCommand: async function(sender) {
+      try {
+        await KnowledgeBaseResearchCore.handleNotification(self, sender)
+      } catch (error) {
+        KnowledgeBaseUtils.addErrorLog(error, 'onResearchCoreCommand')
+      }
+    },
+
     onProcessNewExcerpt: async function (sender) {
       /**
        * 1. 自动移动到预备知识库
@@ -491,6 +539,7 @@ JSB.newAddon = function(mainPath){
        */
       if (typeof MNUtil === 'undefined') return
       if (self.window !== MNUtil.currentWindow) return;
+      let definitionConceptTask = null
       try {
         const startTime = Date.now();
         const noteId = sender.userInfo.noteid
@@ -498,6 +547,18 @@ JSB.newAddon = function(mainPath){
         if (!note) return
         if (isKnowledgeBaseExtendNote(note)) {
           return
+        }
+
+        // Research owns this event before any saved legacy mode can process it.
+        if (typeof KnowledgeBaseResearchCore !== 'undefined' &&
+            KnowledgeBaseResearchCore.getRuntime().isSceneActive(self)) {
+          await KnowledgeBaseResearchCore.getRuntime().processExcerpt(self, note)
+          return
+        }
+
+        if (self.shouldSkipReadingOCR(note) &&
+            typeof KnowledgeBaseDefinitionConcept !== 'undefined') {
+          definitionConceptTask = KnowledgeBaseDefinitionConcept.getRuntime().begin(note)
         }
 
         if (KnowledgeBaseConfig.config.readingAutoClassifyMode || KnowledgeBaseConfig.config.readingFollowMode) {
@@ -527,7 +588,7 @@ JSB.newAddon = function(mainPath){
           //   preExcerptMode: self.preExcerptMode
           // })
 
-          let OCRResult = await KnowledgeBaseNetwork.OCRToTitle(note, excerptOCRMode, self.preExcerptMode)
+          let OCRResult = definitionConceptTask ? false : await KnowledgeBaseNetwork.OCRToTitle(note, excerptOCRMode, self.preExcerptMode)
 
           if (directOCRTagOnly) {
             const processedNote = self.processDirectOCRTaggedExcerptTitleOnly(note, {
@@ -632,6 +693,10 @@ JSB.newAddon = function(mainPath){
         // })
       } catch (error) {
         KnowledgeBaseUtils.addErrorLog(error, "onProcessNewExcerpt")
+      } finally {
+        if (definitionConceptTask) {
+          KnowledgeBaseDefinitionConcept.getRuntime().finish(definitionConceptTask)
+        }
       }
     },
 
@@ -2550,7 +2615,7 @@ JSB.newAddon = function(mainPath){
       'all',
       options,
     )
-    if (result) {
+    if (result && !(options && options.skipIndex === true)) {
       IntermediateKnowledgeIndexer.addToIncrementalIndex(note)
     }
     return result
@@ -2561,6 +2626,9 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.syncConvertedIntermediateIndexIfNeeded = function(originalNote, processedNote, options = {}) {
+    if (typeof KnowledgeBaseDefinitionConcept !== 'undefined') {
+      KnowledgeBaseDefinitionConcept.getRuntime().retarget(originalNote, processedNote)
+    }
     if (!originalNote || !processedNote || !originalNote.noteId || !processedNote.noteId) return
     const originalId = String(originalNote.noteId)
     const processedId = String(processedNote.noteId)
@@ -10611,9 +10679,10 @@ JSB.newAddon = function(mainPath){
                     const prefixes = [
                       "思路：",   // idea
                       "方法：",   // method
-                      "CHECK",   // check (无冒号)
-                      "SKETCH",  // sketch (无冒号)
-                      "SKETCH: " // sketch 可能有冒号+空格的情况
+                      "CHECK: ",  // check 带冒号+空格
+                      "CHECK",    // check (无冒号)
+                      "SKETCH: ", // sketch 可能有冒号+空格的情况
+                      "SKETCH"    // sketch (无冒号)
                     ];
                     prefixes.forEach(prefix => {
                       if (pureContent.startsWith(prefix)) {
@@ -11240,8 +11309,8 @@ JSB.newAddon = function(mainPath){
         return false
       }
 
-      self.currentManagedNote = note
-      self.currentProofStructureContext = {
+      this.currentManagedNote = note
+      this.currentProofStructureContext = {
         noteId: payload.noteId,
         fieldName: payload.field.name,
       }
@@ -11799,8 +11868,13 @@ JSB.newAddon = function(mainPath){
       hash = Math.imul(hash, 16777619)
     }
     const seen = new Set()
+    let exceededLimit = false
     const walk = note => {
-      if (!note || !note.noteId || seen.has(String(note.noteId)) || seen.size >= 500) return
+      if (!note || !note.noteId || seen.has(String(note.noteId))) return
+      if (seen.size >= 500) {
+        exceededLimit = true
+        return
+      }
       const noteId = String(note.noteId)
       seen.add(noteId)
       feed(this.getCommentRevisionForManager(note))
@@ -11812,7 +11886,7 @@ JSB.newAddon = function(mainPath){
     }
     walk(sourceDefinition)
     walk(targetDefinition)
-    return `definition-merge:${seen.size}:${(hash >>> 0).toString(16)}`
+    return exceededLimit ? "" : `definition-merge:${seen.size}:${(hash >>> 0).toString(16)}`
   }
 
   MNKnowledgeBaseClass.prototype.getDefinitionMergeClassificationTitle = function(note) {
@@ -11918,10 +11992,17 @@ JSB.newAddon = function(mainPath){
       }
       return false
     }
+    const sourceIsDirectChild = !!(sourceDefinition && sourceDefinition.parentNote && targetDefinition &&
+      String(sourceDefinition.parentNote.noteId) === String(targetDefinition.noteId))
+    const targetIsAncestor = isAncestor(targetDefinition, sourceDefinition)
     if (errors.length === 0 &&
-      (isAncestor(sourceDefinition, targetDefinition) || isAncestor(targetDefinition, sourceDefinition))) {
-      errors.push("两张定义卡存在祖先关系，不能合并")
+      (isAncestor(sourceDefinition, targetDefinition) || (targetIsAncestor && !sourceIsDirectChild))) {
+      errors.push("两张定义卡存在祖先关系，仅支持子定义并入直接父定义")
     }
+    const revision = errors.length === 0
+      ? this.getDefinitionMergeWorkbenchRevision(sourceDefinition, targetDefinition)
+      : ""
+    if (errors.length === 0 && !revision) errors.push("合并范围超过 500 张卡片，请缩小范围后重试")
 
     const safeChildren = note => {
       try { return note && Array.isArray(note.childNotes) ? note.childNotes.slice() : [] } catch (_) { return [] }
@@ -11971,9 +12052,9 @@ JSB.newAddon = function(mainPath){
       } : null,
       sourceNodes,
       targetNodes,
-      revision: errors.length === 0
-        ? this.getDefinitionMergeWorkbenchRevision(sourceDefinition, targetDefinition)
-        : "",
+      revision,
+      canSwap: errors.length === 0 && !targetIsAncestor,
+      swapDisabledReason: targetIsAncestor ? "子定义只能并入直接父定义，不能交换合并方向" : "",
       canExecute: errors.length === 0,
       errors,
     }
@@ -12054,6 +12135,18 @@ JSB.newAddon = function(mainPath){
       }
       KnowledgeBaseTemplate.linkParentNote(child, true, false)
       changedNoteIds.add(String(child.noteId))
+    }
+    const mergeNoteOrThrow = (target, source, options) => {
+      safeChildren(source).forEach(child => {
+        const movedChild = moveChildOrThrow(target, child)
+        refreshAndRelinkMovedChild(movedChild)
+      })
+      // Counterpart links would become self-links when the source is absorbed.
+      KnowledgeBaseTemplate.removeLinksToNoteInField(source, "相关链接", String(target.noteId))
+      KnowledgeBaseTemplate.removeLinksToNoteInField(target, "相关链接", String(source.noteId))
+      const result = KnowledgeBaseTemplate.renewKnowledgeNotesInTransaction(target, source, options)
+      if (result && result.success === false) throw new Error(result.error || "卡片合并失败")
+      KnowledgeBaseTemplate.removeLinksToNoteInField(target, "相关链接", String(target.noteId))
     }
 
     const sourceOperations = []
@@ -12137,11 +12230,14 @@ JSB.newAddon = function(mainPath){
             if (!targetKnowledge || !targetKnowledge.noteId) {
               throw new Error(`合并失败：未找到目标知识点 ${knowledgeMerge.targetKnowledgeId}`)
             }
-            KnowledgeBaseTemplate.renewKnowledgeNotesInTransaction(targetKnowledge, child, {
+            KnowledgeBaseTemplate.removeLinksToNoteInField(child, "相关链接", String(sourceClassification.noteId))
+            mergeNoteOrThrow(targetKnowledge, child, {
               focusAfterMerge: false,
+              mergeRelatedLinks: true,
               showHUD: false,
               refreshTarget: false,
             })
+            KnowledgeBaseTemplate.removeDuplicateLinksInField(targetKnowledge, "相关链接", { includeMarkdown: true })
             changedNoteIds.add(String(targetKnowledge.noteId))
             deletedNoteIds.add(String(child.noteId))
             mergedKnowledgeCount += 1
@@ -12151,7 +12247,7 @@ JSB.newAddon = function(mainPath){
           refreshAndRelinkMovedChild(movedChild)
           if (KnowledgeBaseTemplate.getNoteType(movedChild) !== "归类") movedKnowledgeCount += 1
         })
-        KnowledgeBaseTemplate.renewKnowledgeNotesInTransaction(targetClassification, sourceClassification, {
+        mergeNoteOrThrow(targetClassification, sourceClassification, {
           removeTitle: true,
           focusAfterMerge: false,
           mergeRelatedLinks: true,
@@ -12179,7 +12275,7 @@ JSB.newAddon = function(mainPath){
       structuralLinkIds.forEach(noteId => {
         KnowledgeBaseTemplate.removeLinksToNoteInField(sourceDefinition, "相关链接", noteId)
       })
-      KnowledgeBaseTemplate.renewKnowledgeNotesInTransaction(targetDefinition, sourceDefinition, {
+      mergeNoteOrThrow(targetDefinition, sourceDefinition, {
         removeTitle: true,
         focusAfterMerge: false,
         mergeRelatedLinks: true,

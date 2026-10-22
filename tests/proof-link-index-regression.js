@@ -35,6 +35,7 @@ const context = {
   Math,
   KnowledgeBaseUtils: {
     log() {},
+    emitRuntimeLog() {},
     addErrorLog(error) {
       throw error;
     },
@@ -92,6 +93,7 @@ const methods = [
   extractStaticMethod('truncateSearchEvidenceText'),
   extractStaticMethod('buildSearchEvidence'),
   extractStaticMethod('buildIndexEntry'),
+  extractStaticMethod('logIncrementalIndexFailure'),
   extractStaticMethod('upsertIncrementalIndexEntry'),
 ];
 

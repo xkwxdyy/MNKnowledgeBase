@@ -124,6 +124,7 @@
 
   function validatePlan(model, plan) {
     const errors = [];
+    if (model && model.canExecute === false) errors.push('当前卡片不能执行合并，请刷新');
     const sourceDefinitionId = nodeId(model && model.sourceDefinition);
     const targetDefinitionId = nodeId(model && model.targetDefinition);
     if (!sourceDefinitionId || !targetDefinitionId) errors.push('缺少来源或目标定义卡');

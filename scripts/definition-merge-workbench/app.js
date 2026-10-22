@@ -9,6 +9,7 @@
     selectedSourceId: '',
     selectedKnowledgeSourceId: '',
     pendingRequestId: '',
+    needsRefresh: false,
     completed: false,
     ignoreClickUntil: 0,
     expanded: new Set(),
@@ -347,10 +348,16 @@
 
   function updateControls() {
     var busy = !!state.pendingRequestId;
-    dom.previewBtn.disabled = busy || state.completed || !state.model || state.model.canExecute === false;
-    dom.executeBtn.disabled = busy || state.completed;
-    dom.swapBtn.disabled = busy || state.completed || !state.model;
+    var invalid = !state.model || state.model.canExecute === false || state.needsRefresh;
+    dom.previewBtn.disabled = busy || state.completed || invalid;
+    dom.executeBtn.disabled = busy || state.completed || invalid;
+    dom.swapBtn.disabled = busy || state.completed || invalid || state.model.canSwap === false;
+    dom.swapBtn.title = state.model && state.model.canSwap === false
+      ? (state.model.swapDisabledReason || '当前卡片不能交换合并方向')
+      : '交换来源与目标';
     dom.refreshBtn.disabled = busy || state.completed || !state.model;
+    dom.closeBtn.disabled = busy;
+    dom.completionCloseBtn.disabled = busy;
     dom.modalBackBtn.disabled = busy;
     dom.closeModalBtn.disabled = busy;
     dom.executeBtn.innerHTML = busy
@@ -471,7 +478,6 @@
     state.selectedSourceId = '';
     renderAll();
     var target = targetNode(targetId);
-    showToast('已配对：合并到「' + text(target.shortTitle || target.title) + '」', 'ok');
   }
 
   function unmapSource(sourceId) {
@@ -513,7 +519,6 @@
     state.knowledgeMappings.set(sourceId, targetId);
     state.selectedKnowledgeSourceId = '';
     renderAll();
-    showToast('已配对：将合并重复知识点', 'ok');
   }
 
   function unmapKnowledge(sourceId) {
@@ -564,6 +569,23 @@
   });
 
   function treeKeydown(event) {
+    if (event.isComposing || event.keyCode === 229) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+      var treeEl = event.currentTarget;
+      if (!treeEl) return;
+      var items = Array.from(treeEl.querySelectorAll('[tabindex="0"]'));
+      var currentItem = event.target.closest('[tabindex="0"]');
+      var idx = items.indexOf(currentItem);
+      if (idx === -1 || items.length === 0) return;
+      event.preventDefault();
+      var nextIdx = idx;
+      if (event.key === 'ArrowDown') nextIdx = Math.min(items.length - 1, idx + 1);
+      else if (event.key === 'ArrowUp') nextIdx = Math.max(0, idx - 1);
+      else if (event.key === 'Home') nextIdx = 0;
+      else if (event.key === 'End') nextIdx = items.length - 1;
+      if (items[nextIdx]) items[nextIdx].focus();
+      return;
+    }
     if (event.key !== 'Enter' && event.key !== ' ') return;
     if (event.target.closest('button')) return;
     var sourceEl = event.target.closest('[data-source-id]');
@@ -711,7 +733,7 @@
 
   /* ── preview & execute ── */
   function openPreview() {
-    if (!state.model || state.pendingRequestId || state.completed) return;
+    if (!state.model || state.model.canExecute === false || state.needsRefresh || state.pendingRequestId || state.completed) return;
     var plan = getPlan();
     var validation = Core.validatePlan(state.model, plan);
     if (!validation.valid) {
@@ -747,17 +769,21 @@
       (plan.keepAliases ? '另一侧词保留为别名' : '不保留另一侧词') + '</span></div>' +
       '<div class="preview-rule"><strong>迁移</strong><span>仅更新换父知识点前缀 · 重建结构链接 · 保留手写链接</span></div>';
     dom.previewModal.hidden = false;
+    dom.workbenchView.inert = true;
+    dom.workbenchView.setAttribute('aria-hidden', 'true');
     dom.closeModalBtn.focus();
   }
 
   function closePreview() {
     if (state.pendingRequestId) return;
     dom.previewModal.hidden = true;
+    dom.workbenchView.inert = false;
+    dom.workbenchView.removeAttribute('aria-hidden');
     dom.previewBtn.focus();
   }
 
   function executePlan() {
-    if (!state.model || state.pendingRequestId || state.completed) return;
+    if (!state.model || state.model.canExecute === false || state.needsRefresh || state.pendingRequestId || state.completed) return;
     var plan = getPlan();
     var validation = Core.validatePlan(state.model, plan);
     if (!validation.valid) {
@@ -777,18 +803,24 @@
 
   /* ── native entry points (names & semantics preserved) ── */
   function loadDefinitionMergeWorkbenchData(payload) {
+    if (state.pendingRequestId) return false;
+    global.clearTimeout(toastTimer);
+    dom.toast.hidden = true;
     state.model = payload || null;
     state.mappings = Core.createDefaultMappings(state.model);
     state.knowledgeMappings = new Map();
     state.selectedSourceId = '';
     state.selectedKnowledgeSourceId = '';
     state.pendingRequestId = '';
+    state.needsRefresh = false;
     state.completed = false;
     state.lastPlan = null;
     state.expanded = new Set();
     cleanupDrag();
     dom.loadingView.hidden = true;
     dom.workbenchView.hidden = false;
+    dom.workbenchView.inert = false;
+    dom.workbenchView.removeAttribute('aria-hidden');
     dom.completionView.hidden = true;
     dom.previewModal.hidden = true;
     var sourceDefinition = state.model && state.model.sourceDefinition ? state.model.sourceDefinition : {};
@@ -816,9 +848,11 @@
 
   function completeDefinitionMergeAction(payload) {
     var result = payload || {};
-    if (state.pendingRequestId && result.requestId && result.requestId !== state.pendingRequestId) return false;
+    if (!state.pendingRequestId || result.requestId !== state.pendingRequestId) return false;
     state.pendingRequestId = '';
     if (result.success === true) {
+      global.clearTimeout(toastTimer);
+      dom.toast.hidden = true;
       state.completed = true;
       dom.previewModal.hidden = true;
       var plan = state.lastPlan;
@@ -841,10 +875,9 @@
         movedTreeCount + ' 棵整树迁移 · ' + movedKnowledgeCount +
         ' 个知识点换父 · ' + mergedKnowledgeCount + ' 个重复知识点已合并 · ' + deletedCount + ' 张来源卡已删除。';
       dom.completionView.hidden = false;
-      dom.completionCloseBtn.focus();
       setStatus('合并完成', 'ok');
-      showToast('定义卡及归类树已合并', 'ok');
     } else {
+      state.needsRefresh = result.stale === true || result.requiresUndo === true;
       var message = result.requiresUndo
         ? '合并中断，请在 MarginNote 撤销一次'
         : (result.message || result.error || '合并失败，请刷新后重试');
@@ -852,6 +885,7 @@
       showToast(message, 'error');
     }
     updateControls();
+    if (result.success === true) dom.completionCloseBtn.focus();
     return true;
   }
 
@@ -866,6 +900,7 @@
 
   function requestRefresh(swap) {
     if (!state.model || state.pendingRequestId || state.completed) return;
+    if (swap && (state.model.canSwap === false || state.needsRefresh || state.model.canExecute === false)) return;
     var actionKey = swap ? 'swap' : 'refresh';
     var button = swap ? dom.swapBtn : dom.refreshBtn;
     var plan = getPlan();
@@ -895,7 +930,11 @@
   }
 
   /* ── global wiring ── */
-  dom.cancelSelectionBtn.addEventListener('click', function() { state.selectedSourceId = ''; renderAll(); });
+  dom.cancelSelectionBtn.addEventListener('click', function() {
+    state.selectedSourceId = '';
+    state.selectedKnowledgeSourceId = '';
+    renderAll();
+  });
   dom.previewBtn.addEventListener('click', openPreview);
   dom.closeModalBtn.addEventListener('click', closePreview);
   dom.modalBackBtn.addEventListener('click', closePreview);
@@ -911,9 +950,53 @@
     if (event.target === dom.previewModal) closePreview();
   });
   document.addEventListener('keydown', function(event) {
+    if (event.isComposing || event.keyCode === 229) return;
+    if (event.key === 'Tab') {
+      var activeLayer = !dom.previewModal.hidden ? dom.previewModal : (!dom.completionView.hidden ? dom.completionView : null);
+      if (!activeLayer) return;
+      var focusable = Array.from(activeLayer.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(function(el) {
+        return !el.hidden && el.offsetParent !== null;
+      });
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!activeLayer.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      }
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      if (!dom.previewModal.hidden && !dom.executeBtn.disabled) {
+        event.preventDefault();
+        executePlan();
+      } else if (dom.previewModal.hidden && !dom.workbenchView.hidden && !dom.previewBtn.disabled) {
+        event.preventDefault();
+        openPreview();
+      }
+      return;
+    }
     if (event.key !== 'Escape') return;
-    if (!dom.previewModal.hidden) closePreview();
-    else if (state.selectedSourceId) { state.selectedSourceId = ''; renderAll(); }
+    if (!dom.previewModal.hidden) {
+      event.preventDefault();
+      closePreview();
+    } else if (state.selectedKnowledgeSourceId || state.selectedSourceId) {
+      event.preventDefault();
+      state.selectedKnowledgeSourceId = '';
+      state.selectedSourceId = '';
+      renderAll();
+    } else if (state.confirmAction) {
+      event.preventDefault();
+      state.confirmAction = '';
+      dom.swapBtn.classList.remove('is-confirming');
+      dom.refreshBtn.classList.remove('is-confirming');
+    }
   });
 
   dom.sourceTree.addEventListener('scroll', scheduleConnectors, { passive: true });

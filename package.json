@@ -1,7 +1,7 @@
 {
   "name": "mnknowledgebase",
   "private": true,
-  "version": "1.87.0",
+  "version": "1.87.7",
   "description": "Standalone local tooling for the MN KnowledgeBase addon",
   "engines": {
     "node": "24.x"

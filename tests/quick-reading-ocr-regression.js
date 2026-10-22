@@ -26,6 +26,8 @@ const context = {
   Number,
   Object,
   Promise,
+  KnowledgeBaseDefinitionConcept: require('../KnowledgeBaseDefinitionConcept'),
+  MNUtil: { currentNotebookId: 'study' },
   RegExp,
   Set,
   String,
@@ -242,6 +244,7 @@ async function captureQuickReadingOCRRequest(needTranslation) {
     },
   };
   context.MNUtil = {
+    delay() { return new Promise(() => {}); },
     MD5(value) {
       return `md5-${String(value).length}`;
     },
@@ -296,6 +299,16 @@ async function captureQuickReadingOCRRequest(needTranslation) {
   assert.strictEqual(normalVisionResult, '普通识别成功');
   assert.strictEqual(normalOCRRequestCalls, 1, 'ordinary OCR must retain the existing MNOCR request path');
   assert.strictEqual(timedOCRRequestCalls, 0, 'ordinary OCR must not use the quick-reading timed request path');
+
+  delete context.ocrNetwork.sendRequest;
+  const currentMNOCRVisionResult = await originalChatGPTVision(
+    'image-data',
+    'vision-model',
+    'prompt',
+    false,
+  );
+  assert.strictEqual(currentMNOCRVisionResult, '限时识别成功');
+  assert.strictEqual(timedOCRRequestCalls, 1, 'MNOCR without its legacy sender must use MNUtils JSON transport even without a timeout option');
 
   context.MNConnection.sendRequest = async () => ({ error: 'The request timed out.' });
   const timeoutDiagnostic = {};

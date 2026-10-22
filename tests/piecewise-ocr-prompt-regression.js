@@ -34,6 +34,12 @@ function assertPiecewiseRuleContract() {
   assert.match(rule, /cases/);
   assert.match(rule, /\\\\begin\{cases\}/);
   assert.match(rule, /\\\\begin\{array\}/);
+  assert.match(rule, /只有原图实际按不同条件给出对应结果/);
+  assert.match(rule, /matrix、array、aligned.*本身不能作为分段依据/);
+  assert.match(rule, /矩阵、行列式、向量、多行对齐等式或方程组保留原有结构/);
+  assert.match(rule, /该要求不适用于矩阵或普通对齐公式/);
+  assert.match(rule, /没有给出的条件或“否则”分支不得补造/);
+  assert.doesNotMatch(rule, /当图片出现左大括号、cases、array、aligned.*必须改写/);
 }
 
 function assertPromptCoverage() {

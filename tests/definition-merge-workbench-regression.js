@@ -178,181 +178,70 @@ assert(menu.includes('定义卡合并工作台（当前卡与父卡）'));
   'scripts/definition-merge-workbench/app.js',
 ].forEach((file) => assert(batchBuild.includes(file), `batch build missing ${file}`));
 
-const applyStart = main.indexOf('  MNKnowledgeBaseClass.prototype.applyDefinitionMergePlan = async function');
-const applyEnd = main.indexOf('\n\n  MNKnowledgeBaseClass.prototype.openDefinitionMergeWorkbench', applyStart);
-assert.notStrictEqual(applyStart, -1, 'cannot locate Native definition merge transaction');
-assert.notStrictEqual(applyEnd, -1, 'cannot locate end of Native definition merge transaction');
-
-function createNativeTransactionRuntime(options = {}) {
-  const notes = new Map();
-  let activeFailMoveId = '';
-  const calls = {
-    changedTitles: [],
-    linkedParents: [],
-    mergeOptions: [],
-    undoGroups: 0,
-  };
-  const createNote = (noteId, type, title) => {
-    const note = {
-      noteId,
-      type,
-      noteTitle: title,
-      title,
-      notebookId: 'NOTEBOOK-1',
-      noteURL: `marginnote4app://note/${noteId}`,
-      comments: [],
-      childNotes: [],
-      parentNote: null,
-      deleted: false,
-      addChild(child) {
-        if (activeFailMoveId === child.noteId) return this;
-        if (child.parentNote) {
-          child.parentNote.childNotes = child.parentNote.childNotes.filter((item) => item.noteId !== child.noteId);
-        }
-        child.parentNote = this;
-        if (!this.childNotes.some((item) => item.noteId === child.noteId)) this.childNotes.push(child);
-        return this;
-      },
-      refresh() {},
-      focusInMindMap() {},
-    };
-    notes.set(noteId, note);
-    return note;
-  };
-  const sourceDefinition = createNote('DEF-A', '定义', '定义 A');
-  const targetDefinition = createNote('DEF-B', '定义', '定义 B');
-  const sourceClassification = createNote('SRC-1', '归类', '来源归类');
-  const targetClassification = createNote('TGT-1', '归类', '目标归类');
-  const knowledge = createNote('KN-1', '命题', '知识点');
-  const targetKnowledge = createNote('KN-TARGET-1', '命题', '目标知识点');
-  sourceDefinition.addChild(sourceClassification);
-  sourceClassification.addChild(knowledge);
-  targetDefinition.addChild(targetClassification);
-  targetClassification.addChild(targetKnowledge);
-  activeFailMoveId = options.failMoveId || '';
-
-  const sandbox = {
-    Map,
-    Set,
-    Array,
-    Object,
-    String,
-    Number,
-    Boolean,
-    RegExp,
-    Math,
-    Promise,
-    console,
-    MNNote: {
-      new(noteId) {
-        const note = notes.get(String(noteId));
-        return note && !note.deleted ? note : null;
-      },
-    },
-    MNUtil: {
-      undoGrouping(block) {
-        calls.undoGroups += 1;
-        block();
-      },
-    },
-    KnowledgeBaseUtils: {
-      addErrorLog() {},
-    },
+// Exercise the actual Toolbar callback with the production data provider and opener.
+// Native rendering and note storage are doubles; preflight is never replaced.
+async function runToolbarEntryRegression() {
+  const sourceDefinition = { noteId: 'DEF-A', type: '定义', noteTitle: '来源定义', notebookId: 'BOOK', comments: [], childNotes: [] };
+  const targetDefinition = { noteId: 'DEF-B', type: '定义', noteTitle: '父定义', notebookId: 'BOOK', comments: [], childNotes: [sourceDefinition] };
+  sourceDefinition.parentNote = targetDefinition;
+  const notes = new Map([[sourceDefinition.noteId, sourceDefinition], [targetDefinition.noteId, targetDefinition]]);
+  const calls = { hud: [], loads: [], broadcasts: [] };
+  let callback;
+  let pendingOpen;
+  const nativeSandbox = {
+    MNKnowledgeBaseClass: function() {},
+    MNNote: { new: id => notes.get(String(id)), getFocusNote: () => sourceDefinition },
+    MNUtil: { showHUD: message => calls.hud.push(message), delay: async () => {} },
     KnowledgeBaseTemplate: {
-      getNoteType(note) { return note && note.type; },
-      changeTitle(note) { calls.changedTitles.push(note.noteId); },
-      linkParentNote(note) { calls.linkedParents.push(note.noteId); },
-      mergeTitleLinkWords() {},
-      removeLinksToNoteInField() {},
-      removeDuplicateLinksInField() {},
-      renewKnowledgeNotesInTransaction(target, source, mergeOptions) {
-        calls.mergeOptions.push({
-          targetId: target.noteId,
-          sourceId: source.noteId,
-          options: mergeOptions,
-        });
-        source.deleted = true;
-        if (source.parentNote) {
-          source.parentNote.childNotes = source.parentNote.childNotes.filter((item) => item.noteId !== source.noteId);
-        }
-      },
+      getNoteType: note => note && note.type,
+      parseNoteTitle: note => ({ type: note.type, content: note.noteTitle }),
+    },
+    KnowledgeBaseUtils: { checkCommentWebViewController() {}, log() {}, addErrorLog() {} },
+    _xdyy_normalizeMNNoteSafe: note => note,
+    registerCustomAction(name, handler) { callback = handler; },
+    _xdyy_openKnowledgeBaseDefinitionMergeWorkbench(sourceId, targetId) {
+      calls.broadcasts.push([sourceId, targetId]);
+      pendingOpen = instance.openDefinitionMergeWorkbench(sourceId, targetId);
+      return true;
     },
   };
-  sandbox.global = sandbox;
-  sandbox.globalThis = sandbox;
-  vm.createContext(sandbox);
-  vm.runInContext(
-    `function MNKnowledgeBaseClass() {}\n${main.slice(applyStart, applyEnd)}\n` +
-      'this.applyDefinitionMergePlan = MNKnowledgeBaseClass.prototype.applyDefinitionMergePlan;',
-    sandbox,
-    { filename: 'definition-merge-native-transaction.js' },
-  );
-  const instance = {
-    prepareDefinitionMergeWorkbenchData() {
-      return {
-        canExecute: true,
-        revision: 'native-revision-1',
-        sourceNodes: [{ noteId: sourceClassification.noteId }],
-        targetNodes: [{ noteId: targetClassification.noteId }],
-      };
+  nativeSandbox.global = nativeSandbox;
+  vm.createContext(nativeSandbox);
+  const names = ['getCommentRevisionForManager', 'getDefinitionMergeWorkbenchRevision',
+    'getDefinitionMergeClassificationTitle', 'prepareDefinitionMergeClassificationNode',
+    'prepareDefinitionMergeWorkbenchData', 'openDefinitionMergeWorkbench'];
+  const methods = names.map(name => {
+    const start = main.indexOf(`  MNKnowledgeBaseClass.prototype.${name} = `);
+    const end = main.indexOf('\n  MNKnowledgeBaseClass.prototype.', start + 1);
+    assert(start >= 0 && end > start, `missing production method ${name}`);
+    return main.slice(start, end);
+  }).join('\n');
+  vm.runInContext(methods, nativeSandbox);
+  const instance = new nativeSandbox.MNKnowledgeBaseClass();
+  const webController = {
+    currentHTMLType: 'comment-manager', webViewLoaded: false,
+    canReplaceCommentSurface: async () => true,
+    loadDefinitionMergeWorkbenchHTML() { this.currentHTMLType = 'definition-merge-workbench'; this.webViewLoaded = true; },
+    show: async () => {},
+    async loadDefinitionMergeWorkbenchData(a, b) {
+      const payload = instance.prepareDefinitionMergeWorkbenchData(a, b);
+      calls.loads.push({ a, b, payload });
+      return { success: payload.canExecute };
     },
-    refreshSearchCardIndex() { return Promise.resolve({ success: true }); },
   };
-  return {
-    calls,
-    instance,
-    knowledge,
-    sourceClassification,
-    sourceDefinition,
-    targetClassification,
-    targetKnowledge,
-    targetDefinition,
-    apply: sandbox.applyDefinitionMergePlan,
-  };
+  nativeSandbox.KnowledgeBaseUtils.commentWebViewController = webController;
+  vm.runInContext(trigger, nativeSandbox);
+  await callback({ focusNote: sourceDefinition });
+  assert.equal(await pendingOpen, true, 'the actual current-card/parent-card entry must open');
+  assert.deepStrictEqual(calls.broadcasts, [['DEF-A', 'DEF-B']]);
+  assert.equal(calls.loads[0].payload.canExecute, true);
+  assert.equal(calls.loads[0].payload.canSwap, false);
+  assert.deepStrictEqual(calls.hud, [], 'opening a valid workbench must be silent');
+  assert.equal(instance.currentManagedNote.noteId, 'DEF-B');
+  assert.equal(await instance.openDefinitionMergeWorkbench('DEF-B', 'DEF-A'), false, 'reverse ancestry must remain blocked');
+  assert.equal(calls.loads.length, 1, 'invalid direction must not replace the valid surface');
 }
 
-async function runNativeTransactionRegression() {
-  const plan = {
-    baseRevision: 'native-revision-1',
-    sourceDefinitionId: 'DEF-A',
-    targetDefinitionId: 'DEF-B',
-    titleMode: 'target',
-    keepAliases: true,
-    prefixMode: 'knowledge',
-    mappings: [{ sourceId: 'SRC-1', targetId: 'TGT-1' }],
-    knowledgeMappings: [{ sourceId: 'KN-1', targetId: 'KN-TARGET-1' }],
-  };
-
-  const successRuntime = createNativeTransactionRuntime();
-  const success = await successRuntime.apply.call(successRuntime.instance, { plan });
-  assert.strictEqual(success.success, true);
-  assert.strictEqual(successRuntime.calls.undoGroups, 1, 'merge must use one top-level undo group');
-  assert.strictEqual(successRuntime.knowledge.deleted, true);
-  assert.strictEqual(successRuntime.sourceClassification.deleted, true);
-  assert.strictEqual(successRuntime.sourceDefinition.deleted, true);
-  assert.deepStrictEqual(successRuntime.calls.changedTitles, []);
-  assert.strictEqual(success.mergedKnowledgeCount, 1);
-  const classificationMerge = successRuntime.calls.mergeOptions.find((item) => item.sourceId === 'SRC-1');
-  assert.strictEqual(classificationMerge.options.mergeRelatedLinks, true);
-  assert.strictEqual(
-    JSON.stringify(classificationMerge.options.skipFields),
-    JSON.stringify(['所属', '包含']),
-  );
-
-  const failedRuntime = createNativeTransactionRuntime({ failMoveId: 'KN-1' });
-  const failure = await failedRuntime.apply.call(failedRuntime.instance, {
-    plan: { ...plan, knowledgeMappings: [] },
-  });
-  assert.strictEqual(failure.success, false);
-  assert.strictEqual(failure.requiresUndo, true);
-  assert.match(failure.error, /撤销一次/);
-  assert.strictEqual(failedRuntime.sourceClassification.deleted, false, 'failed child move must not delete source classification');
-  assert.strictEqual(failedRuntime.sourceDefinition.deleted, false, 'failed child move must not delete source definition');
-}
-
-runNativeTransactionRegression().then(() => {
+runToolbarEntryRegression().then(() => {
   console.log('definition merge workbench regression: ok');
-}).catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+}).catch(error => { console.error(error); process.exitCode = 1; });
