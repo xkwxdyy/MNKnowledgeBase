@@ -46,6 +46,7 @@
     "quick-reading-ocr-regression.js",
     "quick-reading-preprocess-performance-regression.js",
     "research-core-regression.js",
+    "research-menu-refresh-regression.js",
     "research-ocr-recovery-regression.js",
     "research-mnocr-policy-regression.js",
     "runtime-logging-policy-regression.js",

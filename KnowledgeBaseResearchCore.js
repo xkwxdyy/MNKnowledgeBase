@@ -206,7 +206,7 @@ var KnowledgeBaseResearchCore = (function () {
         if (deps.assertCard) deps.assertCard(original, type)
         processed = deps.convert(original) || original
         deps.syncIndex(original, processed); retarget(original, processed)
-        result = deps.makeCard(processed, type, function () { return guard(instance, s.notebookId, lifecycle) }) || { note: processed }
+        result = deps.makeCard(processed, type, function () { return guard(instance, s.notebookId, lifecycle) }, { present: true }) || { note: processed }
         processed = result.note || processed
         retarget(original, processed)
         result = { noteId: text(processed.noteId), cardPending: !!result.pending, addedToReview: false }
@@ -324,15 +324,28 @@ var KnowledgeBaseResearchCore = (function () {
       maker.getQuickReadingMakeCardPolicy = function () { return { mode: 'normal', noteType: type || null, colorIndex: note.colorIndex } }
       return maker
     }
-    function makeWithoutReview(note, type, valid) {
+    function makeWithoutReview(note, type, valid, options) {
       var maker = cardFacade(note, type)
       var make = function (current) {
         if (valid && !valid()) throw new Error('context-changed')
         return maker.makeCard(current, false, true, { noteType: type || null, silent: true, throwOnFailure: true }) || current
       }
+      // DefinitionConcept already presents deferred cards after its outer undo group.
       if (typeof KnowledgeBaseDefinitionConcept !== 'undefined' && KnowledgeBaseDefinitionConcept.getRuntime().deferMakeCard(note, make)) return { note: note, pending: true }
-      return { note: make(note), pending: false }
+      if (!options || !options.present) return { note: make(note), pending: false }
+      // Port Toolbar makeNote's final DB refresh, result/parent refresh and focus; keep the shared card maker.
+      var processed
+      maker.runUndoGroupingWithoutGlobalDBRefresh(function () { processed = make(note) }, { feature: 'mnknowledgebase.research.makeCard', finalRefreshAfterDBChanged: true })
+      if (!valid || valid()) {
+        maker.refreshNoteLocally(processed, true)
+        var parent
+        try { parent = processed.parentNote } catch (_) {}
+        if (parent && text(parent.noteId) !== text(processed.noteId)) maker.refreshNoteLocally(parent, false)
+        processed.focusInMindMap(0.3)
+      }
+      return { note: processed, pending: false }
     }
+
     runtime = create({
       load: function () { return NSUserDefaults.standardUserDefaults().objectForKey(STORE_KEY) },
       save: function (data) { NSUserDefaults.standardUserDefaults().setObjectForKey(JSON.stringify(data), STORE_KEY) },

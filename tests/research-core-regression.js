@@ -235,8 +235,9 @@ async function tests() {
       mergeTemplateAndAutoMoveNoteContent: () => calls.push(['fields']), templateMergedCardMake: () => calls.push(['full']),
       addToReview: () => { throw Error('Review is forbidden') }, syncFinalMakeCardIndex: () => {}, shouldSuppressQuickReadingDefinitionIndexHUD: () => true,
       runUndoGroupingWithoutGlobalDBRefresh: block => block(), toNoExcerptVersion: n => n,
+      refreshNoteLocally: () => {},
     })
-    const note = { noteId: 'E', note: {}, notebookId: 'study', colorIndex: 10 }; notes.set('E', note)
+    const note = { noteId: 'E', note: {}, notebookId: 'study', colorIndex: 10, focusInMindMap() {} }; notes.set('E', note)
     vm.runInContext(fs.readFileSync(path.join(root, 'KnowledgeBaseResearchCore.js'), 'utf8'), context)
     const native = context.module.exports.getRuntime()
     const result = await native.dispatch(instance, { version: 1, requestId: 'make', command: 'makeCard', notebookId: 'study', payload: { noteId: 'E' } })
