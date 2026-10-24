@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "manual-card-actions",
+  "changes": [
+    {
+      "id": "manual-card-actions",
+      "type": "changed",
+      "zh": "点卡不自动复制标题，手动新卡不自动转归类；原工具、菜单和个人配置保持。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

@@ -499,9 +499,6 @@ JSB.newAddon = function(mainPath){
             self.processReadingModeNote(note, { source: "mindmap" })
             return
           }
-          if (KnowledgeBaseConfig.config.classificationMode) {
-            KnowledgeBaseClassUtils.createClassificationNoteAfterTextEditingInMindMap(note)
-          }
           if (self.classAutoMoveMode) {
             self.processInboxAutoMoveNote(note, { source: 'mindmap' })
             return
@@ -1811,27 +1808,7 @@ JSB.newAddon = function(mainPath){
       } catch (error) {
         KnowledgeBaseUtils.addErrorLog(error, "onPopupMenuOnNote")
       }
-      if (KnowledgeBaseConfig.config.classificationMode && sender.userInfo.note.noteId) {
-        let note = MNNote.new(sender.userInfo.note.noteId, false)
-        if (!note) { return }
-        if (KnowledgeBaseTemplate.getNoteType(note) && KnowledgeBaseTemplate.parseNoteTitle(note)) {
-          // KnowledgeBaseUtils.log("复制前的类型"+ KnowledgeBaseTemplate.getNoteType(note), "onPopupMenuOnNote")
-          switch (KnowledgeBaseTemplate.getNoteType(note)) {
-            case "归类":
-              MNUtil.copy(
-                KnowledgeBaseTemplate.parseNoteTitle(note).content || ""
-              )
-              break;
-            default:
-              MNUtil.copy(
-                KnowledgeBaseTemplate.parseNoteTitle(note).prefixContent + "｜" + KnowledgeBaseTemplate.parseNoteTitle(note).content || ""
-              )
-              break;
-          }
-          // KnowledgeBaseUtils.log("复制后的类型"+ KnowledgeBaseTemplate.getNoteType(note), "onPopupMenuOnNote")
-        }
 
-      }
     },
     /**
      * 处理来自其他插件的通信消息

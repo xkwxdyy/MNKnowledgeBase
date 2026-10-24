@@ -86,7 +86,8 @@
     "reading-history-preservation-regression.js",
     "retired-date-collection-regression.js",
     "retired-preexcerpt-regression.js",
-    "proposition-collection-target-regression.js"
+    "proposition-collection-target-regression.js",
+    "manual-card-actions-regression.js"
   ],
   "integration": [
     "definition-concept-toolbar-regression.js",
