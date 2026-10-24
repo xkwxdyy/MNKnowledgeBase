@@ -84,7 +84,8 @@
     "search-source-scope-regression.js",
     "add-template-duplicate-regression.js",
     "reading-history-preservation-regression.js",
-    "retired-date-collection-regression.js"
+    "retired-date-collection-regression.js",
+    "retired-preexcerpt-regression.js"
   ],
   "integration": [
     "definition-concept-toolbar-regression.js",

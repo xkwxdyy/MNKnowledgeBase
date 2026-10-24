@@ -244,7 +244,7 @@ JSB.newAddon = function(mainPath){
         MNUtil.addObserver(self, 'onTextDidEndEditing:', 'UITextViewTextDidEndEditingNotification')
 
         // self.toggled = false
-        self.preExcerptMode = false  // 预摘录模式
+        self.preExcerptMode = false  // Retired compatibility field
         self.classAutoMoveMode = false
         self.inboxRootMissingNotified = false
         self.inboxAutoMoveError = null
@@ -534,7 +534,7 @@ JSB.newAddon = function(mainPath){
 
     onProcessNewExcerpt: async function (sender) {
       /**
-       * 1. 自动移动到预备知识库
+       * 1. 按当前收集规则处理新摘录
        * 2. 调用 MNOCR 插件进行 OCR 到标题，方便后续索引
        */
       if (typeof MNUtil === 'undefined') return
@@ -588,7 +588,7 @@ JSB.newAddon = function(mainPath){
           //   preExcerptMode: self.preExcerptMode
           // })
 
-          let OCRResult = definitionConceptTask ? false : await KnowledgeBaseNetwork.OCRToTitle(note, excerptOCRMode, self.preExcerptMode)
+          let OCRResult = definitionConceptTask ? false : await KnowledgeBaseNetwork.OCRToTitle(note, excerptOCRMode, false)
 
           if (directOCRTagOnly) {
             const processedNote = self.processDirectOCRTaggedExcerptTitleOnly(note, {
@@ -635,31 +635,6 @@ JSB.newAddon = function(mainPath){
           })
 
           // KnowledgeBaseUtils.log("归类模式执行完成", "onProcessNewExcerpt", {
-          //   noteId: noteId,
-          //   totalDurationMs: Date.now() - startTime
-          // })
-          return
-        }
-
-        if (self.preExcerptMode && self.preExcerptRootNote) {
-          // 预摘录模式：自动移动到预备知识库
-          // KnowledgeBaseUtils.log("进入预摘录模式", "onProcessNewExcerpt", {
-          //   noteId: noteId,
-          //   elapsedMs: Date.now() - startTime
-          // })
-
-          MNUtil.undoGrouping(()=>{
-            // const preExcerptStartTime = Date.now();
-            self.preExcerptRootNote.addChild(note)
-            const processedNote = KnowledgeBaseTemplate.toNoExcerptVersion(note)
-            self.syncConvertedIntermediateIndexIfNeeded(note, processedNote)
-            // KnowledgeBaseUtils.log("预摘录模式处理完成", "onProcessNewExcerpt", {
-            //   noteId: noteId,
-            //   durationMs: Date.now() - preExcerptStartTime
-            // })
-          })
-
-          // KnowledgeBaseUtils.log("预摘录模式执行完成", "onProcessNewExcerpt", {
           //   noteId: noteId,
           //   totalDurationMs: Date.now() - startTime
           // })
@@ -2177,7 +2152,7 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.getManagedAutomationModeKeys = function() {
-    return ['excerptOCR', 'preExcerpt', 'classAutoMove', 'readingFollow', 'prefixMode']
+    return ['excerptOCR', 'classAutoMove', 'readingFollow', 'prefixMode']
   }
 
   MNKnowledgeBaseClass.prototype.getManagedAutomationModeLabel = function(modeKey) {
@@ -2199,8 +2174,6 @@ JSB.newAddon = function(mainPath){
         return Number(KnowledgeBaseConfig.config.excerptOCRMode) > 0
       case 'preProcess':
         return !!KnowledgeBaseConfig.config.preProcessMode
-      case 'preExcerpt':
-        return !!this.preExcerptMode
       case 'classAutoMove':
         return !!this.classAutoMoveMode
       case 'readingFollow':
@@ -2225,9 +2198,6 @@ JSB.newAddon = function(mainPath){
         break
       case 'preProcess':
         KnowledgeBaseConfig.config.preProcessMode = false
-        break
-      case 'preExcerpt':
-        this.preExcerptMode = false
         break
       case 'classAutoMove':
         this.classAutoMoveMode = false
@@ -2265,11 +2235,11 @@ JSB.newAddon = function(mainPath){
   MNKnowledgeBaseClass.prototype.getConflictingAutomationModeKeys = function(targetModeKey) {
     switch (targetModeKey) {
       case 'excerptOCR':
-        return ['preExcerpt', 'classAutoMove', 'readingFollow', 'prefixMode']
+        return ['classAutoMove', 'readingFollow', 'prefixMode']
       case 'preProcess':
         return ['prefixMode']
       case 'prefixMode':
-        return ['excerptOCR', 'preProcess', 'preExcerpt', 'classAutoMove', 'readingFollow']
+        return ['excerptOCR', 'preProcess', 'classAutoMove', 'readingFollow']
       default:
         return this.getManagedAutomationModeKeys().filter((modeKey) => modeKey !== targetModeKey)
     }
@@ -2385,19 +2355,9 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.togglePreExcerptModeInternal = function() {
-    const next = !this.preExcerptMode
-    if (!next) {
-      this.preExcerptMode = false
-      MNUtil.showHUD('已关闭预摘录模式', 1)
-      return
-    }
-
-    const result = this.applyAutomationConflictsBeforeEnable('preExcerpt')
-    this.preExcerptMode = true
-    KnowledgeBaseConfig.save()
-    this.showManagedAutomationModeHUD('已开启预摘录模式', result.disabledLabels, {
-      externalReadingStopped: result.externalReadingStopped,
-    })
+    // Preserve the old selector without enabling a second collection flow.
+    this.preExcerptMode = false
+    return false
   }
 
   MNKnowledgeBaseClass.prototype.togglePrefixModeInternal = function() {
@@ -2517,7 +2477,7 @@ JSB.newAddon = function(mainPath){
     const result = await KnowledgeBaseNetwork.OCRToTitle(
       note,
       normalizedMode,
-      this.preExcerptMode,
+      false,
       'all',
       options,
     )
@@ -3568,7 +3528,6 @@ JSB.newAddon = function(mainPath){
       this.indentedTableItem('🔤 前缀模式', 'prefixModeToggled:', undefined, !!KnowledgeBaseConfig.config.prefixMode),
       this.indentedTableItem('📥 Inbox 自动移动', 'classAutoMoveModeToggled:', undefined, !!this.classAutoMoveMode),
       this.menuSeparator(),
-      this.indentedTableItem('🤖 预摘录卡片', 'preExcerptModeToggled:', undefined, !!this.preExcerptMode),
       this.indentedTableItem('📌 Inbox 自动 Pin', 'classAutoPinModeToggled:', undefined, !!KnowledgeBaseConfig.config.classAutoPinMode),
       this.indentedTableItem('🎬 演示模式', 'demoModeToggled:', undefined, !!KnowledgeBaseConfig.config.demoMode),
     ]

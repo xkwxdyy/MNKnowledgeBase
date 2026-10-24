@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "retire-preexcerpt-collection",
+  "changes": [
+    {
+      "id": "retire-preexcerpt-collection-20261024",
+      "type": "removed",
+      "zh": "预摘录退出独立模式，收集沿用泛读与 Inbox，保留历史内容和原配置。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}
