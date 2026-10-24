@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "reading-history-preservation",
+  "changes": [
+    {
+      "id": "reading-history-preservation-20261024",
+      "type": "fixed",
+      "zh": "日期式阅读收集不再自动删除历史日期卡或归类卡，保护正文与评论。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

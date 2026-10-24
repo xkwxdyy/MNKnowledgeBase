@@ -2113,85 +2113,8 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.cleanupHistoricalReadingAutoNotes = function(dateNotes = []) {
-    const cleanupResult = {
-      deletedClassificationCount: 0,
-      deletedDateCount: 0,
-    }
-
-    if (!Array.isArray(dateNotes) || dateNotes.length === 0 || !this.readingDateStr) {
-      return cleanupResult
-    }
-
-    dateNotes.forEach((dateNote) => {
-      try {
-        const dateStr = this.extractReadingDateStrFromTitle(dateNote && dateNote.noteTitle)
-        if (!dateStr || dateStr >= this.readingDateStr) {
-          return
-        }
-
-        const classificationResult = safeGetChildNotes(
-          dateNote,
-          'cleanupHistoricalReadingAutoNotes.dateNote'
-        )
-        if (!classificationResult.ok) return
-
-        let deletedChild = false
-        classificationResult.childNotes.slice().forEach((classificationNote) => {
-          try {
-            if (KnowledgeBaseTemplate.getNoteType(classificationNote) !== '归类') {
-              return
-            }
-
-            const contentResult = safeGetChildNotes(
-              classificationNote,
-              'cleanupHistoricalReadingAutoNotes.classificationNote'
-            )
-            if (!contentResult.ok || contentResult.childNotes.length > 0) {
-              return
-            }
-
-            if (typeof classificationNote.delete === 'function') {
-              classificationNote.delete()
-              cleanupResult.deletedClassificationCount += 1
-              deletedChild = true
-            }
-          } catch (error) {
-            KnowledgeBaseUtils.addErrorLog(error, 'cleanupHistoricalReadingAutoNotes.deleteClassificationNote')
-          }
-        })
-
-        if (deletedChild && dateNote && typeof dateNote.refresh === 'function') {
-          try {
-            dateNote.refresh()
-          } catch (_) {}
-        }
-
-        const remainingResult = safeGetChildNotes(
-          dateNote,
-          'cleanupHistoricalReadingAutoNotes.dateNote.afterClassificationCleanup'
-        )
-        if (!remainingResult.ok || remainingResult.childNotes.length > 0) {
-          return
-        }
-
-        if (typeof dateNote.delete === 'function') {
-          dateNote.delete()
-          cleanupResult.deletedDateCount += 1
-        }
-      } catch (error) {
-        KnowledgeBaseUtils.addErrorLog(error, 'cleanupHistoricalReadingAutoNotes')
-      }
-    })
-
-    if (cleanupResult.deletedClassificationCount > 0 || cleanupResult.deletedDateCount > 0) {
-      KnowledgeBaseUtils.log(
-        '已清理阅读自动归类历史残留卡片',
-        'cleanupHistoricalReadingAutoNotes',
-        cleanupResult
-      )
-    }
-
-    return cleanupResult
+    // Historical cards are user content; empty children do not prove safe deletion.
+    return { deletedClassificationCount: 0, deletedDateCount: 0 }
   }
 
   MNKnowledgeBaseClass.prototype.ensureReadingAutoMoveTargets = function() {
