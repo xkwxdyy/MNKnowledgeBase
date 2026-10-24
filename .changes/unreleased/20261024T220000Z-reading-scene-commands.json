@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "reading-scene-commands",
+  "changes": [
+    {
+      "id": "reading-scene-commands",
+      "type": "added",
+      "zh": "为独立阅读模板补充精读显式制卡与泛读固定 Inbox 配置协议，保留场景隔离和复习边界。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

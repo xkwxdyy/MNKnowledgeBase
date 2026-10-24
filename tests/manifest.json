@@ -88,7 +88,8 @@
     "retired-preexcerpt-regression.js",
     "proposition-collection-target-regression.js",
     "manual-card-actions-regression.js",
-    "collection-lifecycle-regression.js"
+    "collection-lifecycle-regression.js",
+    "reading-scene-commands-regression.js"
   ],
   "integration": [
     "definition-concept-toolbar-regression.js",

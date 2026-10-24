@@ -5,7 +5,7 @@ var KnowledgeBaseResearchCore = (function () {
   var COMMAND = 'MNKBResearchCommand', RESULT = 'MNKBResearchResult'
   var STORE_KEY = 'MNKB_ResearchCore_v1'
   var REVISION = '1.87.8', DIAGNOSTICS_KEY = 'MNKB_ResearchDiagnostics_v1'
-  var commands = ['ping', 'getState', 'registerProject', 'startProject', 'stopProject', 'setReceiver', 'stopReceiver', 'makeCard', 'addTemplate']
+  var commands = ['ping', 'getState', 'registerProject', 'startProject', 'stopProject', 'setReceiver', 'stopReceiver', 'setInbox', 'makeCard', 'addTemplate']
   function text(value) { return value == null ? '' : String(value).trim() }
   function value(object, key) {
     if (!object) return undefined
@@ -173,9 +173,9 @@ var KnowledgeBaseResearchCore = (function () {
       var s = context(instance)
       return { projects: s.notebookId ? clone(notebook(s.notebookId).projects) : [], activeProject: s.notebookId ? clone(activeProject(s)) : null, receiver: receiverInfo(s), sceneActive: isSceneActive(instance), collectionMode: s.mode, notebookId: s.notebookId }
     }
-    function guard(instance, notebookId, lifecycle) {
+    function guard(instance, notebookId, lifecycle, explicitCardAction) {
       var s = context(instance)
-      return isSceneActive(instance) && s.notebookId === notebookId && s.lifecycle === lifecycle
+      return (isSceneActive(instance) || (explicitCardAction && s.mode === 'intensive' && deps.isCurrentWindow(instance) && !s.closed)) && s.notebookId === notebookId && s.lifecycle === lifecycle
     }
     function retarget(oldNote, newNote) {
       if (stored.receiver && oldNote && newNote && stored.receiver.noteId === text(oldNote.noteId) && text(newNote.noteId) !== text(oldNote.noteId)) {
@@ -194,7 +194,8 @@ var KnowledgeBaseResearchCore = (function () {
       var s = context(instance), requestedNotebook = text(request.notebookId), command = text(request.command), payload = request.payload || {}
       if (requestedNotebook && requestedNotebook !== s.notebookId) throw new Error('different-notebook')
       if (command === 'ping' || command === 'getState') return state(instance)
-      if (!isSceneActive(instance)) throw new Error('research-scene-inactive')
+      var explicitCardAction = s.mode === 'intensive' && (command === 'makeCard' || command === 'addTemplate')
+      if (!isSceneActive(instance) && !guard(instance, s.notebookId, s.lifecycle, explicitCardAction)) throw new Error('research-scene-inactive')
       if (!s.notebookId) throw new Error('notebook-unavailable')
       var original, processed, result, type, lifecycle = s.lifecycle
       if (command === 'registerProject') {
@@ -214,21 +215,25 @@ var KnowledgeBaseResearchCore = (function () {
         original = setReceiver(s, note(payload.noteId, s.notebookId)); result = { noteId: text(original.noteId) }
       } else if (command === 'stopReceiver') {
         receiverActive = false; receiverRevision += 1; result = { noteId: stored.receiver ? stored.receiver.noteId : '' }
+      } else if (command === 'setInbox') {
+        if (s.mode !== 'broad' || !deps.setInbox) throw new Error('research-scene-inactive')
+        original = note(payload.noteId, s.notebookId)
+        deps.setInbox(instance, original); result = { noteId: text(original.noteId) }
       } else if (command === 'makeCard') {
         original = note(payload.noteId, s.notebookId)
         type = deps.cardType(original)
         if (deps.assertCard) deps.assertCard(original, type)
         processed = deps.convert(original) || original
         deps.syncIndex(original, processed); retarget(original, processed)
-        result = deps.makeCard(processed, type, function () { return guard(instance, s.notebookId, lifecycle) }, { present: true }) || { note: processed }
+        result = deps.makeCard(processed, type, function () { return guard(instance, s.notebookId, lifecycle, explicitCardAction) }, { present: true, addToReview: s.mode === 'intensive' }) || { note: processed }
         processed = result.note || processed
         retarget(original, processed)
-        result = { noteId: text(processed.noteId), cardPending: !!result.pending, addedToReview: false }
+        result = { noteId: text(processed.noteId), cardPending: !!result.pending, addedToReview: result.addedToReview === true, reviewAllowed: s.mode === 'intensive' }
       } else if (command === 'addTemplate') {
         original = note(payload.noteId, s.notebookId)
         processed = await deps.addTemplate(original, payload)
         if (!processed) return Object.assign({ cancelled: true }, state(instance))
-        if (!guard(instance, s.notebookId, lifecycle)) throw new Error('context-changed')
+        if (!guard(instance, s.notebookId, lifecycle, explicitCardAction)) throw new Error('context-changed')
         processed = note(processed.noteId, s.notebookId)
         result = { noteId: text(processed.noteId) }
       } else { throw new Error('unknown-command') }
@@ -342,11 +347,11 @@ var KnowledgeBaseResearchCore = (function () {
       maker.getQuickReadingMakeCardPolicy = function () { return { mode: 'normal', noteType: type || null, colorIndex: note.colorIndex } }
       return maker
     }
-    function makeWithoutReview(note, type, valid, options) {
+    function makeSceneCard(note, type, valid, options) {
       var maker = cardFacade(note, type)
       var make = function (current) {
         if (valid && !valid()) throw new Error('context-changed')
-        return maker.makeCard(current, false, true, { noteType: type || null, silent: true, throwOnFailure: true }) || current
+        return maker.makeCard(current, !!(options && options.addToReview), true, { noteType: type || null, silent: true, throwOnFailure: true }) || current
       }
       // DefinitionConcept already presents deferred cards after its outer undo group.
       if (typeof KnowledgeBaseDefinitionConcept !== 'undefined' && KnowledgeBaseDefinitionConcept.getRuntime().deferMakeCard(note, make)) return { note: note, pending: true }
@@ -361,7 +366,9 @@ var KnowledgeBaseResearchCore = (function () {
         if (parent && text(parent.noteId) !== text(processed.noteId)) maker.refreshNoteLocally(parent, false)
         processed.focusInMindMap(0.3)
       }
-      return { note: processed, pending: false }
+      var addedToReview = false
+      try { addedToReview = !!(options && options.addToReview && MNUtil.isNoteInReview(processed.noteId)) } catch (_) {}
+      return { note: processed, pending: false, addedToReview: addedToReview }
     }
 
     runtime = create({
@@ -425,7 +432,14 @@ var KnowledgeBaseResearchCore = (function () {
       refresh: function (n, options) { return template().presentOCRResult(n, Object.assign({ stage: 'research.excerpt' }, options)) },
       beginDefinition: function (n, options) { return typeof KnowledgeBaseDefinitionConcept !== 'undefined' ? KnowledgeBaseDefinitionConcept.getRuntime().begin(n, false, options) : null },
       finishDefinition: function (job) { KnowledgeBaseDefinitionConcept.getRuntime().finish(job) },
-      makeCard: makeWithoutReview,
+      setInbox: function (instance, n) {
+        var references = clone(KnowledgeBaseConfig.config.referenceNoteIds || {})
+        references.roots = Object.assign({}, references.roots || {}, { classInput: n.noteURL || ('marginnote4app://note/' + n.noteId) })
+        KnowledgeBaseConfig.config.referenceNoteIds = references
+        KnowledgeBaseConfig.save()
+        instance.classInputRootNote = n
+      },
+      makeCard: makeSceneCard,
       assertCard: function (n, type) { cardFacade(n, type).assertMakeCardTemplateAvailable(n, { noteType: type || null, directMakeCard: true }) },
       addTemplate: async function (n, payload) {
         // OCR-only cards have colors/types but no makeCard title prefix yet.
