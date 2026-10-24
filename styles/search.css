@@ -3785,3 +3785,10 @@ body.filters-collapsed .filters-panel {
     color: #0f141c;
   }
 }
+
+/* Source selection stays visible when the detailed filters are collapsed. */
+.search-source-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 16px; border-bottom:1px solid var(--border-color, #e0e4e8); }
+.search-source-bar[hidden] { display:none; }
+.search-source-label { font-size:12px; color:var(--text-secondary, #667085); margin-right:4px; }
+.search-source-bar .pill { font:inherit; font-size:12px; }
+.search-source-bar .pill:focus-visible { outline:2px solid var(--accent-color, #3378cc); outline-offset:2px; }

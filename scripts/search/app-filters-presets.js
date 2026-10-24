@@ -1,5 +1,57 @@
 'use strict';
 
+const SEARCH_SOURCES_KEY = 'mnkb-search-sources-v1';
+const SEARCH_SOURCE_OPTIONS = [
+  { key: 'main', label: '主知识库' },
+  { key: 'intermediate', label: '过程知识库' },
+  { key: 'literature-classification', label: '文献归类' },
+  { key: 'history-card', label: '历史卡片' },
+];
+
+function loadSearchSources() {
+  try {
+    const stored = localStorage.getItem(SEARCH_SOURCES_KEY);
+    if (stored === null) return;
+    const value = JSON.parse(stored);
+    const keys = SEARCH_SOURCE_OPTIONS.map(item => item.key).concat('all');
+    if (Array.isArray(value) && value.every(key => keys.includes(key))) {
+      state.searchSources = [...new Set(value)];
+    }
+  } catch (error) {
+    console.warn('加载搜索来源失败，使用主知识库', error);
+  }
+}
+
+function renderSearchSourceBar() {
+  const container = document.getElementById('searchSourceBar');
+  if (!container) return;
+  container.hidden = !!(state.localSearchRootId || state.locateOnlyId);
+  const selected = state.searchSources || ['main'];
+  container.querySelectorAll('[data-search-source]').forEach(button => {
+    const key = button.dataset.searchSource;
+    const active = selected.includes(key) || (key !== 'all' && selected.includes('all'));
+    button.setAttribute('aria-pressed', String(active));
+    button.classList.toggle('active', active);
+  });
+}
+
+function toggleSearchSource(key) {
+  const keys = SEARCH_SOURCE_OPTIONS.map(item => item.key);
+  if (key !== 'all' && !keys.includes(key)) return;
+  bumpSearchExecutionRevision('searchSources');
+  let selected = state.searchSources || ['main'];
+  if (key === 'all') selected = ['all'];
+  else {
+    selected = selected.includes('all') ? keys : selected.slice();
+    selected = selected.includes(key) ? selected.filter(item => item !== key) : selected.concat(key);
+  }
+  state.searchSources = selected;
+  savePanelOptions(SEARCH_SOURCES_KEY, selected, '搜索来源');
+  renderSearchSourceBar();
+  clearSelection();
+  scheduleSearch();
+}
+
 function syncFilterPillSelection(pill, selected) {
   pill.setAttribute('role', 'button');
   pill.setAttribute('aria-pressed', selected ? 'true' : 'false');

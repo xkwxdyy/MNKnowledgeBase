@@ -102,10 +102,12 @@ function locateCardById(noteId, options = {}) {
 
   state.selectedCardId = targetId;
   state.locateTargetId = targetId;
+  // Native locate can reveal a card outside the saved source range without changing it.
   state.locateOnlyId = null;
+  if (!passesSearchSourceFilter(getCardById(targetId))) state.locateOnlyId = targetId;
   state.suppressSearchInputFocus = true;
   dom.searchInput?.blur();
-  applyFilters(buildQueryPayload());
+  applyFilters(buildQueryPayload(), { keepLocate: !!state.locateOnlyId });
 
   return true;
 }

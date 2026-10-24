@@ -471,6 +471,7 @@ function currentAICardSearchFilterOptions() {
 function applyCurrentNegativeFilters(cards, payload) {
   const negativeTokens = (payload.excludePresets || []).map((word) => String(word || '').toLowerCase());
   return (cards || []).filter((card) => {
+    if (!passesSearchSourceFilter(card)) return false;
     if (!passesNegativeFilter(card, negativeTokens)) return false;
     if (!passesManualTitleExclusion(card, payload.manualExclusionTerms || [])) return false;
     return true;

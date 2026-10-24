@@ -5624,9 +5624,14 @@ JSB.newAddon = function(mainPath){
         cardMap.set(key, card)
         return
       }
+      const indexSources = Array.from(new Set([
+        ...(previous.indexSources || [previous.indexSource]),
+        ...(card.indexSources || [card.indexSource]),
+      ].filter(Boolean)))
       cardMap.set(key, {
         ...previous,
         ...card,
+        ...(indexSources.length > 1 ? { indexSources } : {}),
         usageScore: Math.max(
           normalizeUsageScore(previous.usageScore),
           normalizeUsageScore(card.usageScore),
@@ -8469,6 +8474,7 @@ JSB.newAddon = function(mainPath){
     cards.forEach((card) => {
       if (card && typeof card === 'object' && card.id) {
         card.indexSource = normalized
+        delete card.indexSources // Rebuild membership from the current source indexes.
       }
     })
     return cards

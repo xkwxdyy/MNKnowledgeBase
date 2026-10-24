@@ -583,8 +583,22 @@ function finalizeFilterResults(context) {
   }
 }
 
+function passesSearchSourceFilter(card) {
+  // An explicit local root or native locate keeps its existing scope.
+  if (state.localSearchRootId || state.locateOnlyId) return true;
+  const selected = state.searchSources;
+  if (!Array.isArray(selected) || selected.includes('all')) return true;
+  const sources = Array.isArray(card?.indexSources) && card.indexSources.length ? card.indexSources : [card?.indexSource || 'main'];
+  const aliases = { knowledge: 'main', 'knowledge-base': 'main', 'intermediate-kb': 'intermediate', literature: 'literature-classification', history: 'history-card' };
+  return sources.some(source => {
+    const raw = String(source || '').trim().toLowerCase();
+    return selected.includes(aliases[raw] || raw);
+  });
+}
+
 function processCardForFilter(card, context) {
   if (!card || !card.id) return;
+  if (!passesSearchSourceFilter(card)) return;
 
   // 局部搜索守卫：仅匹配子孙卡片
   if (state.localSearchRootId && state.localSearchDescendantIds) {
@@ -711,6 +725,7 @@ function applyFilters(payload, options = {}) {
       window.mnkbStartupPerfMark('applyFilters(first start)', `cards=${Array.isArray(state.cards) ? state.cards.length : 0}`);
     }
     clearLocateStateBeforeFiltering(options.keepLocate === true);
+    if (typeof renderSearchSourceBar === 'function') renderSearchSourceBar();
 
     const explicitTokensLower = Array.isArray(query.baseTokens)
       ? query.baseTokens.map((token) => String(token || '').toLowerCase()).filter(Boolean)

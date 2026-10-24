@@ -437,6 +437,7 @@ window.state = {
   searchUsageHadNonEmptyInput: false,
   manualExclusionInput: '',
   currentTypeKey: 'all',
+  searchSources: ['main'],
   classificationOptions: [],
   currentClassificationSubtype: 'all',
   lastQueryPayload: null,
@@ -1907,6 +1908,7 @@ function deactivateLocalSearch() {
 }
 
 function renderLocalSearchBanner() {
+  renderSearchSourceBar();
   const banner = document.getElementById('localSearchBanner');
   if (!banner) return;
   if (state.localSearchRootId) {

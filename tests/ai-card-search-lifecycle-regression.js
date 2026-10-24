@@ -6,6 +6,8 @@ const path = require('path');
 const vm = require('vm');
 const searchCore = require('../scripts/search/math-term-search-core.js');
 const source = fs.readFileSync(path.join(__dirname, '../scripts/search/app-ai-search.js'), 'utf8');
+const querySource = fs.readFileSync(path.join(__dirname, '../scripts/search/app-filters-query.js'), 'utf8');
+const sourceFilter = querySource.slice(querySource.indexOf('function passesSearchSourceFilter('), querySource.indexOf('\nfunction processCardForFilter('));
 
 function element(tagName = 'div') {
   let text = '';
@@ -119,6 +121,7 @@ function makeHarness(options = {}) {
     scheduleSearch() {},
   };
   vm.createContext(context);
+  vm.runInContext(sourceFilter, context);
   vm.runInContext(source, context);
   return {
     state, dom, win, document, context, calls, options, timers,
