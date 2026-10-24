@@ -908,7 +908,15 @@ JSB.newAddon = function(mainPath){
       }
     },
 
-	    excerptOCRModeSetting: function(button) {
+	    openReadingSettingsMenu: function(button) {
+      try {
+        MNKnowledgeBaseClass.prototype.openReadingSettingsMenuInternal.call(self, button)
+      } catch (error) {
+        KnowledgeBaseUtils.addErrorLog(error, 'openReadingSettingsMenu')
+      }
+    },
+
+    excerptOCRModeSetting: function(button) {
 	      try {
 	        self.checkPopover()
 	        const modeNames = ['❌ 关闭', '📝 直接 OCR', '🔤 Markdown 格式']
@@ -2443,25 +2451,19 @@ JSB.newAddon = function(mainPath){
     const normalizedMode = Number.isFinite(parsedMode)
       ? Math.max(0, Math.min(2, parsedMode))
       : 0
-    const modeNames = ['关闭', '直接 OCR', 'Markdown 格式']
 
     if (normalizedMode < 1) {
       KnowledgeBaseConfig.config.excerptOCRMode = 0
       KnowledgeBaseConfig.save()
       this.refreshAddonCommandStatus()
-      MNUtil.showHUD('已关闭摘录 OCR 模式', 1)
       return
     }
 
-    const result = this.applyAutomationConflictsBeforeEnable('excerptOCR')
+    this.applyAutomationConflictsBeforeEnable('excerptOCR')
     KnowledgeBaseConfig.config.excerptOCRMode = normalizedMode
     KnowledgeBaseConfig.save()
     this.refreshAddonCommandStatus()
-    this.showManagedAutomationModeHUD(
-      `已开启摘录 OCR 模式：${modeNames[normalizedMode]}`,
-      result.disabledLabels,
-      { externalReadingStopped: result.externalReadingStopped }
-    )
+
   }
 
   MNKnowledgeBaseClass.prototype.togglePreExcerptModeInternal = function() {
@@ -3681,6 +3683,7 @@ JSB.newAddon = function(mainPath){
 
     return [
       this.indentedTableItem('📖 快速阅读', 'readingFollowModeToggled:', undefined, !!KnowledgeBaseConfig.config.readingFollowMode),
+      this.indentedTableItem('⚙️ 阅读设置', 'openReadingSettingsMenu:', button),
       this.menuSeparator(),
       this.indentedTableItem('❌ 关闭摘录 OCR', 'setExcerptOCRMode:', 0, currentMode === 0),
       this.nestedTableItem('📝 直接 OCR', 'setExcerptOCRMode:', 1, currentMode === 1),
@@ -3715,6 +3718,36 @@ JSB.newAddon = function(mainPath){
     this.popoverController = MNUtil.getPopoverAndPresent(button, commandTable, 360, 0)
   }
 
+  MNKnowledgeBaseClass.prototype.openReadingSettingsMenuInternal = function(button) {
+    this.checkPopover()
+    const mode = this.getSupportedExcerptOCRMode()
+    const commandTable = [
+      this.tableItem('🔤 Markdown 格式', 'setExcerptOCRMode:', 2, mode === 2),
+      this.tableItem('📝 直接 OCR', 'setExcerptOCRMode:', 1, mode === 1),
+      this.tableItem('❌ 关闭摘录 OCR', 'setExcerptOCRMode:', 0, mode === 0),
+      this.menuSeparator(),
+      this.tableItem('⚙️ Markdown OCR 模型', 'excerptOCRModelSettingForMode2:', button),
+    ]
+    this.popoverController = MNUtil.getPopoverAndPresent(button, commandTable, 360, 0)
+  }
+
+  MNKnowledgeBaseClass.prototype.getOCRTaskModelMenuText = function(task) {
+    const config = KnowledgeBaseConfig.config
+    const saved = key => String(config[key] || '').trim()
+    const base = saved('excerptOCRModel')
+    const direct = saved('excerptOCRModelForMode1') || base
+    const markdown = saved('excerptOCRModelForMode2') || base
+    const taskKeys = { direct: 'excerptOCRModelForMode1', markdown: 'excerptOCRModelForMode2', translate: 'excerptOCRTranslateModel', reading: 'quickReadingOCRModel' }
+    if (task === 'default') return `${base || '未配置'}（默认设置）`
+    const dedicated = saved(taskKeys[task])
+    if (dedicated) return `${dedicated}（专用设置）`
+    if (task === 'translate') return `跟随当前 OCR 任务（直接：${direct || '未配置'}；Markdown：${markdown || '未配置'}）`
+    if (task === 'reading' && saved('excerptOCRTranslateModel')) return `${saved('excerptOCRTranslateModel')}（继承翻译 OCR）`
+    const inherited = task === 'reading' ? direct : base
+    const origin = task === 'reading' && saved('excerptOCRModelForMode1') ? '直接 OCR' : '默认 OCR'
+    return `${inherited || '未配置'}（继承${origin}）`
+  }
+
   MNKnowledgeBaseClass.prototype.openModelSettingsMenu = function(button) {
     this.checkPopover()
 
@@ -3723,21 +3756,27 @@ JSB.newAddon = function(mainPath){
     const overrideEnabled = !!KnowledgeBaseConfig.config.mnaiModelOverrideEnabled
     const overrideText = overrideEnabled
       ? (source && model ? `${source}: ${model}` : (source || model || '已启用'))
-      : '未启用'
+      : '未启用；继承 MNAI 设置'
 
-    const commandTable = [
-      this.tableItem('⚙️ 默认 OCR 模型', 'excerptOCRModelSetting:', button),
-      this.tableItem('⚙️ Unicode OCR 模型', 'excerptOCRModelSettingForMode1:', button),
-      this.tableItem('⚙️ Markdown OCR 模型', 'excerptOCRModelSettingForMode2:', button),
-      this.tableItem('⚙️ 翻译 OCR 模型', 'excerptOCRTranslateModelSetting:', button),
-      this.tableItem('⚙️ 快速阅读 OCR 模型', 'quickReadingOCRModelSetting:', button),
+    const commandTable = []
+    if (typeof KnowledgeBaseNetwork !== 'undefined' && KnowledgeBaseNetwork.usesResearchOCR()) {
+      const activeModel = KnowledgeBaseConfig.getResearchOCRModel()
+      commandTable.push(this.menuGroupTitle(`科研场景 OCR：${activeModel}（场景优先）`))
+      commandTable.push(this.menuGroupTitle('以下为全局 OCR 设置'))
+    }
+    commandTable.push(
+      this.tableItem(`⚙️ 默认 OCR 模型：${this.getOCRTaskModelMenuText('default')}`, 'excerptOCRModelSetting:', button),
+      this.tableItem(`⚙️ Unicode OCR 模型：${this.getOCRTaskModelMenuText('direct')}`, 'excerptOCRModelSettingForMode1:', button),
+      this.tableItem(`⚙️ Markdown OCR 模型：${this.getOCRTaskModelMenuText('markdown')}`, 'excerptOCRModelSettingForMode2:', button),
+      this.tableItem(`⚙️ 翻译 OCR 模型：${this.getOCRTaskModelMenuText('translate')}`, 'excerptOCRTranslateModelSetting:', button),
+      this.tableItem(`⚙️ 快速阅读 OCR 模型：${this.getOCRTaskModelMenuText('reading')}`, 'quickReadingOCRModelSetting:', button),
       this.menuSeparator(),
       this.tableItem(`⚙️ AI 模型覆盖（${overrideText}）`, 'mnaiModelOverrideToggled:', undefined, overrideEnabled),
       this.tableItem('⚙️ 选择 AI Source', 'mnaiModelSourceSetting:', button),
       this.tableItem('⚙️ 选择 AI Model', 'mnaiModelNameSetting:', button),
-    ]
+    )
 
-    this.popoverController = MNUtil.getPopoverAndPresent(button, commandTable, 360, 0)
+    this.popoverController = MNUtil.getPopoverAndPresent(button, commandTable, 440, 0)
   }
 
   MNKnowledgeBaseClass.prototype.openMaintenanceMenu = function(button) {

@@ -1,0 +1,48 @@
+// Also runs against the exact unpacked candidate using MNKB_TEST_ROOT.
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
+const root = process.env.MNKB_TEST_ROOT || path.resolve(__dirname, '..');
+const main = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+const a = main.indexOf('  MNKnowledgeBaseClass.prototype.openReadingSettingsMenuInternal =');
+const b = main.indexOf('  MNKnowledgeBaseClass.prototype.openMaintenanceMenu', a);
+assert(a > 0 && b > a);
+const config = { excerptOCRModel: 'base', excerptOCRModelForMode1: 'direct', excerptOCRModelForMode2: 'math', excerptOCRTranslateModel: '', quickReadingOCRModel: '', excerptOCRMode: 2 };
+let menu, research = false;
+const C = function () {};
+const context = { MNKnowledgeBaseClass: C, KnowledgeBaseConfig: { config, getResearchOCRModel: () => 'research-model' }, KnowledgeBaseNetwork: { usesResearchOCR: () => research }, MNUtil: { getPopoverAndPresent: (button, items) => { menu = items; } } };
+vm.createContext(context);vm.runInContext(main.slice(a, b), context);
+Object.assign(C.prototype, { checkPopover() {}, getSupportedExcerptOCRMode: () => config.excerptOCRMode, menuSeparator: () => ({ selector: '' }), menuGroupTitle: title => ({ title, selector: '' }), tableItem: (title, selector, param, checked) => ({ title, selector, param, checked }) });
+const app = new C();
+const before = JSON.stringify(config);
+assert.equal(app.getOCRTaskModelMenuText('default'), 'base（默认设置）');
+assert.equal(app.getOCRTaskModelMenuText('direct'), 'direct（专用设置）');
+assert.equal(app.getOCRTaskModelMenuText('markdown'), 'math（专用设置）');
+assert.match(app.getOCRTaskModelMenuText('translate'), /跟随当前 OCR 任务.*direct.*math/);
+assert.equal(app.getOCRTaskModelMenuText('reading'), 'direct（继承直接 OCR）');
+config.excerptOCRTranslateModel = 'translation';
+assert.equal(app.getOCRTaskModelMenuText('reading'), 'translation（继承翻译 OCR）');
+config.quickReadingOCRModel = 'reading';assert.equal(app.getOCRTaskModelMenuText('reading'), 'reading（专用设置）');
+config.excerptOCRModelForMode1 = '';config.excerptOCRModelForMode2 = '';
+assert.equal(app.getOCRTaskModelMenuText('direct'), 'base（继承默认 OCR）');
+assert.equal(app.getOCRTaskModelMenuText('markdown'), 'base（继承默认 OCR）');
+config.excerptOCRModel = '';assert.match(app.getOCRTaskModelMenuText('markdown'), /未配置/);
+Object.assign(config, JSON.parse(before));
+app.openModelSettingsMenu('anchor');
+const selectors = menu.filter(item => item.selector).map(item => item.selector);
+assert.deepEqual(Array.from(selectors), ['excerptOCRModelSetting:', 'excerptOCRModelSettingForMode1:', 'excerptOCRModelSettingForMode2:', 'excerptOCRTranslateModelSetting:', 'quickReadingOCRModelSetting:', 'mnaiModelOverrideToggled:', 'mnaiModelSourceSetting:', 'mnaiModelNameSetting:']);
+assert.equal(JSON.stringify(config), before, 'opening settings must not save or migrate configuration');
+research = true;app.openModelSettingsMenu('anchor');assert.match(menu[0].title, /research-model.*场景优先/);assert.equal(menu.filter(item => item.selector).length, selectors.length);
+for (const mode of [0, 1, 2]) { config.excerptOCRMode = mode;app.openReadingSettingsMenuInternal('anchor');const modes = menu.filter(item => item.selector === 'setExcerptOCRMode:');assert.equal(modes.length, 3);assert.equal(modes.filter(item => item.checked).length, 1);assert.equal(modes.find(item => item.checked).param, mode); }
+assert.match(main, /openReadingSettingsMenu: function\(button\)[\s\S]*?MNKnowledgeBaseClass\.prototype\.openReadingSettingsMenuInternal\.call\(self, button\)/);
+const automation = main.slice(main.indexOf('MNKnowledgeBaseClass.prototype.getAutomationMenuItems'), main.indexOf('MNKnowledgeBaseClass.prototype.openMainMenu ='));
+for (const selector of ['readingFollowModeToggled:', 'openReadingSettingsMenu:', 'setExcerptOCRMode:', 'preProcessModeToggled:', 'prefixModeToggled:', 'classAutoMoveModeToggled:']) assert(automation.includes(selector), selector);
+const modeStart = main.indexOf('  MNKnowledgeBaseClass.prototype.setExcerptOCRModeInternal ='), modeEnd = main.indexOf('  MNKnowledgeBaseClass.prototype.togglePreExcerptModeInternal', modeStart);
+vm.runInContext(main.slice(modeStart, modeEnd), context);
+let saved = 0, refreshed = 0, conflicted = 0;context.KnowledgeBaseConfig.save = () => saved++;context.MNUtil.showHUD = () => { throw Error('normal setting changes must remain silent'); };
+app.refreshAddonCommandStatus = () => refreshed++;app.applyAutomationConflictsBeforeEnable = () => { conflicted++;return {}; };
+for (const mode of [0,1,2]) { app.setExcerptOCRModeInternal(mode);assert.equal(config.excerptOCRMode, mode); }
+assert.equal(saved,3);assert.equal(refreshed,3);assert.equal(conflicted,2);assert.equal(config.excerptOCRModel, 'base');
+console.log('settings and reading menu regression passed');

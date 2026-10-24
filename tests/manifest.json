@@ -79,7 +79,8 @@
     "ocr-title-template-regression.js",
     "definition-merge-runtime-regression.js",
     "definition-merge-content-regression.js",
-    "definition-merge-bridge-regression.js"
+    "definition-merge-bridge-regression.js",
+    "settings-reading-menu-regression.js"
   ],
   "integration": [
     "definition-concept-toolbar-regression.js",
