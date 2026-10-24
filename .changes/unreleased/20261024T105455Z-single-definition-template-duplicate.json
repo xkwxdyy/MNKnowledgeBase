@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "single-definition-template-duplicate",
+  "changes": [
+    {
+      "id": "single-definition-template-duplicate-20261024",
+      "type": "added",
+      "zh": "从定义卡向下创建单张归类时提示已有同名归类，查看或取消保持接收目标。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

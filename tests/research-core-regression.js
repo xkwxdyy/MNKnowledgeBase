@@ -3,8 +3,8 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const vm = require('node:vm')
-const api = require('../KnowledgeBaseResearchCore')
-const root = path.join(__dirname, '..')
+const root = process.env.MNKB_TEST_ROOT || path.join(__dirname, '..')
+const api = require(path.join(root, 'KnowledgeBaseResearchCore'))
 function harness(saved) {
   const calls = [], notes = new Map(), windows = new Map(), categories = new Map()
   const main = { window: {} }, other = { window: {} }
@@ -205,6 +205,17 @@ async function tests() {
     const result = await h.service.processExcerpt(h.main, definition)
     assert.equal(result.route, 'project'); assert.equal(finished, 1); assert.equal(retargeted, 1)
     assert.equal(h.calls.filter(c => c[0] === 'ocr').length, 0, 'Do not repeat synchronous OCR when definition pipeline owns it')
+  }
+  {
+    const h = harness(), original = h.add('cancel-source'), receiver = h.add('keep-receiver', '归类')
+    receiver.acceptType = '命题'
+    await h.command('setReceiver', { noteId: receiver.noteId })
+    const before = JSON.stringify(h.service.state(h.main).receiver)
+    h.deps.addTemplate = async () => undefined
+    const result = await h.command('addTemplate', { noteId: original.noteId, receive: true })
+    assert.equal(result.cancelled, true)
+    assert.equal(JSON.stringify(h.service.state(h.main).receiver), before, 'view/cancel keeps the receiver unchanged')
+    assert.equal(h.calls.filter(c => c[0] === 'error' || c[0] === 'move' || c[0] === 'make').length, 0)
   }
   // Exercise the native adapter and the actual makeCard body; saved rough policy must not bypass full fields.
   {
@@ -504,7 +515,7 @@ async function tests() {
       vm.createContext(ctx); vm.runInContext('this.editing = ({' + editing + '}).onTextDidEndEditing', ctx)
       ctx.editing({}); assert.deepEqual(calls, active ? [] : ['legacy']); assert.equal(self.isCreatingNewNote, false)
     }
-    const payload = JSON.parse(fs.readFileSync(path.join(root, 'build/payload.json'), 'utf8'))
+    const payload = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'build/payload.json'), 'utf8'))
     assert.ok(payload.includes('KnowledgeBaseResearchCore.js'))
   }
   console.log('Research Core: scene gate, window/study isolation, registry, receiver priority, lazy types, no-review make, pending definitions, dedupe and lifecycle passed')

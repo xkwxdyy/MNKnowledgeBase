@@ -81,7 +81,8 @@
     "definition-merge-content-regression.js",
     "definition-merge-bridge-regression.js",
     "settings-reading-menu-regression.js",
-    "search-source-scope-regression.js"
+    "search-source-scope-regression.js",
+    "add-template-duplicate-regression.js"
   ],
   "integration": [
     "definition-concept-toolbar-regression.js",

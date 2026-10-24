@@ -213,7 +213,7 @@ var KnowledgeBaseResearchCore = (function () {
       } else if (command === 'addTemplate') {
         original = note(payload.noteId, s.notebookId)
         processed = await deps.addTemplate(original, payload)
-        if (!processed) throw new Error('template-cancelled')
+        if (!processed) return Object.assign({ cancelled: true }, state(instance))
         if (!guard(instance, s.notebookId, lifecycle)) throw new Error('context-changed')
         processed = note(processed.noteId, s.notebookId)
         if (payload.receive === true) setReceiver(s, processed)

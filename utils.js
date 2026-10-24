@@ -14887,6 +14887,51 @@ class KnowledgeBaseTemplate {
       .join("｜")
   }
 
+  static async confirmSingleDefinitionTemplateCreation(note, title, type, diagnosticSession) {
+    const expectedTitle = this.normalizeTitleSpaces(`“${title}”相关${type}`)
+    const notebookId = String(note.notebookId || "")
+    const isCurrentDefinition = () => this.getNoteType(note) === "定义" &&
+      (!notebookId || String(MNUtil.currentNotebookId || "") === notebookId)
+    const matches = () => Array.from(note.childNotes || []).filter(child =>
+      child && this.getNoteType(child) === "归类" &&
+      this.normalizeTitleSpaces(child.noteTitle || child.title || "") === expectedTitle &&
+      this.parseNoteTitle(child).type === type &&
+      (!notebookId || String(child.notebookId || "") === notebookId) &&
+      child.parentNote && String(child.parentNote.noteId) === String(note.noteId)
+    )
+    if (!isCurrentDefinition()) throw new Error("学习集或定义卡已变化，请重新操作")
+    const candidates = matches()
+    if (!candidates.length) return true
+    const action = await MNUtil.userSelect("已存在相同归类", expectedTitle, ["查看已有归类", "仍然新建"])
+    if (!isCurrentDefinition()) throw new Error("学习集或定义卡已变化，请重新操作")
+    if (action === 2) return true
+    if (action === 1) {
+      let selected = candidates[0]
+      if (candidates.length > 1) {
+        const labels = candidates.map((candidate, index) => {
+          const children = Array.from(candidate.childNotes || [])
+          const firstTitle = children.length ? String(children[0].noteTitle || children[0].title || "").slice(0, 60) : "空归类"
+          return `${index + 1} · ${children.length} 张子卡片 · ${firstTitle}`
+        })
+        const selectedIndex = await MNUtil.userSelect("选择已有归类", expectedTitle, labels)
+        if (!isCurrentDefinition()) throw new Error("学习集或定义卡已变化，请重新操作")
+        selected = candidates[selectedIndex - 1]
+        if (!selected) {
+          KnowledgeBaseUtils.finishPersistentDiagnosticSession(diagnosticSession, "cancelled", { reason: "duplicate_candidate_cancelled" })
+          return false
+        }
+      }
+      const current = matches().find(candidate => String(candidate.noteId) === String(selected.noteId))
+      if (!current) throw new Error("原归类已变化，请重新操作")
+      current.focusInMindMap(0.3)
+    }
+    // Viewing an existing card is not a creation result: callers must not bind or move into it.
+    KnowledgeBaseUtils.finishPersistentDiagnosticSession(diagnosticSession, "cancelled", {
+      reason: action === 1 ? "duplicate_classification_viewed" : "duplicate_template_cancelled",
+    })
+    return false
+  }
+
 	  static async addTemplate(note, focusLastNote = true) {
     const diagnosticSession = KnowledgeBaseUtils.beginPersistentDiagnosticSession(
       'addTemplate',
@@ -14979,11 +15024,29 @@ class KnowledgeBaseTemplate {
         button: userInputRes ? userInputRes.button : '',
         inputLength: userInputRes && userInputRes.input ? String(userInputRes.input).length : 0,
       })
+      if (!userInputRes || userInputRes.button === 0) {
+        KnowledgeBaseUtils.finishPersistentDiagnosticSession(diagnosticSession, 'cancelled', { reason: 'user_cancelled_template_input' })
+        return
+      }
       let userInputTitle = userInputRes.input
       // 分割输入，支持通过//创建多个兄弟卡片链
       let titlePartsArray = userInputTitle.split("//")
       let previousTitle = titlePartsArray[0]  // 记录上一个标题
       let changedTitlePart = titlePartsArray[titlePartsArray.length-1]
+      // ponytail: first pilot covers one interactive downward card; template chains keep their existing behavior.
+      let singleDefinitionType = ""
+      if (userInputRes.button === 1 && titlePartsArray.length === 1 && this.getNoteType(note) === "定义") {
+        singleDefinitionType = this.getTypeFromInputText(userInputTitle)
+        if (!singleDefinitionType) {
+          const typeChoice = await MNUtil.userSelect("增加归类卡片", "选择类型", typeArr)
+          singleDefinitionType = typeArr[typeChoice - 1]
+          if (!singleDefinitionType) {
+            KnowledgeBaseUtils.finishPersistentDiagnosticSession(diagnosticSession, 'cancelled', { reason: 'user_cancelled_type_select', branch: 'case1' })
+            return
+          }
+        }
+        if (!(await this.confirmSingleDefinitionTemplateCreation(note, titlePartsArray[0], singleDefinitionType, diagnosticSession))) return
+      }
       switch (userInputRes.button) {
         case 4:
           try {
@@ -15291,7 +15354,7 @@ class KnowledgeBaseTemplate {
                 break;
               default:
                 // 智能识别类型
-                intelligentType = this.getTypeFromInputText(userInputTitle);
+                intelligentType = singleDefinitionType || this.getTypeFromInputText(userInputTitle);
                 if (intelligentType) {
                   type = intelligentType;
                   this.runUndoGroupingWithoutGlobalDBRefresh(() => {
