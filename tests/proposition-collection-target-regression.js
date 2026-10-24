@@ -1,75 +1,22 @@
 'use strict'
 const assert = require('node:assert/strict')
-const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm')
-const root = process.env.MNKB_TEST_ROOT || path.join(__dirname, '..')
-const source = fs.readFileSync(path.join(root, 'main.js'), 'utf8')
-function method(name) {
-  const start = source.indexOf('  MNKnowledgeBaseClass.prototype.' + name + ' = ')
-  assert.ok(start >= 0, name)
-  const end = source.indexOf('\n  MNKnowledgeBaseClass.prototype.', start + 1)
-  return source.slice(source.indexOf(' = ', start) + 3, end)
-}
+const { harness } = require('./research-core-regression')
 async function run() {
-  const calls = [], instance = { window: 'window' }
-  const context = {
-    console, self: instance, MNKnowledgeBaseClass: function () {},
-    MNUtil: { currentWindow: 'window', undoGrouping: fn => fn() },
-    KnowledgeBaseConfig: { config: { readingFollowMode: true } },
-    KnowledgeBaseTemplate: {
-      types: { 定义: { colorIndex: 2 } },
-      isClassificationNote: n => n.kind === 'classification',
-      getNoteType: n => n.type,
-      parseNoteTitle: n => ({ type: n.acceptType }),
-      isReadingClassificationNote: () => false,
-      runUndoGroupingWithoutGlobalDBRefresh: fn => fn(),
-      toNoExcerptVersion: (n, parent, options) => { calls.push(['convert', options]); return { ...n, noteId: n.noteId + '-converted', parentNote: parent } },
-      refreshNoteLocally() {},
-      makeCard: (...args) => { calls.push(['make', args[1], args[2]]) },
-    },
-    KnowledgeBaseDefinitionConcept: { getRuntime: () => ({ begin: () => { calls.push(['definition']); return {} }, finish: () => calls.push(['finish-definition']) }) },
-    KnowledgeBaseUtils: { addErrorLog: e => { throw e } },
-    isKnowledgeBaseExtendNote: () => false,
-    MNNote: { new: () => currentNote },
-  }
-  vm.createContext(context)
-  for (const name of ['isReadingFollowPropositionTarget', 'convertQuickReadingExcerptWithoutGlobalRefresh', 'shouldSkipReadingOCR', 'processReadingFollowNote', 'processReadingModeNote']) {
-    instance[name] = vm.runInContext('(' + method(name) + ')', context)
-  }
-  context.MNKnowledgeBaseClass.prototype.markReadingFollowSource = () => calls.push(['mark-source'])
-  const start = source.indexOf('    onProcessNewExcerpt: async function (sender) {')
-  const end = source.indexOf('\n    queryAddonCommandStatus:', start)
-  const handler = vm.runInContext('({' + source.slice(start, end) + '}).onProcessNewExcerpt', context)
-  let target, currentNote
-  Object.assign(instance, {
-    extractReadingTagTypeAndCleanup() {},
-    getReadingFollowParentNote: () => target,
-    getReadingFollowMoveParent: n => n,
-    getQuickReadingNoteDiagnostic: n => ({ noteId: n && n.noteId, parentNoteId: n && n.parentNote && n.parentNote.noteId }),
-    logQuickReadingDiagnostic() {}, getReadingFollowChildContainment: () => ({}),
-    getReadingTypeFromColor: n => n.type,
-    applyQuickReadingOCRToTitle: async (n, options) => { calls.push(['ocr', options]); return true },
-    syncConvertedIntermediateIndexIfNeeded: () => calls.push(['index']), refreshAfterQuickReadingOCR() {},
-  })
+  const h = harness(), receiver = h.add('proposition', '命题')
+  h.deps.collectionMode = () => 'broad'
+  await h.command('setReceiver', { noteId: receiver.noteId })
+  h.deps.defaultAnchor = () => { throw Error('Matching manual receiver must not require Inbox') }
+  h.deps.beginDefinition = () => { throw Error('Proposition collection must not extract concepts') }
   for (const type of ['命题', '定义', '例子', '反例', '约定', '']) {
-    calls.length = 0
-    target = { noteId: 'proposition', type: '命题', addChild: n => { n.parentNote = target; calls.push(['move']) } }
-    currentNote = { noteId: 'excerpt', type, colorIndex: type === '定义' ? 2 : 10, focusInMindMap() {} }
-    await handler({ userInfo: { noteid: currentNote.noteId } })
-    assert.deepEqual(calls.map(c => c[0]), ['mark-source', 'move', 'ocr', 'convert', 'index'], type)
-    assert.equal(calls.find(c => c[0] === 'ocr')[1].ignoreDefinitionSkip, true)
-    assert.equal(calls.find(c => c[0] === 'convert')[1].allowTextExcerpt, true)
-    assert.equal(currentNote.parentNote, target)
+    const note = h.add('excerpt-' + (type || 'untyped'), type), result = await h.service.processExcerpt(h.main, note)
+    assert.equal(result.targetNoteId, receiver.noteId)
+    assert.equal(result.madeCard, false); assert.equal(result.addedToReview, false)
+    assert.deepEqual(h.calls.filter(c => c[1] === note.noteId).map(c => c[0]), ['type','move','ocr','convert','index'])
   }
-  calls.length = 0
-  target = { noteId: 'classification', kind: 'classification', type: '归类', acceptType: '命题', addChild: n => { n.parentNote = target; calls.push(['move']) } }
-  currentNote = { noteId: 'excerpt', type: '命题', colorIndex: 10, focusInMindMap() {} }
-  await handler({ userInfo: { noteid: currentNote.noteId } })
-  assert.deepEqual(calls.find(c => c[0] === 'make'), ['make', false, true], 'Classification still makes a full card without review')
-  calls.length = 0
-  currentNote = { noteId: 'definition', type: '定义', colorIndex: 2, focusInMindMap() {} }
-  await handler({ userInfo: { noteid: currentNote.noteId } })
-  assert.ok(calls.some(c => c[0] === 'definition'), 'Ordinary definition extraction remains available outside proposition collection')
-  assert.ok(!calls.some(c => c[0] === 'ocr'))
-  console.log('Proposition collection: broad excerpt event, OCR, text/image conversion and classification policy passed')
+  const typed = h.add('typed', '归类'); typed.acceptType = '命题'
+  await h.command('setReceiver', { noteId: typed.noteId })
+  const made = await h.service.processExcerpt(h.main, h.add('matching', '命题'))
+  assert.equal(made.madeCard, true); assert.equal(made.addedToReview, false)
+  console.log('Broad proposition targets accept all types with OCR/conversion only; typed targets still make full cards')
 }
-run().catch(e => { console.error(e); process.exitCode = 1 })
+run().catch(error => { console.error(error); process.exitCode = 1 })

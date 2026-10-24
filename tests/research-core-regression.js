@@ -236,8 +236,7 @@ async function tests() {
     assert.equal(result.noteId, 'manual-converted'); assert.equal(result.cardPending, true); assert.equal(result.addedToReview, false)
     assert.equal(h.notes.get(result.noteId).parentNote, parent)
     const template = await h.command('addTemplate', { noteId: 'manual', receive: true })
-    assert.equal(template.noteId, 'template-last'); assert.equal(template.receiver.noteId, 'template-last')
-    assert.equal(template.receiver.type, '定义', 'Bind only the final AddTemplate result')
+    assert.equal(template.noteId, 'template-last'); assert.equal(template.receiver, null, 'AddTemplate must never activate receiving, including legacy receive payloads')
   }
   {
     const h = harness(); await start(h); const definition = h.add('D', '定义'); let finished = 0, retargeted = 0
@@ -459,7 +458,7 @@ async function tests() {
     const command = (requestId, payload) => core.dispatch(instance, { version: 1, requestId, command: 'addTemplate', notebookId: 'study', payload: { noteId: definition.noteId, ...payload } })
     const dialogResult = await command('dialog', { receive: true })
     assert.equal(created.length, 2); assert.equal(created[0].parentNote, parent); assert.equal(created[1].parentNote, created[0])
-    assert.equal(dialogResult.noteId, created[1].noteId); assert.equal(dialogResult.receiver.noteId, created[1].noteId)
+    assert.equal(dialogResult.noteId, created[1].noteId); assert.equal(dialogResult.receiver, null, 'Even a legacy receive payload only creates templates')
     assert.equal(created[0].noteTitle, '“紧空间的命题”相关命题'); assert.equal(created[1].noteTitle, '“紧空间的命题及其性质”相关命题')
     const direct = await command('direct', { mode: 'sibling', titleInput: '紧空间的辅助知识', receive: false })
     assert.equal(notes.get(direct.noteId).noteTitle, '“紧空间的辅助知识”相关定义', 'Direct chain inherits color-derived definition instead of hard-coded proposition')
@@ -542,7 +541,7 @@ async function tests() {
       }
     }
     const event = main.slice(main.indexOf('onProcessNewExcerpt: async function (sender)'), main.indexOf('\n    queryAddonCommandStatus:'))
-    assert.ok(event.indexOf('KnowledgeBaseResearchCore.getRuntime().processExcerpt') < event.indexOf('definitionConceptTask = KnowledgeBaseDefinitionConcept'))
+    assert.ok(event.indexOf('runtime.processExcerpt') < event.indexOf('definitionConceptTask = KnowledgeBaseDefinitionConcept'))
     const calls = [], note = { noteId: 'event' }, self = { window: 'w', shouldSkipReadingOCR: () => { throw Error('Old definition branch ran') } }
     const context = { self, MNUtil: { currentWindow: 'w' }, MNNote: { new: () => note }, isKnowledgeBaseExtendNote: () => false,
       KnowledgeBaseResearchCore: { getRuntime: () => ({ isSceneActive: () => true, processExcerpt: async () => { calls.push('research') } }) }, KnowledgeBaseUtils: { addErrorLog: e => { throw e } } }
@@ -561,4 +560,5 @@ async function tests() {
   }
   console.log('Research Core: scene gate, window/study isolation, registry, receiver priority, lazy types, no-review make, pending definitions, dedupe and lifecycle passed')
 }
-tests().catch(error => { console.error(error); process.exitCode = 1 })
+module.exports = { harness, start }
+if (require.main === module) tests().catch(error => { console.error(error); process.exitCode = 1 })

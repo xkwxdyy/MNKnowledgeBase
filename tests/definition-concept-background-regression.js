@@ -11,6 +11,11 @@ function harness(options={}) {
  return {notes,note,saved,calls,scheduled,deps,manager,async start(){scheduled.filter(t=>t.ms===0).forEach(t=>t.resolve());await flush();}};
 }
 (async()=>{
+ {
+  let active=true, resolve;const h=harness({request:()=>new Promise(r=>{resolve=r;})});
+  h.manager.finish(h.manager.begin(h.note,false,{valid:()=>active}));await h.start();active=false;resolve('若 T 将有界集映为相对紧集，则称 T 为紧算子。');await flush();
+  assert.equal(h.note.title,'原摘录');assert.equal(h.saved.at(-1).status,'stale');
+ }
  assert.equal(api.formatTitles(good),'紧算子; compact operator');
  assert.equal(api.formatTitles({titles:[{zh:'伯格曼空间',en:'Bergman space'}]}),'伯格曼空间; Bergman space');
  assert.equal(api.formatTitles({titles:[{zh:'C*-代数',en:'C*-algebra'},{zh:'GNS构造',en:'GNS construction'}]}),'C*-代数; C*-algebra; GNS构造; GNS construction');
@@ -111,7 +116,7 @@ function harness(options={}) {
   const events=[],note={noteId:'event-note',colorIndex:2};
   const manager={begin:()=>{events.push('begin');return{};},finish:()=>events.push('finish')};
   const self={window:'window',classAutoMoveMode:false,isReadingFollowPropositionTarget:()=>false,getReadingFollowParentNote:()=>null,getReadingFollowMoveParent:n=>n,shouldSkipReadingOCR:()=>true,processReadingModeNote:async()=>events.push('collect'),hasDirectOCRTagComment:()=>false};
-  const ctx={MNUtil:{currentWindow:'window'},MNKnowledgeBaseClass:{prototype:{markReadingFollowSource(){}}},self,MNNote:{new:()=>note},isKnowledgeBaseExtendNote:()=>false,KnowledgeBaseConfig:{config:{readingFollowMode:mode==='reading',excerptOCRMode:mode==='direct'?3:0}},KnowledgeBaseDefinitionConcept:{getRuntime:()=>manager},KnowledgeBaseNetwork:{OCRToTitle:async()=>{throw Error('Definition must not wait for synchronous OCR')}},KnowledgeBaseUtils:{addErrorLog:e=>{throw e}}};
+  const ctx={MNUtil:{currentWindow:'window'},MNKnowledgeBaseClass:{prototype:{markReadingFollowSource(){}}},self,MNNote:{new:()=>note},isKnowledgeBaseExtendNote:()=>false,KnowledgeBaseConfig:{config:{readingFollowMode:mode==='reading',excerptOCRMode:mode==='direct'?3:0}},KnowledgeBaseResearchCore:{getRuntime:()=>({isSceneActive:()=>mode==='reading',processExcerpt:async()=>{manager.begin();events.push('collect');manager.finish();}})},KnowledgeBaseTemplate:{getReadingScene:()=>''},KnowledgeBaseDefinitionConcept:{getRuntime:()=>manager},KnowledgeBaseNetwork:{OCRToTitle:async()=>{throw Error('Definition must not wait for synchronous OCR')}},KnowledgeBaseUtils:{addErrorLog:e=>{throw e}}};
   vm.createContext(ctx);vm.runInContext('this.event = ({'+event+'}).onProcessNewExcerpt',ctx);
   await ctx.event({userInfo:{noteid:note.noteId}});
   assert.deepEqual(events,mode==='reading'?['begin','collect','finish']:['begin','finish']);

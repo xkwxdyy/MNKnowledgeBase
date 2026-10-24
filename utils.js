@@ -1532,16 +1532,16 @@ const kbOCRConfig = {
 const kbBundledReferenceNoteIds = {};
 
 class KnowledgeBaseTemplate {
-  static shouldAutoAddToReview() {
+  static getReadingScene() {
     try {
-      if (typeof Application === 'undefined') return true
+      if (typeof Application === 'undefined') return ''
       let snapshot
       const addonId = 'marginnote.extension.mnknowledgebase'
       if (typeof Application.immersiveTemplateForAddon === 'function') {
         snapshot = Application.immersiveTemplateForAddon(addonId)
       } else {
         const app = typeof Application.sharedInstance === 'function' ? Application.sharedInstance() : null
-        if (!app || typeof app.immersiveTemplateForAddon !== 'function') return true
+        if (!app || typeof app.immersiveTemplateForAddon !== 'function') return ''
         snapshot = app.immersiveTemplateForAddon(addonId)
       }
       const value = (object, key) => {
@@ -1559,8 +1559,15 @@ class KnowledgeBaseTemplate {
       if (typeof snapshot === 'string') snapshot = JSON.parse(snapshot)
       let config = value(snapshot, 'config')
       if (typeof config === 'string') config = JSON.parse(config)
-      return !(bool(value(snapshot, 'allowed')) && String(value(config, 'scene') || '').trim() === 'research')
-    } catch (_) { return true }
+      const scene = String(value(config, 'scene') || '').trim()
+      return bool(value(snapshot, 'allowed')) && ['research', 'broad', 'intensive'].includes(scene) ? scene : ''
+    } catch (_) { return '' }
+  }
+
+  static shouldAutoAddToReview() {
+    const scene = this.getReadingScene()
+    if (scene) return scene === 'intensive'
+    return !(typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig.config && KnowledgeBaseConfig.config.readingFollowMode)
   }
 
   static getConfiguredReference(section, key) {
@@ -2887,94 +2894,16 @@ class KnowledgeBaseTemplate {
   }
 
   /**
-   * 获取快速阅读下的制卡策略。
-   *
-   * 直接父卡是归类卡，或直接父卡链接最近归类祖先时恢复正常制卡。
-   * 仅存在更远的归类祖先不足以触发完整制卡。
+   * 显式制卡使用完整流程；泛读按摘录颜色锁定已知类型。
    * @param {MNNote} note
    * @returns {{mode: string, noteType: string|null, colorIndex: number|null, directParentIsClassification: boolean, linkParentTargetFound: boolean}}
    */
   static getQuickReadingMakeCardPolicy(note) {
-    const quickReadingEnabled = !!(
-      typeof KnowledgeBaseConfig !== "undefined" &&
-      KnowledgeBaseConfig &&
-      KnowledgeBaseConfig.config &&
-      KnowledgeBaseConfig.config.readingFollowMode
-    )
-    const rawColorIndex = note && note.colorIndex
-    const numericColorIndex = Number(rawColorIndex)
-    const colorIndex = rawColorIndex === null ||
-      typeof rawColorIndex === "undefined" ||
-      !Number.isFinite(numericColorIndex)
-      ? null
-      : numericColorIndex
-
-    if (!note) {
-      return {
-        mode: "normal",
-        noteType: null,
-        colorIndex,
-        directParentIsClassification: false,
-        linkParentTargetFound: false,
-      }
-    }
-
-    const currentNoteType = this.getNoteTypeByColor(colorIndex)
-    const readingClassificationParent = this.getReadingClassificationParentNote(note)
-    const readingRoughTypes = ["定义", "命题", "反例", "例子", "思想方法"]
-    if (readingClassificationParent && readingRoughTypes.includes(currentNoteType)) {
-      return {
-        mode: "rough",
-        noteType: currentNoteType,
-        colorIndex,
-        directParentIsClassification: true,
-        linkParentTargetFound: true,
-        readingClassificationParent: true,
-      }
-    }
-
-    if (!quickReadingEnabled) {
-      return {
-        mode: "normal",
-        noteType: null,
-        colorIndex,
-        directParentIsClassification: false,
-        linkParentTargetFound: false,
-      }
-    }
-
-    const supportedTypes = ["归类", "定义", "命题", "反例", "例子"]
-    if (!currentNoteType || !supportedTypes.includes(currentNoteType)) {
-      return {
-        mode: "unsupported",
-        noteType: null,
-        colorIndex,
-        directParentIsClassification: false,
-        linkParentTargetFound: false,
-      }
-    }
-
-    const directParentIsClassification = !!this.getDirectClassificationParentNote(note)
-    const linkedClassificationAncestor = directParentIsClassification
-      ? null
-      : this.getQuickReadingLinkedClassificationAncestor(note)
-    if (directParentIsClassification || linkedClassificationAncestor) {
-      return {
-        mode: "normal",
-        noteType: currentNoteType,
-        colorIndex,
-        directParentIsClassification,
-        linkParentTargetFound: true,
-      }
-    }
-
-    return {
-      mode: "rough",
-      noteType: currentNoteType,
-      colorIndex,
-      directParentIsClassification: false,
-      linkParentTargetFound: false,
-    }
+    // Explicit card commands always use the complete pipeline, regardless of ancestry.
+    const raw = note && note.colorIndex
+    const colorIndex = raw == null || !Number.isFinite(Number(raw)) ? null : Number(raw)
+    const broad = this.getReadingScene() === 'broad' || (typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig.config && KnowledgeBaseConfig.config.readingFollowMode)
+    return { mode: 'normal', noteType: broad && note ? this.getNoteTypeByColor(colorIndex) : null, colorIndex, directParentIsClassification: false, linkParentTargetFound: false }
   }
 
   static showQuickReadingUnsupportedColorHUD(policy) {
@@ -32040,6 +31969,7 @@ ${this.OCRNumberingRules}
         let titleApplied = false
         this.logOCRStage('title.started')
         const applyTitle = () => {
+        if (options.valid && !options.valid()) return false
         if (guardedOCR && (String(MNUtil.currentNotebookId || '') !== originalNotebook || MNUtil.currentWindow !== originalWindow ||
           KnowledgeBaseDefinitionConcept.snapshot(note) !== originalSnapshot)) {
           this.logOCRStage('title.rejected', { reason: 'source-changed' })

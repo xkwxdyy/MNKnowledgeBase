@@ -332,6 +332,15 @@ JSB.newAddon = function(mainPath){
      * - 保存用户的临时操作状态
      * - 释放一些临时资源
      */
+    notebookWillClose: function(topicid) {
+      try { self.readingCollectionStopped = true; KnowledgeBaseResearchCore.getRuntime().close(self, topicid) }
+      catch (error) { KnowledgeBaseUtils.addErrorLog(error, 'notebookWillClose') }
+    },
+    notebookWillOpen: function(topicid) {
+      try { KnowledgeBaseResearchCore.getRuntime().connect(self) }
+      catch (error) { KnowledgeBaseUtils.addErrorLog(error, 'notebookWillOpen') }
+    },
+
     sceneWillResignActive: function() {
       // 示例中为空实现
     },
@@ -345,7 +354,8 @@ JSB.newAddon = function(mainPath){
      * - 重新获取最新数据
      */
     sceneDidBecomeActive: function() {
-      // 示例中为空实现
+      try { KnowledgeBaseResearchCore.getRuntime().state(self) }
+      catch (error) { KnowledgeBaseUtils.addErrorLog(error, 'sceneDidBecomeActive') }
     },
     
     /**
@@ -546,27 +556,17 @@ JSB.newAddon = function(mainPath){
           return
         }
 
-        // Research owns this event before any saved legacy mode can process it.
-        if (typeof KnowledgeBaseResearchCore !== 'undefined' &&
-            KnowledgeBaseResearchCore.getRuntime().isSceneActive(self)) {
-          await KnowledgeBaseResearchCore.getRuntime().processExcerpt(self, note)
-          return
+        // Collection uses explicit receivers; intensive reading never enters legacy routing.
+        if (typeof KnowledgeBaseResearchCore !== 'undefined') {
+          const runtime = KnowledgeBaseResearchCore.getRuntime()
+          if (runtime.isSceneActive(self)) {
+            await runtime.processExcerpt(self, note)
+            return
+          }
+          if (KnowledgeBaseTemplate.getReadingScene() || KnowledgeBaseConfig.config.readingFollowMode) return
         }
-
-        if (KnowledgeBaseConfig.config.readingFollowMode) {
-          MNKnowledgeBaseClass.prototype.markReadingFollowSource.call(self, noteId)
-        }
-        const propositionReceiver = KnowledgeBaseConfig.config.readingFollowMode &&
-          self.shouldSkipReadingOCR(note) && self.isReadingFollowPropositionTarget(
-            self.getReadingFollowMoveParent(self.getReadingFollowParentNote(note)))
-        if (!propositionReceiver && self.shouldSkipReadingOCR(note) &&
-            typeof KnowledgeBaseDefinitionConcept !== 'undefined') {
+        if (self.shouldSkipReadingOCR(note) && typeof KnowledgeBaseDefinitionConcept !== 'undefined') {
           definitionConceptTask = KnowledgeBaseDefinitionConcept.getRuntime().begin(note)
-        }
-
-        if (KnowledgeBaseConfig.config.readingFollowMode) {
-          await self.processReadingModeNote(note, { source: "excerpt" })
-          return
         }
 
         // KnowledgeBaseUtils.log("开始执行 onProcessNewExcerpt", "onProcessNewExcerpt", {
@@ -676,6 +676,7 @@ JSB.newAddon = function(mainPath){
     },
 
     queryAddonCommandStatus: function() {
+      if (typeof KnowledgeBaseResearchCore !== 'undefined') KnowledgeBaseResearchCore.getRuntime().state(self)
       // 延迟初始化控制器（参考 mnliterature）
       KnowledgeBaseUtils.checkWebViewController()
 
@@ -1183,10 +1184,10 @@ JSB.newAddon = function(mainPath){
       }
     },
 
-    readingFollowModeToggled: function() {
+    readingFollowModeToggled: async function() {
       try {
         self.checkPopover()
-        MNKnowledgeBaseClass.prototype.toggleReadingFollowMode.call(self)
+        await MNKnowledgeBaseClass.prototype.toggleReadingFollowMode.call(self)
       } catch (error) {
         KnowledgeBaseUtils.addErrorLog(error, "readingFollowModeToggled")
       }
@@ -1797,14 +1798,7 @@ JSB.newAddon = function(mainPath){
             })
           }
         }
-        if (selectedNoteId && KnowledgeBaseConfig.config.readingFollowMode) {
-          const selectedNote = MNNote.new(selectedNoteId)
-          if (selectedNote && selectedNote.noteTitle) {
-            MNKnowledgeBaseClass.prototype.commitReadingFollowTarget.call(self, selectedNoteId, 'popup-titled')
-          } else if (selectedNote) {
-            MNKnowledgeBaseClass.prototype.scheduleUntitledReadingFollowTarget.call(self, selectedNoteId)
-          }
-        }
+
       } catch (error) {
         KnowledgeBaseUtils.addErrorLog(error, "onPopupMenuOnNote")
       }
@@ -2403,25 +2397,40 @@ JSB.newAddon = function(mainPath){
     return false
   }
 
-  MNKnowledgeBaseClass.prototype.toggleReadingFollowMode = function() {
-    const next = !KnowledgeBaseConfig.config.readingFollowMode
-    if (!next) {
-      KnowledgeBaseConfig.config.readingFollowMode = false
+  MNKnowledgeBaseClass.prototype.toggleReadingFollowMode = async function() {
+    const runtime = KnowledgeBaseResearchCore.getRuntime(), state = runtime.state(this)
+    const scene = KnowledgeBaseTemplate.getReadingScene()
+    if (scene === 'intensive') { MNUtil.showHUD('❌ 精读场景不接收摘录'); return }
+    const receiver = state.receiver
+    const actions = []
+    if (!scene) actions.push(state.sceneActive ? '关闭泛读收集' : '开启泛读收集')
+    if (state.sceneActive) {
+      actions.push('将选中卡片设为接收目标')
+      if (receiver && receiver.available && !receiver.active) actions.push('恢复上次接收目标')
+      if (receiver && receiver.active) actions.push('结束手动接收')
+    }
+    const summary = receiver ? `${receiver.type} · ${receiver.title}（${receiver.active ? '接收中' : '等待手动恢复'}）` : '未设置'
+    const choice = await MNUtil.userSelect('阅读收集', `手动目标：${summary}\n默认位置：${scene === 'research' ? '当前课题；未开始课题时原位处理' : '固定 Inbox'}`, actions)
+    if (!choice) return
+    if (String(MNUtil.currentNotebookId || '') !== state.notebookId || this.window !== MNUtil.currentWindow || runtime.state(this).collectionMode !== state.collectionMode) throw Error('context-changed')
+    const action = actions[choice - 1]
+    if (action === '开启泛读收集' || action === '关闭泛读收集') {
+      if (action === '关闭泛读收集') runtime.close(this, state.notebookId)
+      KnowledgeBaseConfig.config.readingFollowMode = action === '开启泛读收集'
       KnowledgeBaseConfig.save()
+      if (KnowledgeBaseConfig.config.readingFollowMode) { this.readingCollectionStopped = false; runtime.connect(this) }
       this.refreshAddonCommandStatus()
-      MNUtil.showHUD('已关闭快速阅读模式', 1)
       return
     }
-
-    const result = this.applyAutomationConflictsBeforeEnable('readingFollow', {
-      preserveReadingOCRMode: true,
-    })
-    KnowledgeBaseConfig.config.readingFollowMode = true
-    KnowledgeBaseConfig.save()
-    this.refreshAddonCommandStatus()
-    this.showManagedAutomationModeHUD('已开启快速阅读模式', result.disabledLabels, {
-      externalReadingStopped: result.externalReadingStopped,
-    })
+    let command = 'stopReceiver', payload = {}
+    if (action === '将选中卡片设为接收目标') {
+      const selected = this.getSelectedNotes()
+      if (selected.length !== 1) { MNUtil.showHUD('❌ 请选中一张归类卡或命题卡'); return }
+      command = 'setReceiver'; payload = { noteId: selected[0].noteId }
+    } else if (action === '恢复上次接收目标') {
+      command = 'setReceiver'; payload = { noteId: receiver.noteId }
+    } else if (action !== '结束手动接收') return
+    return runtime.dispatch(this, { version: 1, requestId: 'reading-' + Date.now(), notebookId: state.notebookId, command, payload })
   }
 
   MNKnowledgeBaseClass.prototype.demoModeToggledInternal = function() {
@@ -3073,72 +3082,10 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.getReadingFollowParentNote = function(sourceNote) {
-    const pendingTargetId = String(
-      this.readingFollowPendingUntitledTarget && this.readingFollowPendingUntitledTarget.noteId || '',
-    ).trim()
-    if (pendingTargetId) {
-      const pendingTarget = resolveAvailableNote(pendingTargetId)
-      if (pendingTarget && this.isReadingFollowTargetCompatible(pendingTarget, sourceNote)) {
-        this.logQuickReadingDiagnostic('target.pendingUsedForFollow', {
-          target: this.getQuickReadingNoteDiagnostic(pendingTarget),
-        })
-        return pendingTarget
-      }
-      this.logQuickReadingDiagnostic('target.pendingDiscarded', {
-        target: this.getQuickReadingNoteDiagnostic(pendingTargetId),
-        source: this.getQuickReadingNoteDiagnostic(sourceNote),
-        reason: pendingTarget ? 'different-notebook' : 'unavailable',
-      }, 'warn')
-      this.readingFollowPendingUntitledTarget = null
-    }
-
-    const recentTargetIds = this.getReadingFollowRecentTargetIds()
-    const unavailableTargetIds = []
-    const incompatibleTargetIds = []
-    let resolvedTarget = null
-    let resolvedTargetId = ''
-    recentTargetIds.forEach((candidateId) => {
-      const candidate = resolveAvailableNote(candidateId)
-      if (!candidate) {
-        unavailableTargetIds.push(candidateId)
-        return
-      }
-      if (!this.isReadingFollowTargetCompatible(candidate, sourceNote)) {
-        incompatibleTargetIds.push(candidateId)
-        return
-      }
-      if (!resolvedTarget) {
-        resolvedTarget = candidate
-        resolvedTargetId = candidateId
-      }
-    })
-    const remainingTargetIds = recentTargetIds.filter(id => !unavailableTargetIds.includes(id))
-    if (resolvedTarget) {
-      const nextTargetIds = [resolvedTargetId]
-        .concat(remainingTargetIds.filter(id => id !== resolvedTargetId))
-        .slice(0, 3)
-      const queueResult = this.setReadingFollowRecentTargetIds(nextTargetIds)
-      if (queueResult.changed || unavailableTargetIds.length > 0 || incompatibleTargetIds.length > 0) {
-        this.logQuickReadingDiagnostic('target.recentFallbackUsed', {
-          source: this.getQuickReadingNoteDiagnostic(sourceNote),
-          target: this.getQuickReadingNoteDiagnostic(resolvedTarget),
-          unavailableTargetIds,
-          incompatibleTargetIds,
-          recentTargetIds: queueResult.recentTargetIds,
-        })
-      }
-      return resolvedTarget
-    }
-    if (unavailableTargetIds.length > 0) {
-      this.setReadingFollowRecentTargetIds(remainingTargetIds)
-    }
-
-    const selectedNotes = this.getSelectedNotes()
-    if (selectedNotes.length > 0 && this.isReadingFollowTargetCompatible(selectedNotes[0], sourceNote)) {
-      return selectedNotes[0]
-    }
-
-    return null
+    const receiver = KnowledgeBaseResearchCore.getRuntime().state(this).receiver
+    if (!receiver || !receiver.active) return null
+    const target = resolveAvailableNote(receiver.noteId)
+    return target && this.isReadingFollowTargetCompatible(target, sourceNote) ? target : null
   }
 
   MNKnowledgeBaseClass.prototype.getReadingFollowMoveParent = function(targetParent) {
@@ -3232,194 +3179,7 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.processReadingFollowNote = async function(note) {
-    this.extractReadingTagTypeAndCleanup(note)
-
-    const flowId = `${Date.now()}-${String(note && note.noteId ? note.noteId : '').slice(-8)}`
-    const followStartedAt = Date.now()
-    const slowThresholdMs = 1000
-    let ocrDurationMs = 0
-    let ocrDiagnostic = {}
-    const logSlowFollowIfNeeded = (stage) => {
-      const totalDurationMs = Math.max(0, Date.now() - followStartedAt)
-      if (totalDurationMs < slowThresholdMs && ocrDurationMs < slowThresholdMs) return
-      this.logQuickReadingDiagnostic('follow.slow', {
-        flowId,
-        stage: String(stage || ''),
-        totalDurationMs,
-        ocrDurationMs,
-        ocr: ocrDiagnostic,
-      }, 'warn')
-    }
-    const sourceBefore = this.getQuickReadingNoteDiagnostic(note)
-    const targetParent = this.getReadingFollowParentNote(note)
-    const pendingTargetId = String(
-      this.readingFollowPendingUntitledTarget && this.readingFollowPendingUntitledTarget.noteId || '',
-    ).trim()
-    let targetParentForMove = this.getReadingFollowMoveParent(targetParent)
-    const targetSelectedState = this.getQuickReadingNoteDiagnostic(targetParent)
-    const targetMoveState = this.getQuickReadingNoteDiagnostic(targetParentForMove)
-    const propositionTarget = this.isReadingFollowPropositionTarget(targetParentForMove)
-    const pendingTargetState = pendingTargetId
-      ? this.getQuickReadingNoteDiagnostic(pendingTargetId)
-      : null
-    const sourceIds = [sourceBefore.noteId, sourceBefore.realGroupNoteId].filter(id => !!id)
-    const targetIds = [targetMoveState.noteId, targetMoveState.realGroupNoteId].filter(id => !!id)
-    const pendingTargetIds = [pendingTargetState && pendingTargetState.noteId, pendingTargetState && pendingTargetState.realGroupNoteId]
-      .filter(id => !!id)
-    const pendingTargetUsed = !!pendingTargetId && pendingTargetIds.some(id => [
-      targetSelectedState.noteId,
-      targetSelectedState.realGroupNoteId,
-      targetMoveState.noteId,
-      targetMoveState.realGroupNoteId,
-    ].includes(id))
-    const selfTarget = sourceIds.some(id => targetIds.includes(id))
-    if (selfTarget) {
-      this.logQuickReadingDiagnostic('follow.selfTargetBlocked', {
-        flowId,
-        source: sourceBefore,
-        targetSelected: targetSelectedState,
-        targetForMove: targetMoveState,
-      }, 'warn')
-      targetParentForMove = null
-    }
-
-    this.logQuickReadingDiagnostic('follow.start', {
-      flowId,
-      configuredTargetId: String(KnowledgeBaseConfig.config.readingFollowLastNoteId || '').trim(),
-      source: sourceBefore,
-      targetSelected: targetSelectedState,
-      targetForMove: targetMoveState,
-      selfTarget,
-    })
-
-    if (targetParentForMove) {
-      MNUtil.undoGrouping(() => {
-        targetParentForMove.addChild(note)
-      })
-
-      if (pendingTargetUsed && !selfTarget) {
-        this.commitReadingFollowTarget(pendingTargetId, 'follow-pending-confirmed')
-        this.readingFollowPendingUntitledTarget = null
-      }
-
-      const sourceAfterMove = this.getQuickReadingNoteDiagnostic(sourceBefore.noteId || note)
-      this.logQuickReadingDiagnostic('follow.afterAddChild', {
-        flowId,
-        sourceBefore,
-        sourceAfterMove,
-        targetForMove: this.getQuickReadingNoteDiagnostic(targetParentForMove),
-        containment: this.getReadingFollowChildContainment(targetParentForMove, sourceAfterMove),
-      })
-
-      let ocrSuccess = false
-      if (propositionTarget || !this.shouldSkipReadingOCR(note)) {
-        const ocrStartedAt = Date.now()
-        ocrSuccess = !!await this.applyQuickReadingOCRToTitle(note, {
-          ocrDiagnosticTarget: ocrDiagnostic,
-          ignoreDefinitionSkip: propositionTarget,
-        })
-        ocrDurationMs = Math.max(0, Date.now() - ocrStartedAt)
-      }
-
-      this.logQuickReadingDiagnostic('follow.beforeConversion', {
-        flowId,
-        source: this.getQuickReadingNoteDiagnostic(note),
-        targetForMove: this.getQuickReadingNoteDiagnostic(targetParentForMove),
-        excerptType: String(note && note.excerptType || ''),
-        ocrDurationMs,
-        ocr: ocrDiagnostic,
-      })
-      const processedNote = this.convertQuickReadingExcerptWithoutGlobalRefresh(note, targetParentForMove)
-      const processedState = this.getQuickReadingNoteDiagnostic(processedNote)
-      const expectedParentId = String(targetMoveState.realGroupNoteId || targetMoveState.noteId || '').trim()
-      const actualParentId = String(processedState.parentRealGroupNoteId || processedState.parentNoteId || '').trim()
-      this.logQuickReadingDiagnostic('follow.afterConversion', {
-        flowId,
-        expectedParentId,
-        actualParentId,
-        parentMatches: !!expectedParentId && expectedParentId === actualParentId,
-        processed: processedState,
-        targetForMove: this.getQuickReadingNoteDiagnostic(targetParentForMove),
-        containment: this.getReadingFollowChildContainment(targetParentForMove, processedState),
-        ocrDurationMs,
-        ocr: ocrDiagnostic,
-        totalDurationMs: Math.max(0, Date.now() - followStartedAt),
-     }, expectedParentId && actualParentId && expectedParentId !== actualParentId ? 'warn' : 'info')
-     this.syncConvertedIntermediateIndexIfNeeded(note, processedNote)
-
-      // 快速阅读自动制卡：摘录颜色与目标归类卡类型匹配时自动完整制卡
-      if (processedNote && targetParentForMove) {
-        const autoMakeNoteType = this.getReadingTypeFromColor(processedNote)
-        const autoMakeSupportedTypes = ['命题', '定义', '例子', '反例']
-        if (autoMakeSupportedTypes.includes(autoMakeNoteType)) {
-          if (KnowledgeBaseTemplate.isClassificationNote(targetParentForMove) &&
-              !KnowledgeBaseTemplate.isReadingClassificationNote(targetParentForMove)) {
-            const targetParsed = KnowledgeBaseTemplate.parseNoteTitle(targetParentForMove)
-            const targetType = (targetParsed && targetParsed.type) ? String(targetParsed.type).trim() : ''
-            const typeMatched = autoMakeNoteType === targetType
-            this.logQuickReadingDiagnostic('follow.autoMakeCard', {
-              flowId,
-              noteType: autoMakeNoteType,
-              targetType,
-              typeMatched,
-            })
-            if (typeMatched) {
-              try {
-                KnowledgeBaseTemplate.makeCard(processedNote, false, true, {
-                  noteType: autoMakeNoteType,
-                })
-              } catch (makeCardError) {
-                this.logQuickReadingDiagnostic('follow.autoMakeCard.error', {
-                  flowId,
-                  noteType: autoMakeNoteType,
-                  targetType,
-                  error: String(makeCardError && makeCardError.message || makeCardError || ''),
-                }, 'warn')
-              }
-            }
-          }
-        }
-      }
-
-     if (processedNote) {
-       processedNote.focusInMindMap(0.4)
-     }
-     if (ocrSuccess) {
-       this.refreshAfterQuickReadingOCR(processedNote || note, 'afterConversion')
-     }
-      logSlowFollowIfNeeded('afterConversion')
-      return
-    }
-
-    let ocrSuccess = false
-    if (!this.shouldSkipReadingOCR(note)) {
-      const ocrStartedAt = Date.now()
-      ocrSuccess = !!await this.applyQuickReadingOCRToTitle(note, {
-        ocrDiagnosticTarget: ocrDiagnostic,
-      })
-      ocrDurationMs = Math.max(0, Date.now() - ocrStartedAt)
-    }
-    if (selfTarget) {
-      this.logQuickReadingDiagnostic('follow.selfTargetPreservedPreviousTarget', {
-        flowId,
-        source: sourceBefore,
-        configuredTargetId: String(KnowledgeBaseConfig.config.readingFollowLastNoteId || '').trim(),
-        ocrDurationMs,
-        totalDurationMs: Math.max(0, Date.now() - followStartedAt),
-      }, 'warn')
-      if (ocrSuccess) {
-        this.refreshAfterQuickReadingOCR(note, 'selfTarget')
-      }
-      logSlowFollowIfNeeded('selfTarget')
-      return
-    }
-    if (note && note.noteId) {
-      this.commitReadingFollowTarget(note.noteId, 'follow-no-target')
-    }
-    if (ocrSuccess) {
-      this.refreshAfterQuickReadingOCR(note, 'noTarget')
-    }
-    logSlowFollowIfNeeded('noTarget')
+    return KnowledgeBaseResearchCore.getRuntime().processExcerpt(this, note)
   }
 
   MNKnowledgeBaseClass.prototype.processReadingModeNote = async function(note, options = {}) {

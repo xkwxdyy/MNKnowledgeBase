@@ -107,6 +107,7 @@ var KnowledgeBaseDefinitionConcept = (function () {
         var input = manual ? {} : deps.capture(note)
         if (!input || (!manual && !input.image && !input.text)) return null
         var job = { research: research, token: ++sequence, noteId: text(note.noteId), context: deps.context ? deps.context() : '', window: deps.window ? deps.window() : null, deferredInput: !!manual, image: input.image || '', inputText: input.text || '', startedAt: Date.now() }
+        job.collectionValid = options && options.valid
         jobs[job.noteId] = job
         log('job.accepted', { hasImage: !!job.image, hasText: !!job.inputText, queueLength: queue.length })
         return job
@@ -120,7 +121,7 @@ var KnowledgeBaseDefinitionConcept = (function () {
       }
     }
     function valid(job) {
-      if (stopped || jobs[job.noteId] !== job) return null
+      if (stopped || jobs[job.noteId] !== job || (job.collectionValid && !job.collectionValid())) return null
       if (deps.context && job.context !== deps.context()) return null
       if (deps.window && job.window !== deps.window()) return null
       var note = deps.getNote(job.noteId)

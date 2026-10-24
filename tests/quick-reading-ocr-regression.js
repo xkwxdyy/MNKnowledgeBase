@@ -380,21 +380,10 @@ async function captureQuickReadingOCRRequest(needTranslation) {
     /applyQuickReadingOCRToTitle[\s\S]*?applyOCRToTitleWithMode\(note, 1, \{\s*\.\.\.options,\s*quickReadingPlainText: true,/,
     'quick reading must explicitly select the Unicode-only post-processing profile',
   );
-  assert.match(
-    mainSource,
-    /processReadingFollowNote[\s\S]*?applyQuickReadingOCRToTitle\(note,\s*\{\s*ocrDiagnosticTarget:/,
-    'quick reading follow flow must retain its dedicated OCR entry point',
-  );
-  assert.match(
-    mainSource,
-    /refreshAfterQuickReadingOCR[\s\S]*?xdyyRefreshAfterDBChangedNow[\s\S]*?app\.refreshAfterDBChanged[\s\S]*?refreshAfterDBChanged/,
-    'quick reading must use an immediate post-OCR DB refresh with compatible fallbacks',
-  );
-  assert.match(
-    mainSource,
-    /ocrSuccess = !!await this\.applyQuickReadingOCRToTitle[\s\S]*?this\.refreshAfterQuickReadingOCR\(processedNote \|\| note, 'afterConversion'\)/,
-    'quick reading must refresh only after successful OCR and conversion complete',
-  );
+  assert.match(mainSource, /processReadingFollowNote = async function\(note\) \{\s*return KnowledgeBaseResearchCore.getRuntime\(\).processExcerpt\(this, note\)/, 'Broad routing delegates to the shared guarded pipeline');
+  const core = fs.readFileSync(path.join(addonRoot, 'KnowledgeBaseResearchCore.js'), 'utf8');
+  assert.match(core, /ocr: function \(instance, n, options\)[\s\S]*?instance.applyQuickReadingOCRToTitle/, 'Shared routing retains the dedicated OCR entry');
+  assert.match(core, /await deps\.ocr[\s\S]*?deps\.convert[\s\S]*?await deps\.refresh/, 'Presentation follows OCR and conversion');
   assert.match(
     utilsSource,
     /OCRToTitle[\s\S]*?const applyTitle = \(\) => \{[\s\S]*?refreshNoteLocally\(note, false[\s\S]*?await KnowledgeBaseTemplate\.runUndoGroupingWithoutGlobalDBRefreshAsync\(applyTitle/,
@@ -411,9 +400,9 @@ async function captureQuickReadingOCRRequest(needTranslation) {
     'the model settings menu must expose a dedicated quick-reading model selector',
   );
   assert.match(
-    mainSource,
-    /follow\.slow[\s\S]*?ocr:\s*ocrDiagnostic/,
-    'the retained slow summary must include the per-request OCR diagnostic payload',
+    core,
+    /log\('ocr.finished',[\s\S]*?durationMs:[\s\S]*?log\('excerpt.finished'/,
+    'Shared routing retains phase timing diagnostics without private content',
   );
 
   console.log('quick reading OCR regression ok');

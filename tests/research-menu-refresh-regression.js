@@ -21,7 +21,7 @@ function fixture() {
     refreshAfterDBChanged: id => calls.push(['db', id]),
     undoGroupingNotRefresh: block => { calls.push(['undo.start']); try { return block() } finally { calls.push(['undo.end']) } },
   }
-  const context = vm.createContext({ console, module: { exports: {} }, Set, Map, Date, MNUtil: util,
+  const context = vm.createContext({ console, module: { exports: {} }, Set, Map, Date, MNUtil: util, KnowledgeBaseConfig: { config: {} },
     Application: { sharedInstance: () => ({ studyController: () => ({ notebookController: { notebookId: util.currentNotebookId } }) }),
       immersiveTemplateForAddon: () => ({ allowed: active, config: { scene: 'research' } }) },
     NSUserDefaults: { standardUserDefaults: () => ({ objectForKey: key => stored.get(key), setObjectForKey: (value, key) => stored.set(key, value) }) },
@@ -32,7 +32,7 @@ function fixture() {
   vm.runInContext('this.KnowledgeBaseTemplate = class {' + actualMake + '\n' + actualUndo + '}', context)
   const T = context.KnowledgeBaseTemplate
   Object.assign(T, {
-    types: { 归类: { colorIndex: 0 } }, shouldAutoAddToReview: () => true,
+    types: { 归类: { colorIndex: 0 } }, shouldAutoAddToReview: () => true, getReadingScene: () => active ? 'research' : '',
     getNoteType: () => '命题', assertMakeCardTemplateAvailable: () => calls.push(['preflight']),
     getQuickReadingMakeCardPolicy: () => ({ mode: 'rough' }),
     makeQuickReadingRoughCard: () => { throw Error('saved rough policy must not replace explicit full make') },

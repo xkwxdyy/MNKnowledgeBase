@@ -22,7 +22,7 @@ var KnowledgeBaseResearchCore = (function () {
   }
   function errorCode(error) {
     var code = text(value(error, 'code') || value(error, 'message'))
-    return /^(?:invalid-(?:id|request|json|template-mode)|note-unavailable|different-notebook|receiver-must-be-classification|receiver-must-be-classification-or-proposition|receiver-type-missing|research-scene-inactive|notebook-unavailable|project-unavailable|template-cancelled|context-changed|unknown-command|self-target|project-title-missing|classification-create-failed|KB_TEMPLATE_MISSING)$/.test(code) ? code : 'exception'
+    return /^(?:invalid-(?:id|request|json|template-mode)|note-unavailable|different-notebook|receiver-must-be-classification|receiver-must-be-classification-or-proposition|receiver-type-missing|inbox-unavailable|research-scene-inactive|notebook-unavailable|project-unavailable|template-cancelled|context-changed|unknown-command|self-target|project-title-missing|classification-create-failed|KB_TEMPLATE_MISSING)$/.test(code) ? code : 'exception'
   }
   // A bounded metadata-only record also works before MNUtil and the window observers exist.
   function trace(stage, details) {
@@ -122,7 +122,11 @@ var KnowledgeBaseResearchCore = (function () {
       return found
     }
     function context(instance) {
-      var s = session(instance), notebookId = text(deps.notebookId(instance))
+      var s = session(instance), notebookId = text(deps.notebookId(instance)), mode = collectionMode(instance)
+      if (s.mode !== mode) {
+        if (s.mode !== undefined) { receiverActive = false; receiverRevision += 1; s.lifecycle += 1; s.projectRevision += 1; s.seen.clear() }
+        s.mode = mode
+      }
       if (s.notebookId !== notebookId) {
         if (s.notebookId && stored.receiver && stored.receiver.notebookId === s.notebookId) { receiverActive = false; receiverRevision += 1 }
         s.notebookId = notebookId; s.activeId = ''; s.lifecycle += 1; s.projectRevision += 1; s.seen.clear()
@@ -135,8 +139,12 @@ var KnowledgeBaseResearchCore = (function () {
       if (!item || !Array.isArray(item.projects)) { item = { projects: [] }; stored.notebooks[id] = item }
       return item
     }
+    function collectionMode(instance) {
+      try { return deps.collectionMode ? text(deps.collectionMode(instance)) : deps.sceneActive(instance) ? 'research' : '' } catch (_) { return '' }
+    }
     function isSceneActive(instance) {
-      try { return !!deps.isCurrentWindow(instance) && !session(instance).closed && !!deps.sceneActive(instance) } catch (_) { return false }
+      var s = context(instance)
+      return !!deps.isCurrentWindow(instance) && !s.closed && (s.mode === 'research' || s.mode === 'broad')
     }
     function note(id, notebookId) {
       var result = deps.getNote(identifier(id))
@@ -163,7 +171,7 @@ var KnowledgeBaseResearchCore = (function () {
     }
     function state(instance) {
       var s = context(instance)
-      return { projects: s.notebookId ? clone(notebook(s.notebookId).projects) : [], activeProject: s.notebookId ? clone(activeProject(s)) : null, receiver: receiverInfo(s), sceneActive: isSceneActive(instance), notebookId: s.notebookId }
+      return { projects: s.notebookId ? clone(notebook(s.notebookId).projects) : [], activeProject: s.notebookId ? clone(activeProject(s)) : null, receiver: receiverInfo(s), sceneActive: isSceneActive(instance), collectionMode: s.mode, notebookId: s.notebookId }
     }
     function guard(instance, notebookId, lifecycle) {
       var s = context(instance)
@@ -222,7 +230,6 @@ var KnowledgeBaseResearchCore = (function () {
         if (!processed) return Object.assign({ cancelled: true }, state(instance))
         if (!guard(instance, s.notebookId, lifecycle)) throw new Error('context-changed')
         processed = note(processed.noteId, s.notebookId)
-        if (payload.receive === true) setReceiver(s, processed)
         result = { noteId: text(processed.noteId) }
       } else { throw new Error('unknown-command') }
       return Object.assign(result, state(instance))
@@ -239,11 +246,13 @@ var KnowledgeBaseResearchCore = (function () {
       if (s.seen.has(sourceId)) return Promise.resolve({ handled: true, noteId: sourceId, duplicate: true })
       remember(s, sourceId)
       // Type resolution consumes recognized tag comments. Read exactly once at event time.
-      var type = deps.excerptType(instance, inputNote), receiver = receiverInfo(s), project = activeProject(s)
+      var type = deps.excerptType(instance, inputNote), receiver = receiverInfo(s), project = s.mode === 'research' ? activeProject(s) : null
       var manual = !!(receiver && receiver.active && (receiver.kind === 'proposition' || (type && receiver.type === type)))
       var fullCard = manual && receiver.kind === 'classification'
-      var job = { sourceId: sourceId, type: type, notebookId: s.notebookId, lifecycle: s.lifecycle, receiverRevision: receiverRevision, projectRevision: s.projectRevision, targetId: manual ? receiver.noteId : '', anchorId: project ? project.anchorNoteId : '', manual: manual, fullCard: fullCard, receiverKind: manual ? receiver.kind : '' }
-      var queuedAt = Date.now(), traceId = 'excerpt-' + (++excerptSequence), route = manual ? 'receiver' : job.anchorId ? 'project' : 'in-place'
+      var inbox = !manual && s.mode === 'broad' && deps.defaultAnchor ? deps.defaultAnchor(instance) : null
+      if (inbox) inbox = note(inbox.noteId, s.notebookId)
+      var job = { sourceId: sourceId, type: type, notebookId: s.notebookId, lifecycle: s.lifecycle, receiverRevision: receiverRevision, projectRevision: s.projectRevision, targetId: manual ? receiver.noteId : '', anchorId: project ? project.anchorNoteId : inbox ? text(inbox.noteId) : '', mode: s.mode, manual: manual, fullCard: fullCard, receiverKind: manual ? receiver.kind : '' }
+      var queuedAt = Date.now(), traceId = 'excerpt-' + (++excerptSequence), route = manual ? 'receiver' : job.anchorId ? (job.mode === 'broad' ? 'inbox' : 'project') : 'in-place'
       function log(stage, details) { return pipeline(stage, Object.assign({ traceId: traceId, route: route }, details || {})) }
       log('excerpt.queued')
       function valid() {
@@ -273,8 +282,8 @@ var KnowledgeBaseResearchCore = (function () {
           }
           log('route.finished', { durationMs: Date.now() - phaseStartedAt })
           phase = 'ocr'; phaseStartedAt = Date.now()
-          if (!(job.manual && !job.fullCard) && job.type === '定义' && deps.beginDefinition) definitionJob = deps.beginDefinition(original)
-          if (!definitionJob) { log('ocr.started'); var ocrResult = await deps.ocr(instance, original); log('ocr.finished', { ok: !!ocrResult, hasTitle: !!text(deps.title(original)), durationMs: Date.now() - phaseStartedAt }) }
+          if (!(job.manual && !job.fullCard) && job.type === '定义' && deps.beginDefinition) definitionJob = deps.beginDefinition(original, { researchScene: job.mode === 'research', valid: valid })
+          if (!definitionJob) { log('ocr.started'); var ocrResult = await deps.ocr(instance, original, { researchScene: job.mode === 'research', valid: valid }); log('ocr.finished', { ok: !!ocrResult, hasTitle: !!text(deps.title(original)), durationMs: Date.now() - phaseStartedAt }) }
           else log('definition.accepted', { pending: true, durationMs: Date.now() - phaseStartedAt })
           if (!valid()) { log('excerpt.finished', { skipped: true, reason: 'context-changed', durationMs: Date.now() - startedAt }); completed = true; return { handled: true, noteId: text(original.noteId), skipped: 'context-changed' } }
           // No anchor is a supported state: OCR/conversion keeps the original parent.
@@ -294,7 +303,7 @@ var KnowledgeBaseResearchCore = (function () {
           var presented = await deps.refresh(processed, { focus: !definitionJob, notebookId: job.notebookId, window: instance.window, valid: valid })
           log('refresh.finished', { ok: presented !== false, durationMs: Date.now() - phaseStartedAt })
           log('excerpt.finished', { ok: true, pending: !!definitionJob || !!(made && made.pending), durationMs: Date.now() - startedAt }); completed = true
-          return { handled: true, noteId: text(processed.noteId), noteType: job.type, route: job.manual ? 'receiver' : target ? 'project' : 'in-place', targetNoteId: target ? text(target.noteId) : '', madeCard: !!made && !made.pending, cardPending: !!(made && made.pending), addedToReview: false }
+          return { handled: true, noteId: text(processed.noteId), noteType: job.type, route: route, targetNoteId: target ? text(target.noteId) : '', madeCard: !!made && !made.pending, cardPending: !!(made && made.pending), addedToReview: false }
         } catch (error) {
           log('excerpt.failed', { ok: false, phase: phase, reason: errorCode(error), durationMs: Date.now() - phaseStartedAt })
           throw error
@@ -310,7 +319,7 @@ var KnowledgeBaseResearchCore = (function () {
     function close(instance, notebookId) {
       var s = session(instance), closedNotebook = text(notebookId || s.notebookId)
       if (stored.receiver && stored.receiver.notebookId === closedNotebook) { receiverActive = false; receiverRevision += 1 }
-      s.activeId = ''; s.lifecycle += 1; s.projectRevision += 1; s.seen.clear()
+      s.activeId = ''; s.lifecycle += 1; s.projectRevision += 1; s.seen.clear(); s.closed = true
     }
     function disconnect(instance) { close(instance); session(instance).closed = true }
     return { dispatch: dispatch, state: state, processExcerpt: processExcerpt, isSceneActive: isSceneActive, close: close, disconnect: disconnect, connect: function (instance) { session(instance).closed = false } }
@@ -360,11 +369,18 @@ var KnowledgeBaseResearchCore = (function () {
       save: function (data) { NSUserDefaults.standardUserDefaults().setObjectForKey(JSON.stringify(data), STORE_KEY) },
       notebookId: getNotebookId,
       isCurrentWindow: function (instance) { return instance.window === MNUtil.currentWindow },
-      sceneActive: function () {
+      collectionMode: function (instance) {
+        var scene = typeof KnowledgeBaseTemplate !== 'undefined' && typeof template().getReadingScene === 'function' ? template().getReadingScene() : ''
+        if (scene) return scene
         var app = Application.sharedInstance(), snapshot
         if (typeof Application.immersiveTemplateForAddon === 'function') snapshot = Application.immersiveTemplateForAddon(ADDON_ID)
         else if (app && typeof app.immersiveTemplateForAddon === 'function') snapshot = app.immersiveTemplateForAddon(ADDON_ID)
-        return sceneSnapshot(snapshot)
+        if (sceneSnapshot(snapshot)) return 'research'
+        return typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig.config.readingFollowMode && !instance.readingCollectionStopped ? 'broad' : ''
+      },
+      defaultAnchor: function (instance) {
+        if (!instance.ensureInboxAutoMoveTargets()) throw new Error('inbox-unavailable')
+        return instance.classInputRootNote
       },
       getNote: function (id) { var n = MNNote.new(id); return n && n.note ? n : null },
       noteNotebookId: function (n) { return n.notebookId },
@@ -390,7 +406,12 @@ var KnowledgeBaseResearchCore = (function () {
         if (n.parentNote && text(n.parentNote.noteId) === text(parent.noteId)) return
         template().runUndoGroupingWithoutGlobalDBRefresh(function () { parent.addChild(n) }, { feature: 'mnknowledgebase.research.route' })
       },
-      ocr: function (instance, n) { return instance.applyQuickReadingOCRToTitle(n, { ignoreDefinitionSkip: true, skipIndex: true, researchScene: true, deferPresentation: true }) },
+      ocr: function (instance, n, options) {
+        var settings = Object.assign({ ignoreDefinitionSkip: true, skipIndex: true, deferPresentation: true }, options)
+        return Number(KnowledgeBaseConfig.config.excerptOCRMode) === 2
+          ? instance.applyOCRToTitleWithMode(n, 2, settings)
+          : instance.applyQuickReadingOCRToTitle(n, settings)
+      },
       convert: function (n) {
         var processed = n
         template().runUndoGroupingWithoutGlobalDBRefresh(function () { processed = template().toNoExcerptVersion(n, undefined, { allowTextExcerpt: true, createChildUndoGrouping: false }) || n }, { feature: 'mnknowledgebase.research.convert' })
@@ -402,7 +423,7 @@ var KnowledgeBaseResearchCore = (function () {
         if (typeof IntermediateKnowledgeIndexer !== 'undefined') return IntermediateKnowledgeIndexer.upsertIncrementalIndexEntry(processed, { staleIds: stale, showErrorHUD: false, buildOptions: { skipRenewLinks: true } })
       },
       refresh: function (n, options) { return template().presentOCRResult(n, Object.assign({ stage: 'research.excerpt' }, options)) },
-      beginDefinition: function (n) { return typeof KnowledgeBaseDefinitionConcept !== 'undefined' ? KnowledgeBaseDefinitionConcept.getRuntime().begin(n, false, { researchScene: true }) : null },
+      beginDefinition: function (n, options) { return typeof KnowledgeBaseDefinitionConcept !== 'undefined' ? KnowledgeBaseDefinitionConcept.getRuntime().begin(n, false, options) : null },
       finishDefinition: function (job) { KnowledgeBaseDefinitionConcept.getRuntime().finish(job) },
       makeCard: makeWithoutReview,
       assertCard: function (n, type) { cardFacade(n, type).assertMakeCardTemplateAvailable(n, { noteType: type || null, directMakeCard: true }) },

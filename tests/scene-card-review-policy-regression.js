@@ -58,6 +58,8 @@ function runEntry(Template, method, requested = true) {
 const nativeResearch = dictionary({ allowed: { boolValue() { return true } }, config: dictionary({ scene: 'research' }) })
 for (const [application, expected] of [
   [snapshotApi({ allowed: true, config: { scene: 'research' } }), false],
+  [snapshotApi({ allowed: true, config: { scene: 'broad' } }), false],
+  [snapshotApi({ allowed: true, config: { scene: 'intensive' } }), true],
   [snapshotApi(JSON.stringify({ allowed: true, config: JSON.stringify({ scene: 'research' }) })), false],
   [snapshotApi(nativeResearch, true), false],
   [snapshotApi({ allowed() { return true }, config() { return { scene: 'research' } } }), false],
@@ -76,6 +78,11 @@ for (const [application, expected] of [
 }
 
 for (const method of ['makeCard', 'makeNote']) {
+  const broad = harness(snapshotApi({ allowed: true, config: { scene: 'broad' } }))
+  runEntry(broad.Template, method)
+  assert.deepEqual(broad.commands, [], 'Broad full card processing never adds to review')
+  const legacyBroad = harness(undefined); legacyBroad.savedConfig.readingFollowMode = true
+  runEntry(legacyBroad.Template, method); assert.deepEqual(legacyBroad.commands, [])
   const research = harness(snapshotApi({ allowed: true, config: { scene: 'research' } }))
   const originalConfig = JSON.stringify(research.savedConfig)
   const made = runEntry(research.Template, method)

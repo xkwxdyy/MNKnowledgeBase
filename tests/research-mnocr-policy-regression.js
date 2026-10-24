@@ -41,6 +41,12 @@ function researchFixture(active = true) {
 
 ;(async () => {
   {
+    const h=researchFixture(),note=h.add('stale-result'),before=note.title;
+    const applied=await h.context.Network.OCRToTitle(note,1,false,'all',{valid:()=>false});
+    assert.equal(applied,false);assert.equal(note.title,before);
+  }
+
+  {
     const h = researchFixture(), Config = h.context.KnowledgeBaseConfig
     assert.equal(Config.getResearchOCRModel(), 'gemini-3.5-flash-minimal')
     assert.deepEqual(Array.from(Config.getAvailableOCRSources(1)), Array.from(Config.RESEARCH_OCR_SOURCES), 'the existing temporary model picker must offer only Top5 in research')
