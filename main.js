@@ -495,7 +495,7 @@ JSB.newAddon = function(mainPath){
         let note = MNNote.new(self.newNoteCreatedFromMindMap.noteId);
 
         if (note && note.noteTitle) {
-          if (KnowledgeBaseConfig.config.readingAutoClassifyMode || KnowledgeBaseConfig.config.readingFollowMode) {
+          if (KnowledgeBaseConfig.config.readingFollowMode) {
             self.processReadingModeNote(note, { source: "mindmap" })
             return
           }
@@ -561,7 +561,7 @@ JSB.newAddon = function(mainPath){
           definitionConceptTask = KnowledgeBaseDefinitionConcept.getRuntime().begin(note)
         }
 
-        if (KnowledgeBaseConfig.config.readingAutoClassifyMode || KnowledgeBaseConfig.config.readingFollowMode) {
+        if (KnowledgeBaseConfig.config.readingFollowMode) {
           if (KnowledgeBaseConfig.config.readingFollowMode) {
             MNKnowledgeBaseClass.prototype.markReadingFollowSource.call(self, noteId)
           }
@@ -2177,7 +2177,7 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.getManagedAutomationModeKeys = function() {
-    return ['excerptOCR', 'preExcerpt', 'classAutoMove', 'readingAutoClassify', 'readingFollow', 'prefixMode']
+    return ['excerptOCR', 'preExcerpt', 'classAutoMove', 'readingFollow', 'prefixMode']
   }
 
   MNKnowledgeBaseClass.prototype.getManagedAutomationModeLabel = function(modeKey) {
@@ -2203,8 +2203,6 @@ JSB.newAddon = function(mainPath){
         return !!this.preExcerptMode
       case 'classAutoMove':
         return !!this.classAutoMoveMode
-      case 'readingAutoClassify':
-        return !!KnowledgeBaseConfig.config.readingAutoClassifyMode
       case 'readingFollow':
         return !!KnowledgeBaseConfig.config.readingFollowMode
       case 'prefixMode':
@@ -2233,9 +2231,6 @@ JSB.newAddon = function(mainPath){
         break
       case 'classAutoMove':
         this.classAutoMoveMode = false
-        break
-      case 'readingAutoClassify':
-        KnowledgeBaseConfig.config.readingAutoClassifyMode = false
         break
       case 'readingFollow':
         KnowledgeBaseConfig.config.readingFollowMode = false
@@ -2270,11 +2265,11 @@ JSB.newAddon = function(mainPath){
   MNKnowledgeBaseClass.prototype.getConflictingAutomationModeKeys = function(targetModeKey) {
     switch (targetModeKey) {
       case 'excerptOCR':
-        return ['preExcerpt', 'classAutoMove', 'readingAutoClassify', 'readingFollow', 'prefixMode']
+        return ['preExcerpt', 'classAutoMove', 'readingFollow', 'prefixMode']
       case 'preProcess':
         return ['prefixMode']
       case 'prefixMode':
-        return ['excerptOCR', 'preProcess', 'preExcerpt', 'classAutoMove', 'readingAutoClassify', 'readingFollow']
+        return ['excerptOCR', 'preProcess', 'preExcerpt', 'classAutoMove', 'readingFollow']
       default:
         return this.getManagedAutomationModeKeys().filter((modeKey) => modeKey !== targetModeKey)
     }
@@ -2464,22 +2459,8 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.toggleReadingAutoClassifyMode = function() {
-    const next = !KnowledgeBaseConfig.config.readingAutoClassifyMode
-    if (!next) {
-      KnowledgeBaseConfig.config.readingAutoClassifyMode = false
-      KnowledgeBaseConfig.save()
-      MNUtil.showHUD('已关闭阅读自动归类模式', 1)
-      return
-    }
-
-    const result = this.applyAutomationConflictsBeforeEnable('readingAutoClassify', {
-      preserveReadingOCRMode: true,
-    })
-    KnowledgeBaseConfig.config.readingAutoClassifyMode = true
-    KnowledgeBaseConfig.save()
-    this.showManagedAutomationModeHUD('已开启阅读自动归类模式', result.disabledLabels, {
-      externalReadingStopped: result.externalReadingStopped,
-    })
+    // Retired selector remains callable without changing saved preferences.
+    return false
   }
 
   MNKnowledgeBaseClass.prototype.toggleReadingFollowMode = function() {
@@ -3300,32 +3281,8 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.processReadingAutoClassifyNote = async function(note) {
-    if (!this.ensureReadingAutoMoveTargets()) return
-
-    const noteType = this.getReadingAutoTypeFromNote(note)
-    let targetParent = null
-
-    if (noteType) {
-      targetParent = this.getReadingClassificationNote(noteType)
-    }
-    if (!targetParent) {
-      targetParent = this.readingDateNote
-    }
-    if (!targetParent) return
-
-    MNUtil.undoGrouping(() => {
-      targetParent.addChild(note)
-    })
-
-    if (!this.shouldSkipReadingOCR(note, noteType)) {
-      await this.applyReadingOCRToTitle(note)
-    }
-
-    const processedNote = KnowledgeBaseTemplate.toNoExcerptVersion(note)
-    this.syncConvertedIntermediateIndexIfNeeded(note, processedNote)
-    if (processedNote) {
-      processedNote.focusInMindMap(0.4)
-    }
+    // Old direct callers must not restart retired date collection.
+    return note || null
   }
 
   MNKnowledgeBaseClass.prototype.processReadingFollowNote = async function(note) {
@@ -3524,10 +3481,6 @@ JSB.newAddon = function(mainPath){
       if (source !== 'excerpt') {
         return
       }
-      if (KnowledgeBaseConfig.config.readingAutoClassifyMode) {
-        await this.processReadingAutoClassifyNote(note)
-        return
-      }
       if (KnowledgeBaseConfig.config.readingFollowMode) {
         await this.processReadingFollowNote(note)
         return
@@ -3617,7 +3570,6 @@ JSB.newAddon = function(mainPath){
       this.menuSeparator(),
       this.indentedTableItem('🤖 预摘录卡片', 'preExcerptModeToggled:', undefined, !!this.preExcerptMode),
       this.indentedTableItem('📌 Inbox 自动 Pin', 'classAutoPinModeToggled:', undefined, !!KnowledgeBaseConfig.config.classAutoPinMode),
-      this.indentedTableItem('📖 阅读自动归类', 'readingAutoClassifyModeToggled:', undefined, !!KnowledgeBaseConfig.config.readingAutoClassifyMode),
       this.indentedTableItem('🎬 演示模式', 'demoModeToggled:', undefined, !!KnowledgeBaseConfig.config.demoMode),
     ]
   }
