@@ -1700,7 +1700,7 @@ function assertQuickReadingConversionUsesBoundedRefresh() {
       calls.push({ step: 'refresh', note, useRefreshAll, options });
     },
   }, () => {
-    assert.strictEqual(convert(sourceNote, parentNote), processedNote);
+    assert.strictEqual(convert.call({ isReadingFollowPropositionTarget: () => false }, sourceNote, parentNote), processedNote);
     assert.strictEqual(calls[0].step, 'undo');
     assert.strictEqual(calls[0].trigger.feature, 'mnknowledgebase.quickReadingConversion.noGlobalDBRefresh');
     assert.strictEqual(calls[1].step, 'convert');
@@ -1720,7 +1720,7 @@ function assertQuickReadingOCRRefreshUsesImmediateDBRefresh() {
     },
   };
   const refresh = vm.runInNewContext(
-    `(${extractPrototypeFunction('refreshAfterQuickReadingOCR', 'convertQuickReadingExcerptWithoutGlobalRefresh')})`,
+    `(${extractPrototypeFunction('refreshAfterQuickReadingOCR', 'isReadingFollowPropositionTarget')})`,
     { MNUtil: immediateInstance, KnowledgeBaseUtils: { addErrorLog() {} } },
   );
   assert.strictEqual(refresh({ noteId: 'NOTE' }, 'afterConversion'), true);
@@ -1728,7 +1728,7 @@ function assertQuickReadingOCRRefreshUsesImmediateDBRefresh() {
 
   const fallbackCalls = [];
   const fallbackRefresh = vm.runInNewContext(
-    `(${extractPrototypeFunction('refreshAfterQuickReadingOCR', 'convertQuickReadingExcerptWithoutGlobalRefresh')})`,
+    `(${extractPrototypeFunction('refreshAfterQuickReadingOCR', 'isReadingFollowPropositionTarget')})`,
     { MNUtil: {
       currentNotebookId: 'NOTEBOOK-FALLBACK',
       app: { refreshAfterDBChanged(notebookId) { fallbackCalls.push(notebookId); } },
@@ -1764,6 +1764,7 @@ async function assertQuickReadingAutoMakeCard() {
       addChild(child) { this.addChildCalls.push(child); },
     };
     return {
+      isReadingFollowPropositionTarget: () => false,
       readingFollowPendingUntitledTarget: null,
       extractReadingTagTypeAndCleanup() {},
       getReadingTypeFromColor() { return noteType; },
@@ -2089,6 +2090,7 @@ async function assertQuickReadingUsesResolvedParentForMoveAndConversion() {
   };
   try {
     const processor = {
+     isReadingFollowPropositionTarget: () => false,
      readingFollowPendingUntitledTarget: { noteId: 'TARGET-DOC' },
      extractReadingTagTypeAndCleanup() {},
       getReadingTypeFromColor() { return ''; },
@@ -2163,6 +2165,7 @@ async function assertQuickReadingUsesResolvedParentForMoveAndConversion() {
 
   const selfTargetLogs = [];
    const selfTargetProcessor = {
+     isReadingFollowPropositionTarget: () => false,
      extractReadingTagTypeAndCleanup() {},
       getReadingTypeFromColor() { return ''; },
      getReadingFollowParentNote() { return selectedTarget; },

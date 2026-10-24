@@ -75,6 +75,46 @@ async function tests() {
     context.MNUtil.log = () => { throw Error('sink-unavailable') }
     assert.doesNotThrow(() => context.Perf._logMakeCardPerf({ message: '制卡开始: makeNote' }))
   }
+  {
+    const h = harness(), receiver = h.add('proposition', '命题')
+    const state = await h.command('setReceiver', { noteId: receiver.noteId })
+    assert.equal(state.receiver.kind, 'proposition')
+    h.deps.beginDefinition = () => { throw Error('Proposition collection must only OCR and convert') }
+    h.assertCard(() => { throw Error('Proposition collection must not need a makeCard template') })
+    for (const type of ['命题', '定义', '例子', '反例', '约定', '']) {
+      const n = h.add('excerpt-' + (type || 'untyped'), type)
+      const result = await h.service.processExcerpt(h.main, n)
+      assert.equal(result.route, 'receiver', type)
+      assert.equal(result.targetNoteId, receiver.noteId)
+      assert.equal(result.madeCard, false); assert.equal(result.cardPending, false)
+      assert.equal(result.addedToReview, false)
+      assert.equal(h.notes.get(result.noteId).parentNote, receiver)
+      assert.deepEqual(h.calls.filter(c => c[1] === n.noteId).map(c => c[0]), ['type', 'move', 'ocr', 'convert', 'index'])
+    }
+    assert.equal(h.calls.filter(c => c[0] === 'make' || c[0] === 'create').length, 0)
+    await start(h, 'other-project')
+    assert.equal((await h.service.processExcerpt(h.main, h.add('after-switch'))).targetNoteId, receiver.noteId)
+    const restarted = api.create(h.deps)
+    assert.equal(restarted.state(h.main).receiver.kind, 'proposition')
+    assert.equal(restarted.state(h.main).receiver.active, false)
+    await h.command('stopReceiver')
+    assert.equal((await h.service.processExcerpt(h.main, h.add('after-stop'))).route, 'project')
+    await h.command('setReceiver', { noteId: receiver.noteId }); h.service.close(h.main, 'study')
+    assert.equal(h.service.state(h.main).receiver.active, false)
+  }
+  {
+    const h = harness(), receiver = h.add('proposition', '命题')
+    await h.command('setReceiver', { noteId: receiver.noteId })
+    let finish; h.ocr(() => new Promise(resolve => { finish = resolve }))
+    const first = h.service.processExcerpt(h.main, h.add('waiting'))
+    const second = h.service.processExcerpt(h.main, h.add('queued'))
+    await Promise.resolve(); await Promise.resolve()
+    receiver.type = '定义'; finish()
+    assert.equal((await first).skipped, 'context-changed')
+    assert.equal((await second).skipped, 'context-changed')
+    assert.equal(h.service.state(h.main).receiver.active, false)
+    assert.equal(h.calls.filter(c => c[0] === 'convert').length, 0)
+  }
   assert.equal(api.sceneSnapshot({ allowed: true, config: { scene: 'research' } }), true)
   assert.equal(api.sceneSnapshot({ allowed: false, config: { scene: 'research' } }), false)
   assert.equal(api.sceneSnapshot({ allowed: '0', config: { scene: 'research' } }), false)
@@ -147,7 +187,8 @@ async function tests() {
     await assert.rejects(h.command('startProject', { projectId: 'P' }, h.main, 'different'), /different-notebook/)
     const foreign = h.add('foreign'); foreign.notebookId = 'other'
     await assert.rejects(h.command('registerProject', { anchorNoteId: 'foreign' }), /different-notebook/)
-    await assert.rejects(h.command('setReceiver', { noteId: 'P' }), /receiver-must-be-classification/)
+    h.add('unsupported', '定义')
+    await assert.rejects(h.command('setReceiver', { noteId: 'unsupported' }), /receiver-must-be-classification-or-proposition/)
     await assert.rejects(h.command('registerProject', { anchorNoteId: '__proto__' }), /invalid-id/)
     assert.equal((await h.service.processExcerpt(h.main, foreign)).skipped, 'different-notebook')
   }

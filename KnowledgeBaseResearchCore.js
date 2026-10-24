@@ -22,7 +22,7 @@ var KnowledgeBaseResearchCore = (function () {
   }
   function errorCode(error) {
     var code = text(value(error, 'code') || value(error, 'message'))
-    return /^(?:invalid-(?:id|request|json|template-mode)|note-unavailable|different-notebook|receiver-must-be-classification|receiver-type-missing|research-scene-inactive|notebook-unavailable|project-unavailable|template-cancelled|context-changed|unknown-command|self-target|project-title-missing|classification-create-failed|KB_TEMPLATE_MISSING)$/.test(code) ? code : 'exception'
+    return /^(?:invalid-(?:id|request|json|template-mode)|note-unavailable|different-notebook|receiver-must-be-classification|receiver-must-be-classification-or-proposition|receiver-type-missing|research-scene-inactive|notebook-unavailable|project-unavailable|template-cancelled|context-changed|unknown-command|self-target|project-title-missing|classification-create-failed|KB_TEMPLATE_MISSING)$/.test(code) ? code : 'exception'
   }
   // A bounded metadata-only record also works before MNUtil and the window observers exist.
   function trace(stage, details) {
@@ -147,12 +147,19 @@ var KnowledgeBaseResearchCore = (function () {
     function activeProject(s) {
       return notebook(s.notebookId).projects.find(function (project) { return project.id === s.activeId }) || null
     }
+    function receiverPolicy(target) {
+      if (deps.isClassification(target)) {
+        var type = text(deps.classificationType(target))
+        return type && type !== '归类' ? { kind: 'classification', type: type } : null
+      }
+      return deps.cardType(target) === '命题' ? { kind: 'proposition', type: '命题' } : null
+    }
     function receiverInfo(s) {
       var saved = stored.receiver
       if (!saved || saved.notebookId !== s.notebookId) return null
-      var current
-      try { current = note(saved.noteId, s.notebookId) } catch (_) {}
-      return { noteId: saved.noteId, notebookId: saved.notebookId, title: current ? deps.title(current) : saved.title, type: current ? deps.classificationType(current) : saved.type, active: receiverActive && !!current, available: !!current }
+      var current, policy
+      try { current = note(saved.noteId, s.notebookId); policy = receiverPolicy(current) } catch (_) {}
+      return { noteId: saved.noteId, notebookId: saved.notebookId, title: current ? deps.title(current) : saved.title, type: policy ? policy.type : saved.type, kind: policy ? policy.kind : saved.kind, active: receiverActive && !!policy, available: !!policy }
     }
     function state(instance) {
       var s = context(instance)
@@ -168,10 +175,9 @@ var KnowledgeBaseResearchCore = (function () {
       }
     }
     function setReceiver(s, target) {
-      if (!deps.isClassification(target)) throw new Error('receiver-must-be-classification')
-      var type = text(deps.classificationType(target))
-      if (!type || type === '归类') throw new Error('receiver-type-missing')
-      stored.receiver = { noteId: text(target.noteId), notebookId: s.notebookId, title: deps.title(target), type: type }
+      var policy = receiverPolicy(target)
+      if (!policy) throw new Error(deps.isClassification(target) ? 'receiver-type-missing' : 'receiver-must-be-classification-or-proposition')
+      stored.receiver = { noteId: text(target.noteId), notebookId: s.notebookId, title: deps.title(target), type: policy.type, kind: policy.kind }
       receiverActive = true; receiverRevision += 1; persist()
       return target
     }
@@ -234,14 +240,17 @@ var KnowledgeBaseResearchCore = (function () {
       remember(s, sourceId)
       // Type resolution consumes recognized tag comments. Read exactly once at event time.
       var type = deps.excerptType(instance, inputNote), receiver = receiverInfo(s), project = activeProject(s)
-      var manual = !!(receiver && receiver.active && type && receiver.type === type)
-      var job = { sourceId: sourceId, type: type, notebookId: s.notebookId, lifecycle: s.lifecycle, receiverRevision: receiverRevision, projectRevision: s.projectRevision, targetId: manual ? receiver.noteId : '', anchorId: project ? project.anchorNoteId : '', manual: manual }
+      var manual = !!(receiver && receiver.active && (receiver.kind === 'proposition' || (type && receiver.type === type)))
+      var fullCard = manual && receiver.kind === 'classification'
+      var job = { sourceId: sourceId, type: type, notebookId: s.notebookId, lifecycle: s.lifecycle, receiverRevision: receiverRevision, projectRevision: s.projectRevision, targetId: manual ? receiver.noteId : '', anchorId: project ? project.anchorNoteId : '', manual: manual, fullCard: fullCard, receiverKind: manual ? receiver.kind : '' }
       var queuedAt = Date.now(), traceId = 'excerpt-' + (++excerptSequence), route = manual ? 'receiver' : job.anchorId ? 'project' : 'in-place'
       function log(stage, details) { return pipeline(stage, Object.assign({ traceId: traceId, route: route }, details || {})) }
       log('excerpt.queued')
       function valid() {
         if (!guard(instance, job.notebookId, job.lifecycle)) return false
-        return job.manual ? receiverActive && receiverRevision === job.receiverRevision : s.projectRevision === job.projectRevision
+        if (!job.manual) return s.projectRevision === job.projectRevision
+        var currentReceiver = receiverInfo(s)
+        return receiverRevision === job.receiverRevision && !!(currentReceiver && currentReceiver.active && currentReceiver.noteId === job.targetId && currentReceiver.kind === job.receiverKind && (!job.fullCard || currentReceiver.type === job.type))
       }
       var task = s.queue.then(async function () {
         var startedAt = Date.now(), phase = 'route', phaseStartedAt = startedAt, completed = false
@@ -257,14 +266,14 @@ var KnowledgeBaseResearchCore = (function () {
             var anchor = note(job.anchorId, job.notebookId)
             target = job.type ? deps.classification(anchor, job.type) : anchor
           }
-          if (job.manual && deps.assertCard) deps.assertCard(original, job.type)
+          if (job.fullCard && deps.assertCard) deps.assertCard(original, job.type)
           if (target) {
             if (text(target.noteId) === sourceId) throw new Error('self-target')
             deps.move(original, target)
           }
           log('route.finished', { durationMs: Date.now() - phaseStartedAt })
           phase = 'ocr'; phaseStartedAt = Date.now()
-          if (job.type === '定义' && deps.beginDefinition) definitionJob = deps.beginDefinition(original)
+          if (!(job.manual && !job.fullCard) && job.type === '定义' && deps.beginDefinition) definitionJob = deps.beginDefinition(original)
           if (!definitionJob) { log('ocr.started'); var ocrResult = await deps.ocr(instance, original); log('ocr.finished', { ok: !!ocrResult, hasTitle: !!text(deps.title(original)), durationMs: Date.now() - phaseStartedAt }) }
           else log('definition.accepted', { pending: true, durationMs: Date.now() - phaseStartedAt })
           if (!valid()) { log('excerpt.finished', { skipped: true, reason: 'context-changed', durationMs: Date.now() - startedAt }); completed = true; return { handled: true, noteId: text(original.noteId), skipped: 'context-changed' } }
@@ -277,8 +286,8 @@ var KnowledgeBaseResearchCore = (function () {
           log('index.finished', { indexed: !!(indexed && indexed.success && !indexed.skipped), skipped: !!(indexed && indexed.skipped), ok: !!(indexed && (indexed.skipped || indexed.success)), durationMs: Date.now() - phaseStartedAt })
           remember(s, text(processed.noteId))
           phase = 'make-card'; phaseStartedAt = Date.now()
-          if (job.manual) made = deps.makeCard(processed, job.type, valid) || { note: processed }
-          if (job.manual) log('make-card.finished', { pending: !!(made && made.pending), durationMs: Date.now() - phaseStartedAt })
+          if (job.fullCard) made = deps.makeCard(processed, job.type, valid) || { note: processed }
+          if (job.fullCard) log('make-card.finished', { pending: !!(made && made.pending), durationMs: Date.now() - phaseStartedAt })
           if (made && made.note) processed = made.note
           remember(s, text(processed.noteId))
           phase = 'refresh'; phaseStartedAt = Date.now()

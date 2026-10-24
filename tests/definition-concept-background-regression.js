@@ -110,7 +110,7 @@ function harness(options={}) {
  const run=async mode=>{
   const events=[],note={noteId:'event-note',colorIndex:2};
   const manager={begin:()=>{events.push('begin');return{};},finish:()=>events.push('finish')};
-  const self={window:'window',classAutoMoveMode:false,shouldSkipReadingOCR:()=>true,processReadingModeNote:async()=>events.push('collect'),hasDirectOCRTagComment:()=>false};
+  const self={window:'window',classAutoMoveMode:false,isReadingFollowPropositionTarget:()=>false,getReadingFollowParentNote:()=>null,getReadingFollowMoveParent:n=>n,shouldSkipReadingOCR:()=>true,processReadingModeNote:async()=>events.push('collect'),hasDirectOCRTagComment:()=>false};
   const ctx={MNUtil:{currentWindow:'window'},MNKnowledgeBaseClass:{prototype:{markReadingFollowSource(){}}},self,MNNote:{new:()=>note},isKnowledgeBaseExtendNote:()=>false,KnowledgeBaseConfig:{config:{readingFollowMode:mode==='reading',excerptOCRMode:mode==='direct'?3:0}},KnowledgeBaseDefinitionConcept:{getRuntime:()=>manager},KnowledgeBaseNetwork:{OCRToTitle:async()=>{throw Error('Definition must not wait for synchronous OCR')}},KnowledgeBaseUtils:{addErrorLog:e=>{throw e}}};
   vm.createContext(ctx);vm.runInContext('this.event = ({'+event+'}).onProcessNewExcerpt',ctx);
   await ctx.event({userInfo:{noteid:note.noteId}});

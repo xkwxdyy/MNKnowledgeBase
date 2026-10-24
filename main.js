@@ -556,15 +556,18 @@ JSB.newAddon = function(mainPath){
           return
         }
 
-        if (self.shouldSkipReadingOCR(note) &&
+        if (KnowledgeBaseConfig.config.readingFollowMode) {
+          MNKnowledgeBaseClass.prototype.markReadingFollowSource.call(self, noteId)
+        }
+        const propositionReceiver = KnowledgeBaseConfig.config.readingFollowMode &&
+          self.shouldSkipReadingOCR(note) && self.isReadingFollowPropositionTarget(
+            self.getReadingFollowMoveParent(self.getReadingFollowParentNote(note)))
+        if (!propositionReceiver && self.shouldSkipReadingOCR(note) &&
             typeof KnowledgeBaseDefinitionConcept !== 'undefined') {
           definitionConceptTask = KnowledgeBaseDefinitionConcept.getRuntime().begin(note)
         }
 
         if (KnowledgeBaseConfig.config.readingFollowMode) {
-          if (KnowledgeBaseConfig.config.readingFollowMode) {
-            MNKnowledgeBaseClass.prototype.markReadingFollowSource.call(self, noteId)
-          }
           await self.processReadingModeNote(note, { source: "excerpt" })
           return
         }
@@ -2723,10 +2726,16 @@ JSB.newAddon = function(mainPath){
     }
   }
 
+  MNKnowledgeBaseClass.prototype.isReadingFollowPropositionTarget = function(target) {
+    return !!target && !KnowledgeBaseTemplate.isClassificationNote(target) &&
+      KnowledgeBaseTemplate.getNoteType(target, true) === '命题'
+  }
+
   MNKnowledgeBaseClass.prototype.convertQuickReadingExcerptWithoutGlobalRefresh = function(note, parentNote) {
     let processedNote = note
     KnowledgeBaseTemplate.runUndoGroupingWithoutGlobalDBRefresh(() => {
       processedNote = KnowledgeBaseTemplate.toNoExcerptVersion(note, parentNote, {
+        allowTextExcerpt: this.isReadingFollowPropositionTarget(parentNote),
         createChildUndoGrouping: false,
       })
     }, {
@@ -3272,6 +3281,7 @@ JSB.newAddon = function(mainPath){
     let targetParentForMove = this.getReadingFollowMoveParent(targetParent)
     const targetSelectedState = this.getQuickReadingNoteDiagnostic(targetParent)
     const targetMoveState = this.getQuickReadingNoteDiagnostic(targetParentForMove)
+    const propositionTarget = this.isReadingFollowPropositionTarget(targetParentForMove)
     const pendingTargetState = pendingTargetId
       ? this.getQuickReadingNoteDiagnostic(pendingTargetId)
       : null
@@ -3325,10 +3335,11 @@ JSB.newAddon = function(mainPath){
       })
 
       let ocrSuccess = false
-      if (!this.shouldSkipReadingOCR(note)) {
+      if (propositionTarget || !this.shouldSkipReadingOCR(note)) {
         const ocrStartedAt = Date.now()
         ocrSuccess = !!await this.applyQuickReadingOCRToTitle(note, {
           ocrDiagnosticTarget: ocrDiagnostic,
+          ignoreDefinitionSkip: propositionTarget,
         })
         ocrDurationMs = Math.max(0, Date.now() - ocrStartedAt)
       }
