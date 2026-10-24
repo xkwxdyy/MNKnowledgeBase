@@ -414,7 +414,7 @@ var KnowledgeBaseResearchCore = (function () {
       },
       convert: function (n) {
         var processed = n
-        template().runUndoGroupingWithoutGlobalDBRefresh(function () { processed = template().toNoExcerptVersion(n, undefined, { allowTextExcerpt: true, createChildUndoGrouping: false }) || n }, { feature: 'mnknowledgebase.research.convert' })
+        template().runUndoGroupingWithoutGlobalDBRefresh(function () { processed = template().toNoExcerptVersion(n, undefined, { allowTextExcerpt: true, allowTopLevel: true, createChildUndoGrouping: false }) || n }, { feature: 'mnknowledgebase.research.convert' })
         return processed
       },
       syncIndex: function (original, processed) {

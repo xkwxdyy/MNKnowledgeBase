@@ -4700,7 +4700,7 @@ class KnowledgeBaseTemplate {
     let parentNote = inputParentNote || note.parentNote
     const allowTextExcerpt = !!(options && options.allowTextExcerpt)
     const createChildUndoGrouping = !(options && options.createChildUndoGrouping === false)
-    if (parentNote) {
+    if (parentNote || (options && options.allowTopLevel)) {
       let excerptType = note.excerptType
       if (!excerptType) {
         const excerptPic = note.excerptPic
@@ -4750,8 +4750,17 @@ class KnowledgeBaseTemplate {
           markdown: true,
           color: note.colorIndex,
         }
-        // 创建新兄弟卡片，标题为旧卡片的标题
-        let newNote = parentNote.createChildNote(config, createChildUndoGrouping)
+        // Root excerpts need an explicit notebook and document identity.
+        if (!parentNote) {
+          config.notebookId = note.notebookId
+          if (requestedDocId && Number.isFinite(requestedPageNumber)) {
+            config.docId = requestedDocId
+            config.pageNumber = requestedPageNumber
+          }
+        }
+        let newNote = parentNote
+          ? parentNote.createChildNote(config, createChildUndoGrouping)
+          : MNNote.new(config)
         if (!newNote || !String(newNote.noteId || "").trim()) {
           logConversionDiagnostic("转非摘录建卡未返回稳定 noteId", "ERROR", {
             traceId: conversionTraceId,
@@ -4762,6 +4771,7 @@ class KnowledgeBaseTemplate {
             creationApi: "parentNote.createChildNote",
             returnedType: typeof newNote
           }, "ERROR")
+          throw new Error("non-excerpt-create-failed")
         }
         
         note.noteTitle = ""
@@ -4809,7 +4819,7 @@ class KnowledgeBaseTemplate {
           }, "ERROR")
         }
 
-        newNote.moveTo(index)
+        if (parentNote) newNote.moveTo(index)
         newNote.kbSourceExcerptNoteId = oldNoteId
         this.cleanupConvertedExcerptSourceLinks(oldClassificationParents, oldNoteId, newNote)
 

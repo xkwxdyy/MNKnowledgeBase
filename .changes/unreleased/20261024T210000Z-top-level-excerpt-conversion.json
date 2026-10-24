@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "top-level-excerpt-conversion",
+  "changes": [
+    {
+      "id": "top-level-excerpt-conversion",
+      "type": "fixed",
+      "zh": "修复科研与泛读中顶层摘录无法转非摘录的问题，保留文档定位并保护创建失败时的原内容。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}
