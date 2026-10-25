@@ -1,0 +1,9 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=process.argv[2]||path.resolve(__dirname,'..');
+const utils=fs.readFileSync(path.join(root,'utils.js'),'utf8');const a=utils.indexOf('  static getReadingScene() {'),b=utils.indexOf('  static getConfiguredReference(',a);assert(a>=0&&b>a);
+let mode='literature';const ctx={Application:{immersiveTemplateForAddon:()=>({allowed:true,config:{scene:mode}})},KnowledgeBaseConfig:{config:{readingFollowMode:true}}};vm.createContext(ctx);vm.runInContext('class Policy {\n'+utils.slice(a,b)+'}\nglobalThis.Policy=Policy;',ctx);
+for(const scene of ['broad','intensive','research','literature']){mode=scene;assert.equal(ctx.Policy.getReadingScene(),scene);assert.equal(ctx.Policy.shouldAutoAddToReview(),scene==='intensive');}
+const main=fs.readFileSync(path.join(root,'main.js'),'utf8');const start=main.indexOf('    onProcessNewExcerpt: async function (sender) {'),end=main.indexOf('\n    queryAddonCommandStatus:',start);assert(start>=0&&end>start);
+const window={};const c={self:{window,shouldSkipReadingOCR:()=>{throw Error('Literature must not fall through to legacy OCR')}},MNUtil:{currentWindow:window},MNNote:{new:()=>({noteId:'excerpt'})},isKnowledgeBaseExtendNote:()=>false,KnowledgeBaseResearchCore:{getRuntime:()=>({isSceneActive:()=>false})},KnowledgeBaseTemplate:{getReadingScene:()=> 'literature'},KnowledgeBaseConfig:{config:{readingFollowMode:false}},KnowledgeBaseUtils:{addErrorLog:e=>{throw e}}};vm.createContext(c);vm.runInContext('globalThis.handler=({'+main.slice(start,end)+'}).onProcessNewExcerpt;',c);
+(async()=>{await c.handler({userInfo:{noteid:'excerpt'}});console.log('MNKB scenes: four stable policies, intensive-only automatic review and no legacy fallback in literature scene passed');})().catch(e=>{console.error(e);process.exitCode=1});

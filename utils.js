@@ -1560,7 +1560,7 @@ class KnowledgeBaseTemplate {
       let config = value(snapshot, 'config')
       if (typeof config === 'string') config = JSON.parse(config)
       const scene = String(value(config, 'scene') || '').trim()
-      return bool(value(snapshot, 'allowed')) && ['research', 'broad', 'intensive'].includes(scene) ? scene : ''
+      return bool(value(snapshot, 'allowed')) && ['research', 'broad', 'intensive', 'literature'].includes(scene) ? scene : ''
     } catch (_) { return '' }
   }
 

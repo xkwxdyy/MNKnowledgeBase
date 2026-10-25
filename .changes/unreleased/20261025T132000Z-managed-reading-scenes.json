@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "managed-reading-scenes",
+  "changes": [
+    {
+      "id": "managed-reading-scenes",
+      "type": "fixed",
+      "zh": "识别独立文献研读场景，阻止知识库旧摘录流程重复认领，保留其他场景制卡与复习规则。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}
