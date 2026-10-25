@@ -111,6 +111,62 @@ function researchFixture(active = true) {
     await h.core.processExcerpt(h.instance, note)
     assert.equal(note.title, 'original'); assert.equal(h.images.length, 0); assert.equal(h.concepts.length, 0)
   }
+  for (const failure of ['timeout', 'provider-error', 'empty-result', 'exception']) {
+    const h = researchFixture(), requests = [], diagnostic = {}
+    let lateResponse
+    h.context.MNConnection.sendRequest = request => {
+      requests.push(request.model)
+      if (request.model === 'qwen3.8-flash-nothinking') return Promise.resolve({ choices: [{ message: { content: 'fallback recognized' } }] })
+      if (failure === 'timeout') return new Promise(resolve => { lateResponse = resolve })
+      if (failure === 'exception') throw Error('fixture transport failed')
+      return Promise.resolve(failure === 'provider-error' ? { error: { message: 'unavailable' } } : { choices: [{ message: { content: '  ' } }] })
+    }
+    const task = h.context.Network.OCRToTitle(h.add('failure-' + failure), 1, false, 'all', { ocrDiagnosticTarget: diagnostic })
+    if (failure === 'timeout') {
+      await flush(); h.timers[0].resolve()
+      await flush(); h.timers[1].resolve()
+    }
+    assert.equal(await task, true)
+    assert.deepEqual(requests, ['gemini-3.5-flash-minimal', 'glm-5.3-flashx-low', 'qwen3.8-flash-nothinking'])
+    assert.equal(diagnostic.finalModel, 'qwen3.8-flash-nothinking')
+    assert.equal(diagnostic.attempts.length, 3)
+    assert.equal(diagnostic.fallbackUsed, true)
+    assert.equal(diagnostic.success, true)
+    if (lateResponse) {
+      lateResponse({ choices: [{ message: { content: 'late result' } }] }); await flush()
+      assert.equal(h.notes.get('failure-' + failure).title, 'fallback recognized')
+    } else assert(h.timers.every(timer => timer.seconds >= 1), 'failures must advance without scheduling a retry delay')
+    assert(h.logs.some(entry => entry.message === 'ocr.fallback' && entry.detail.provider === 'qwen3.8-flash-nothinking'))
+    assert.equal(h.concepts.length, 0, 'research image fallbacks must not use DS')
+  }
+  {
+    const h = researchFixture(), note = h.add('definition-timeout', '定义'), requests = [], made = []
+    let releasePrimary
+    h.context.MNConnection.sendRequest = request => {
+      requests.push(request.model)
+      return requests.length === 1 ? new Promise(resolve => { releasePrimary = resolve })
+        : Promise.resolve({ choices: [{ message: { content: 'A compact operator maps bounded sets to relatively compact sets' } }] })
+    }
+    await h.core.processExcerpt(h.instance, note)
+    const manager = h.context.Definition.getRuntime()
+    assert.equal(manager.deferMakeCard(note, current => made.push(current.title)), true)
+    h.timers.find(timer => timer.seconds < 0.01).resolve(); await flush()
+    h.timers.find(timer => timer.seconds >= 1).resolve(); await flush()
+    assert.deepEqual(requests, ['gemini-3.5-flash-minimal', 'glm-5.3-flashx-low'])
+    assert.equal(note.title, '紧算子; compact operator', 'the background job must allow the OCR fallback and a fresh concept deadline')
+    assert.equal(made.length, 1); assert.equal(manager.pending(), 0)
+    releasePrimary({ choices: [{ message: { content: 'late primary OCR' } }] }); await flush()
+    assert.equal(note.title, '紧算子; compact operator')
+  }
+  {
+    const h = researchFixture(), requests = [], diagnostic = {}, note = h.add('exhausted')
+    h.context.MNConnection.sendRequest = async request => { requests.push(request.model); return { error: 'unavailable' } }
+    assert.equal(await h.context.Network.OCRToTitle(note, 1, false, 'all', { ocrDiagnosticTarget: diagnostic }), false)
+    assert.deepEqual(requests, ['gemini-3.5-flash-minimal', 'glm-5.3-flashx-low', 'qwen3.8-flash-nothinking', 'glm-5.3-flash-nothinking', 'doubao-seed-2-1-lite-nothinking'])
+    assert.equal(new Set(requests).size, requests.length, 'each candidate must run only once')
+    assert.equal(note.title, 'original'); assert.equal(diagnostic.success, false)
+    assert.equal(diagnostic.finalModel, requests.at(-1))
+  }
   {
     const h = researchFixture(false), calls = []
     h.context.Definition.requestOfficial = async body => {
@@ -121,5 +177,5 @@ function researchFixture(active = true) {
     assert.equal(calls.length, 2, 'nonresearch modes must retain their configured independent correction')
     assert.equal(h.images.length, 0)
   }
-  console.log('Research MNOCR: Top5-only default/override, one image request, text-only DS concepts, visible fallback/deferred make, GLM-only timeout fallback, Toolbar scene defaults and nonresearch isolation: ok')
+  console.log('Research MNOCR: Top5-only default/override, one successful image request, text-only DS concepts, visible fallback/deferred make, immediate bounded model fallback, Toolbar scene defaults and nonresearch isolation: ok')
 })().catch(error => { console.error(error); process.exitCode = 1 })

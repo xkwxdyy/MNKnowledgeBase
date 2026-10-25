@@ -132,14 +132,17 @@ var KnowledgeBaseDefinitionConcept = (function () {
       if (remaining <= 0) throw new Error('timeout')
       var started = Date.now()
       log(stage + '.started', { timeoutMs: remaining })
-      var result = await Promise.race([
-        Promise.resolve().then(function () {
-          return job.research && stage === 'ocr'
-            ? deps.researchOCR(job.image, remaining)
-            : deps.request(requestBody(stage, input, null, job.research), remaining)
-        }),
-        deps.delay(remaining).then(function () { throw new Error('timeout') }),
-      ])
+      var result
+      if (job.research && stage === 'ocr') {
+        // Shared OCR bounds each model attempt; an outer deadline would discard its fallback.
+        result = await deps.researchOCR(job.image, remaining)
+        job.deadline = Date.now() + Math.max(1000, deps.timeoutMs ? deps.timeoutMs() : 8000)
+      } else {
+        result = await Promise.race([
+          Promise.resolve().then(function () { return deps.request(requestBody(stage, input, null, job.research), remaining) }),
+          deps.delay(remaining).then(function () { throw new Error('timeout') }),
+        ])
+      }
       log(stage + '.finished', { success: !!result, durationMs: Date.now() - started })
       return result
     }
@@ -216,8 +219,19 @@ var KnowledgeBaseDefinitionConcept = (function () {
     async function drain() {
       if (running || stopped) return
       running = true
-      try { while (queue.length && !stopped) await run(queue.shift()) }
+      var manualPresentation = null
+      try {
+        while (queue.length && !stopped) {
+          var job = queue.shift()
+          await run(job)
+          if (job.deferredInput && !job.research && job.titleApplied) manualPresentation = job
+        }
+      }
       finally { running = false }
+      if (manualPresentation && !stopped && deps.present) {
+        var note = deps.getNote(manualPresentation.noteId)
+        if (note) await deps.present(note, manualPresentation.context, manualPresentation.window, false)
+      }
     }
     function finish(job) {
       if (!job || job.enqueued || stopped) return
@@ -307,7 +321,7 @@ var KnowledgeBaseDefinitionConcept = (function () {
         KnowledgeBaseTemplate.refreshNoteLocally(note, false, { stage: 'definitionConcept' })
         IntermediateKnowledgeIndexer.addToIncrementalIndex(note, { showErrorHUD: false })
       },
-      present: function (note, context, window) { return KnowledgeBaseTemplate.presentOCRResult(note, { notebookId: context, window: window, stage: 'research.definition' }) },
+      present: function (note, context, window, focus) { return KnowledgeBaseTemplate.presentOCRResult(note, { notebookId: context, window: window, focus: focus !== false, stage: focus === false ? 'definitionConcept.manual' : 'research.definition' }) },
       save: function (result) {
         var key = 'MNKB_definitionConceptResults'
         var entries = MNUtil.getLocalDataByKey(key) || []

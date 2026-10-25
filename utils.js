@@ -31966,7 +31966,7 @@ ${this.OCRNumberingRules}
 	      fallbackSource: fallbackModel,
 	      ocrDiagnosticTarget: ocrDiagnostic,
 	    })
-      this.logOCRStage('ocr.finished', { provider: ocrModel, success: !!result, correctionFallback: !!ocrDiagnostic.correctionFallback })
+      this.logOCRStage('ocr.finished', { provider: ocrDiagnostic.finalModel || ocrModel, success: !!result, correctionFallback: !!ocrDiagnostic.correctionFallback })
       // A failed optional correction keeps the recognized draft and uses the existing formatter.
       if (ocrDiagnostic.correctionFallback && result) {
         result = this.postProcessOCRResult(result, {
@@ -32130,6 +32130,11 @@ ${this.OCRNumberingRules}
     const fallbackSource = researchOCR
       ? (source === KnowledgeBaseConfig.RESEARCH_OCR_FALLBACK ? '' : KnowledgeBaseConfig.RESEARCH_OCR_FALLBACK)
       : String(options && options.fallbackSource || '').trim()
+    const rankedSources = researchOCR ? KnowledgeBaseConfig.RESEARCH_OCR_SOURCES
+      : typeof KnowledgeBaseConfig.getAvailableOCRSources === 'function'
+        ? KnowledgeBaseConfig.getAvailableOCRSources(options.mode || 1) : []
+    const fallbackSources = [...new Set([fallbackSource].concat(rankedSources || []))]
+      .filter(candidate => candidate && candidate !== source)
     const diagnostic = {
       primaryModel: String(source || ''),
       finalModel: String(source || ''),
@@ -32163,16 +32168,23 @@ ${this.OCRNumberingRules}
       const requestVision = async requestedSource => {
         const requestStartedAt = Date.now()
         const attemptDiagnostic = {}
-        const result = await this.ChatGPTVision(
-          imageBase64,
-          requestedSource,
-          fixedMath ? KnowledgeBaseOCRPostprocess.visionPrompt : prompt,
-          showProgressHUD,
-          {
-            requestTimeoutSeconds: timeoutSeconds,
-            attemptDiagnosticTarget: attemptDiagnostic,
-          },
-        )
+        let result
+        try {
+          result = await this.ChatGPTVision(
+            imageBase64,
+            requestedSource,
+            fixedMath ? KnowledgeBaseOCRPostprocess.visionPrompt : prompt,
+            showProgressHUD,
+            {
+              requestTimeoutSeconds: timeoutSeconds,
+              attemptDiagnosticTarget: attemptDiagnostic,
+            },
+          )
+        } catch (error) {
+          const timedOut = !!(error && error.message === 'timeout')
+          Object.assign(attemptDiagnostic, { timedOut, errorCategory: timedOut ? 'timeout' : 'exception' })
+        }
+        if (typeof result !== 'string' || !result.trim()) result = undefined
         diagnostic.attempts.push({
           model: String(requestedSource || ''),
           providerModel: String(attemptDiagnostic.providerModel || ''),
@@ -32180,19 +32192,20 @@ ${this.OCRNumberingRules}
           timeoutSeconds,
           success: !!result,
           timedOut: !!attemptDiagnostic.timedOut,
-          errorCategory: String(attemptDiagnostic.errorCategory || ''),
+          errorCategory: String(attemptDiagnostic.errorCategory || (result ? '' : 'empty-result')),
         })
         return result
       }
-      const requestLegacy = async send => {
+      const requestLegacy = async (send, requestedSource = ocrSource) => {
         const started = Date.now()
         try {
-          const result = await this.waitForOCRNetwork(send, timeoutSeconds, ocrSource)
-          diagnostic.attempts.push({ model: ocrSource, durationMs: Date.now() - started, timeoutSeconds, success: !!result, timedOut: false, errorCategory: result ? '' : 'empty-result' })
+          let result = await this.waitForOCRNetwork(send, timeoutSeconds, requestedSource)
+          if (typeof result !== 'string' || !result.trim()) result = undefined
+          diagnostic.attempts.push({ model: requestedSource, durationMs: Date.now() - started, timeoutSeconds, success: !!result, timedOut: false, errorCategory: result ? '' : 'empty-result' })
           return result
         } catch (error) {
           const timedOut = !!(error && error.message === 'timeout')
-          diagnostic.attempts.push({ model: ocrSource, durationMs: Date.now() - started, timeoutSeconds, success: false, timedOut, errorCategory: timedOut ? 'timeout' : 'provider-error' })
+          diagnostic.attempts.push({ model: requestedSource, durationMs: Date.now() - started, timeoutSeconds, success: false, timedOut, errorCategory: timedOut ? 'timeout' : 'provider-error' })
           return undefined
         }
       }
@@ -32327,17 +32340,21 @@ ${this.OCRNumberingRules}
             }
             break
           }
-          MNUtil.showHUD("不支持的 OCR 模型来源：" + ocrSource)
-          diagnostic.errorCategory = 'unsupported-source'
-          diagnostic.durationMs = Math.max(0, Date.now() - ocrStartedAt)
-          syncDiagnostic()
-          return undefined
+          diagnostic.attempts.push({ model: ocrSource, success: false, timedOut: false, errorCategory: 'unsupported-source' })
       }
-      const primaryAttempt = diagnostic.attempts[diagnostic.attempts.length - 1]
-      if (!res && fallbackSource && fallbackSource !== ocrSource && primaryAttempt && primaryAttempt.timedOut) {
+      for (const candidate of fallbackSources) {
+        if (res) break
         diagnostic.fallbackUsed = true
-        resultSource = fallbackSource
-        res = await requestVision(fallbackSource)
+        resultSource = candidate
+        const previousAttempt = diagnostic.attempts[diagnostic.attempts.length - 1]
+        this.logOCRStage('ocr.fallback', { provider: candidate, reason: previousAttempt && previousAttempt.errorCategory || 'empty-result' })
+        if (['Doc2X', 'doc2x', 'Doc2XPDF', 'doc2xpdf'].includes(candidate)) {
+          res = await requestLegacy(() => ocrNetwork.doc2xImgOCR(imageData), candidate)
+        } else if (['SimpleTex', 'simpleTex'].includes(candidate)) {
+          res = await requestLegacy(() => ocrNetwork.simpleTexOCR(imageData), candidate)
+        } else {
+          res = await requestVision(candidate)
+        }
         if (res) {
           ocrNetwork.OCRBuffer[MD5] = res
         }

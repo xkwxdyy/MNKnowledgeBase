@@ -65,6 +65,16 @@ function harness(options={}) {
   for(let i=0;i<20;i++){const n={...h.note,noteId:'batch-'+i};h.notes.set(n.noteId,n);assert.equal(h.manager.enqueue(n),true);}
   assert.equal(captures,0);await h.start();for(let i=0;i<20&&h.manager.pending();i++)await flush();assert.equal(captures,20);assert.equal(h.manager.pending(),0);assert.equal(h.saved.filter(r=>r.status==='applied').length,20);
  }
+ for(const outcome of ['success','failed','stale']) {
+  let inUndo=false;const presented=[];
+  const h=harness({capture:()=>({text:'Definition: A compact operator maps bounded sets to relatively compact sets.'}),
+   request:async()=>{if(outcome==='failed')throw Error('offline');return good;},
+   apply:async fn=>{inUndo=true;fn();inUndo=false;},
+   present:async(note,context,window,focus)=>{assert.equal(inUndo,false);presented.push({id:note.noteId,focus});}});
+  for(const id of ['first','second']){const note={...h.note,noteId:id};h.notes.set(id,note);assert.equal(h.manager.enqueue(note),true);if(outcome==='stale')note.noteTitle='manual edit';}
+  await h.start();await flush();
+  assert.deepEqual(presented,outcome==='success'?[{id:'second',focus:false}]:[], 'manual definitions must refresh once after the batch succeeds, outside undo and without changing focus');
+ }
  {
   const h=harness();let made=false;h.manager.finish(h.manager.begin(h.note));h.manager.deferMakeCard(h.note,()=>{made=true});h.note.noteTitle='阅读中改名';await h.start();assert.equal(made,false);assert.equal(h.calls.length,0);
  }

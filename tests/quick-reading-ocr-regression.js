@@ -372,8 +372,45 @@ async function captureQuickReadingOCRRequest(needTranslation) {
     ocrDiagnosticTarget: nonTimeoutDiagnostic,
   });
   assert.strictEqual(nonTimeoutResult, undefined);
-  assert.deepStrictEqual(attemptedModels, ['broken-model'], 'non-timeout failures must not spend a second provider request');
-  assert.strictEqual(nonTimeoutDiagnostic.fallbackUsed, false);
+  assert.deepStrictEqual(attemptedModels, ['broken-model', 'fast-model'], 'provider errors must immediately try the configured fallback');
+  assert.strictEqual(nonTimeoutDiagnostic.fallbackUsed, true);
+
+  const originalConfig = JSON.stringify(context.KnowledgeBaseConfig.config);
+  const legacyCalls = [];
+  context.KnowledgeBaseConfig.getAvailableOCRSources = mode => {
+    assert.strictEqual(mode, 2, 'fallback candidates must match the requested OCR mode');
+    return ['broken-model', 'Doc2X', 'SimpleTex', 'unused-model', 'Doc2X'];
+  };
+  context.ocrNetwork.doc2xImgOCR = async image => {
+    legacyCalls.push(['Doc2X', image]);
+    throw Error('fixture unavailable');
+  };
+  context.ocrNetwork.simpleTexOCR = async image => {
+    legacyCalls.push(['SimpleTex', image]);
+    return '备用公式识别成功';
+  };
+  const legacyDiagnostic = {};
+  attemptedModels.length = 0;
+  assert.strictEqual(await Network.OCR('image-data', 'broken-model', 'same prompt', {
+    mode: 2, timeoutSeconds: 12, fallbackSource: 'broken-model', ocrDiagnosticTarget: legacyDiagnostic,
+  }), '备用公式识别成功');
+  assert.deepStrictEqual(attemptedModels, ['broken-model']);
+  assert.deepStrictEqual(legacyCalls, [['Doc2X', 'image-data'], ['SimpleTex', 'image-data']], 'legacy fallbacks must use their own OCR adapters and retain the image');
+  assert.deepStrictEqual(Array.from(legacyDiagnostic.attempts, attempt => attempt.model), ['broken-model', 'Doc2X', 'SimpleTex']);
+  assert.strictEqual(legacyDiagnostic.finalModel, 'SimpleTex');
+  assert.strictEqual(legacyDiagnostic.success, true);
+  assert.strictEqual(JSON.stringify(context.KnowledgeBaseConfig.config), originalConfig, 'fallback must not change saved user configuration');
+
+  attemptedModels.length = 0;
+  legacyCalls.length = 0;
+  Network.ChatGPTVision = async () => '主模型识别成功';
+  const successDiagnostic = {};
+  assert.strictEqual(await Network.OCR('image-data', 'working-model', 'prompt', {
+    mode: 2, ocrDiagnosticTarget: successDiagnostic,
+  }), '主模型识别成功');
+  assert.strictEqual(successDiagnostic.attempts.length, 1, 'a successful primary must stop the chain');
+  assert.strictEqual(successDiagnostic.fallbackUsed, false);
+  assert.strictEqual(legacyCalls.length, 0);
 
   assert.match(
     mainSource,
