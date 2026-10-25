@@ -769,7 +769,7 @@ const kbOCRConfig = {
       description: '统一 OCR 输出中的数学减号为键盘短横线/ASCII hyphen-minus'
     },
     {
-      pattern: /[‐‑‒–—―﹣－]/g,
+      pattern: /[‐‑‒–—―﹘﹣－➖˗]/g,
       replacement: '-',
       description: '统一 OCR 输出中的横线为键盘短横线/ASCII hyphen-minus'
     },
@@ -29887,6 +29887,8 @@ class KnowledgeBaseNetwork {
 
 只纠正能够依据原图确认的识别错误，不按识别稿的字符组合、常见公式或已知定义猜测或补全。
 
+原图中的普通数学减号统一输出键盘短横线 -（ASCII U+002D），不要输出汉字一或异常横线；只有数学上下文能够确认减号时才修正一，中文正文的一和数字 1 保持。上下标能完整表达时优先保留 Unicode，包括 x⁻¹、aₙ₋₁；不得为统一普通减号而改写上下标或改变指标范围。
+
 ### 下标问题
 - 下标位置、附着对象和作用范围必须依据原图确认。X1、Y2、Z3 等识别稿不能单独作为下标证据；原图是行内字符时保持行内字符。
 - 原图确认是下标时，可优先把 a_i、x_n、y_k 等写成准确的 Unicode 下标；复杂指标保留原有层级，不凭识别稿中的 _ 重新猜测原图。
@@ -29966,6 +29968,7 @@ class KnowledgeBaseNetwork {
   static OCRHyphenHandlingRules = `
 **横线处理规则**：
 - ✅ 减号、连字符、英文复合词连接符统一使用键盘短横线 \`-\`（ASCII hyphen-minus, U+002D）
+- 原图中的普通数学减号统一输出键盘短横线 -（ASCII U+002D），不要输出汉字一或异常横线；只有数学上下文能够确认减号时才修正一，中文正文的一和数字 1 保持。上下标能完整表达时优先保留 Unicode，包括 x⁻¹、aₙ₋₁；不得为统一普通减号而改写上下标或改变指标范围。
 - ✅ 示例：\`Hilbert-Schmidt\`、\`C^*-algebra\`、\`x-y\`
 - ❌ 禁止输出 Unicode 横线或数学负号，例如 U+2010、U+2011、U+2012、U+2013、U+2014、U+2015、U+2212、U+FE63、U+FF0D
 - ❌ 不要用很细的数学负号代替键盘短横线 \`-\`
@@ -30447,6 +30450,37 @@ class KnowledgeBaseNetwork {
     // 依次应用所有替换规则
     rules.forEach(rule => {
       result = result.replace(rule.pattern, rule.replacement)
+    })
+
+    // Normalize baseline minus glyphs before the existing Unicode script formatter.
+    result = String(result).replace(/[−‐‑‒–—―﹘﹣－➖˗]/g, '-')
+    // A Chinese numeral in prose or a TeX text command is not a minus sign.
+    const textRanges = []
+    const textCommands = /\\(?:text|textrm|textnormal|textsf|texttt|textbf|textit|mathrm|mbox|operatorname)\s*\{/g
+    let textMatch
+    while ((textMatch = textCommands.exec(result))) {
+      let end = textCommands.lastIndex, depth = 1
+      while (end < result.length && depth) {
+        if (result[end] === '\\') { end += 2; continue }
+        if (result[end] === '{') depth++
+        if (result[end] === '}') depth--
+        end++
+      }
+      textRanges.push([textMatch.index, end])
+      textCommands.lastIndex = end
+    }
+    const operandStart = /^[A-Za-z0-9\u0370-\u03ff\u2100-\u214f\u{1d400}-\u{1d7ff}(\[{\\|‖√∑∏∫∂∇∞]$/u
+    const operandEnd = /^[A-Za-z0-9\u0370-\u03ff\u2100-\u214f\u{1d400}-\u{1d7ff})\]}′″*|‖∞¹²³\u2070-\u209f\u1d2c-\u1d6a]$/u
+    const operatorLeft = /^[=<>≤≥≠≈≡:+*/×÷·(\[{$-]$/u
+    result = result.replace(/[一─━⎯]/g, (glyph, index, whole) => {
+      if (textRanges.some(([start, end]) => index >= start && index < end)) return glyph
+      let before = index - 1, after = index + 1
+      while (before >= 0 && /\s/.test(whole[before])) before--
+      while (after < whole.length && /\s/.test(whole[after])) after++
+      const left = before < 0 ? '' : /[\udc00-\udfff]/.test(whole[before])
+        ? whole.slice(before - 1, before + 1) : whole[before]
+      const right = after >= whole.length ? '' : String.fromCodePoint(whole.codePointAt(after))
+      return operandStart.test(right) && (!left || operandEnd.test(left) || operatorLeft.test(left)) ? '-' : glyph
     })
 
     if (options && options.normalizeMarkdownTitle === true) {
