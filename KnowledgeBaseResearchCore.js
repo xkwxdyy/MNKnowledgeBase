@@ -349,6 +349,16 @@ var KnowledgeBaseResearchCore = (function () {
     }
     function makeSceneCard(note, type, valid, options) {
       var maker = cardFacade(note, type)
+      // A scene command owns an explicit card; native selection commands can be disabled or target another card.
+      maker.addToReview = function (current, reviewEverytime) {
+        if (['定义', '命题', '例子', '反例', '思想方法', '问题', '思路'].indexOf(type || maker.getNoteType(current, true)) < 0) return
+        if (valid && !valid()) throw new Error('context-changed')
+        var controller = Application.sharedInstance().studyController(MNUtil.currentWindow)
+        var nativeNote = Database.sharedInstance().getNoteById(current.noteId)
+        if (!controller || !nativeNote) throw new Error('note-unavailable')
+        if (!reviewEverytime && controller.isNoteInReview(current.noteId)) return
+        NSNotificationCenter.defaultCenter().postNotificationNameObjectUserInfo('AddToReview', controller, { note: nativeNote })
+      }
       var make = function (current) {
         if (valid && !valid()) throw new Error('context-changed')
         return maker.makeCard(current, !!(options && options.addToReview), true, { noteType: type || null, silent: true, throwOnFailure: true }) || current
