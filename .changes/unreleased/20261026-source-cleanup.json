@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "source-cleanup",
+  "changes": [
+    {
+      "id": "source-cleanup-20261026",
+      "type": "changed",
+      "zh": "移出已核验的临时副本，保留正式资源并限定源码检索范围。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}
