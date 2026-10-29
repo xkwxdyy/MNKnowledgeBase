@@ -1053,6 +1053,15 @@ function assertToolbarDelegatesQuickReadingBeforeLegacyPreProcessPath() {
     true,
     'the legacy pre-process compatibility path must remain available outside quick reading',
   );
+  toolbarContext.KnowledgeBaseTemplate.isOldTemplateCard = KBT.isOldTemplateCard.bind(KBT);
+  for (const label of ['归纳总结', 'remark', 'Remark']) {
+    const legacyNote = { noteId: 'OLD', MNComments: ['证明', '所属', '相关链接', label]
+      .map(text => ({ type: 'HtmlComment', text })) };
+    assert.strictEqual(toolbarContext.shouldUsePreProcessSafePath(legacyNote), false,
+      'Recognized legacy fields must reach core migration even with modern fields: ' + label);
+  }
+  assert.strictEqual(toolbarContext.shouldUsePreProcessSafePath(note), true,
+    'Modern cards retain the compatibility path when the shared detector is available');
 }
 
 function assertToolbarUsesConvertedClassificationNote() {

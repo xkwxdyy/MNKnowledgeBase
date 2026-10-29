@@ -15,6 +15,7 @@
     window.__MNKB_SEARCH_DEBUG__ = window.__MNKB_SEARCH_DEBUG__ === true;
   </script>
   <link rel="stylesheet" href="./styles/search.css" />
+  <link rel="stylesheet" href="./styles/organization.css">
 </head>
 <body>
   <div class="topbar">
@@ -192,6 +193,24 @@
           <div class="ai-recommendation__list" id="aiRecommendList"></div>
         </div>
       </div>
+
+      <section id="organizationPanel" class="organization-panel" aria-label="按语义整理卡片">
+        <p id="organizationSource">待整理 B：读取脑图当前选卡</p>
+        <div class="organization-controls">
+          <button id="organizationReadSource" class="btn" type="button" title="读取脑图当前选卡" aria-label="读取脑图当前选卡">↻</button>
+          <button id="organizationFindEqual" class="btn" type="button">查找等价卡片</button>
+          <button id="organizationFindParent" class="btn" type="button">查找上级归类</button>
+          <button id="organizationModels" class="btn" type="button" title="选择 AI 模型" aria-label="选择 AI 模型">⚙</button>
+        </div>
+        <div class="organization-controls">
+          <button id="organizationMerge" class="btn" type="button" disabled>合并重复知识点</button>
+          <button id="organizationMove" class="btn" type="button" disabled>归入该归类</button>
+          <button id="organizationProof" class="btn" type="button" hidden>补入证明</button>
+        </div>
+        <p id="organizationStatus" role="status" aria-live="polite">找到候选 A 后，按内容等价或上下级关系选择操作。</p>
+        <div id="organizationCandidates" aria-label="整理候选"></div>
+      </section>
+      <details id="organizationCustom"><summary>本次自定义</summary></details>
 
       <!-- ⭐ 星标常用功能区 -->
       <!-- 暂时注释：双向链接功能已移至卡片操作图标 -->
@@ -514,6 +533,9 @@
   <script src="./scripts/search/app-ui.js"></script>
   <script src="./scripts/search/app-ui-bridge.js"></script>
   <script src="./scripts/search/app.js"></script>
+  <dialog id="organizationDialog" aria-label="整理方案审阅"><div id="organizationDialogBody"></div></dialog>
+  <script src="./KnowledgeBaseOrganization.js"></script>
+  <script src="./scripts/search/app-organization.js"></script>
 
 </body>
 </html>

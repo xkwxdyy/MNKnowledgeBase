@@ -39,6 +39,7 @@ function harness(options = {}) {
       this._childNotes = [];
       this.knowledge = options.knowledge === true;
       this.classification = options.classification === true;
+      this.templated = options.templated === true;
       this.excerptType = options.excerptType || (options.excerptText ? 'text' : 'none');
       this.excerptText = options.excerptText || '';
       this.mainExcerptText = this.excerptText;
@@ -85,6 +86,8 @@ function harness(options = {}) {
       return options.freshWrappers ? fresh(note) : note;
     }
     get title() { return this._state.title; }
+    get tags() { throw new Error('Proof workflow must not read user tags'); }
+    set tags(_) { throw new Error('Proof workflow must not write user tags'); }
     set title(value) { this._state.title = value; }
     get noteTitle() { return this._state.title; }
     set noteTitle(value) { this._state.title = value; }
@@ -203,6 +206,7 @@ function harness(options = {}) {
     KnowledgeBaseTemplate: {
       isClassificationNote: note => note.classification,
       isKnowledgeNote: note => note.knowledge,
+      ifTemplateMerged: note => note.templated,
       getNoteType: note => note.classification ? '归类' : note.knowledge ? '命题' : '',
     },
     KnowledgeBaseUtils: { log() {}, addErrorLog() {}, emitRuntimeLog() {} },
@@ -213,6 +217,16 @@ function harness(options = {}) {
   });
   context.global = context;
   context.globalThis = context;
+  const identityStart = source.indexOf('  static isIntermediateKnowledge(note) {');
+  const identityEnd = source.indexOf('  static excludeWorkflowClassificationFromIndex(', identityStart);
+  assert.ok(identityStart > 0 && identityEnd > identityStart);
+  vm.runInContext('class WorkflowIdentity {\n' + source.slice(identityStart, identityEnd) + '\n}\nthis.WorkflowIdentity=WorkflowIdentity;', context);
+  Object.assign(context.KnowledgeBaseTemplate, {
+    pendingIntermediateCompletionIds: new Set(),
+    isRequiredPropositionsClassification: context.WorkflowIdentity.isRequiredPropositionsClassification,
+    isIntermediateKnowledge: context.WorkflowIdentity.isIntermediateKnowledge,
+    isClassificationNote(note) { return note.classification || this.isRequiredPropositionsClassification(note); },
+  });
   vm.runInContext(`${source.slice(start, end)}\nthis.HtmlMarkdownUtils = HtmlMarkdownUtils;`, context, { filename: 'proof-merge-production.js' });
   assert.equal(typeof context.HtmlMarkdownUtils.runProofMergeWithCheckFolding, 'function');
   return {
@@ -579,6 +593,73 @@ test('native provenance added and rewritten across layers preserves original bou
   assert.equal(root.comments.find(value => value.testTag === 'leaf-before').noteid, 'MIDDLE');
   assert.equal(root.comments.find(value => value.testTag === 'leaf-link').noteid, 'REFERENCE');
   assert.ok(root.comments.filter(value => /after$/.test(value.testTag)).every(value => !value.collapsed));
+});
+
+test('deep protected nodes exclude their ancestors and complete subtrees without excluding ordinary siblings', () => {
+  const h = harness();
+  const root = new h.Note('ROOT');
+  const ancestor = root.addChild(new h.Note('ANCESTOR'));
+  const secondAncestor = ancestor.addChild(new h.Note('SECOND-ANCESTOR'));
+  const category = secondAncestor.addChild(new h.Note('CATEGORY', [], { classification: true }));
+  const unfinished = category.addChild(new h.Note('UNFINISHED', [], { title: 'not made yet' }));
+  unfinished.addChild(new h.Note('UNFINISHED-PROOF'));
+  const localSafe = ancestor.addChild(new h.Note('LOCAL-SAFE'));
+  const ordinary = root.addChild(new h.Note('ORDINARY'));
+  ordinary.addChild(new h.Note('ORDINARY-LEAF'));
+  const required = root.addChild(new h.Note('REQUIRED', [], { title: '所需命题' }));
+  const intermediate = required.addChild(new h.Note('INTERMEDIATE'));
+  intermediate.addChild(new h.Note('INTERMEDIATE-PROOF'));
+  assert.deepEqual(Array.from(h.api.getProofMergeCandidates(root), note => note.noteId), [localSafe.noteId, ordinary.noteId, 'ORDINARY-LEAF']);
+  assert.deepEqual(Array.from(h.api.getProofMergeCandidates(root, [ancestor, category, unfinished, intermediate])), []);
+});
+
+test('explicit source selection refuses protected ancestors before invoking the merge operation', () => {
+  const h = harness(), root = new h.Note('ROOT');
+  const ancestor = root.addChild(new h.Note('ANCESTOR', [check('ancestor-check')]));
+  ancestor.addChild(new h.Note('GROUP', [], { classification: true }));
+  let invoked = false;
+  assert.throws(() => h.api.runProofMergeWithCheckFolding(root, [ancestor], () => { invoked = true; }), /受保护/);
+  assert.equal(invoked, false);
+  assert.equal(ancestor.parentNote, root);
+  assert.deepEqual(h.wrapperCalls, []);
+  assert.deepEqual(h.nativeCalls, []);
+});
+
+test('protected branch titles and Check comments never trigger title processing, folding or movement', () => {
+  const h = harness(), root = new h.Note('ROOT');
+  const ancestor = root.addChild(new h.Note('ANCESTOR', [check('ancestor-one'), check('ancestor-two')], { title: 'retained ancestor' }));
+  const category = ancestor.addChild(new h.Note('CATEGORY', [check('category-one'), check('category-two')], { classification: true, title: 'retained category' }));
+  const unfinished = category.addChild(new h.Note('UNFINISHED', [check('unfinished-one'), check('unfinished-two')], { title: 'retained unfinished' }));
+  const required = root.addChild(new h.Note('REQUIRED', [], { title: '所需命题' }));
+  const intermediate = required.addChild(new h.Note('INTERMEDIATE', [check('intermediate-one'), check('intermediate-two')], { title: 'retained intermediate' }));
+  assert.equal(h.api.hasDescendantWithTitle(root), false);
+  const ordinary = root.addChild(new h.Note('ORDINARY', [check('ordinary-check'), drawing('ordinary-after')], { title: '' }));
+  assert.equal(h.api.hasDescendantWithTitle(root), false);
+  const saved = [ancestor, category, unfinished, required, intermediate].map(note => ({ note, parent: note.parentNote, title: note.title, comments: note.comments.map(value => ({ ...value })) }));
+  h.api.runProofMergeWithCheckFolding(root, null, () => h.api.upwardMergeWithStyledComments(root, 'level1'));
+  assert.deepEqual(foldedTags(root), ['ordinary-check']);
+  assert.equal(ordinary.parentNote, null);
+  for (const item of saved) {
+    assert.equal(item.note.parentNote, item.parent);
+    assert.equal(item.note.title, item.title);
+    assert.deepEqual(item.note.comments.map(value => ({ ...value })), item.comments);
+    assert.equal(h.wrapperCalls.some(call => call.receiver.noteId === item.note.noteId), false);
+  }
+});
+
+test('ordinary siblings inside a retained ancestor merge there and retain their own Check boundary', () => {
+  const h = harness(), root = new h.Note('ROOT');
+  const ancestor = root.addChild(new h.Note('ANCESTOR', [comment('ancestor-before', 'retained')], { title: 'retained ancestor' }));
+  const category = ancestor.addChild(new h.Note('CATEGORY', [], { classification: true }));
+  const leaf = ancestor.addChild(new h.Note('LOCAL-SAFE', [comment('local-before', 'proof'), check('local-check'), drawing('local-after')], { title: '' }));
+  h.api.runProofMergeWithCheckFolding(root, null, () => h.api.upwardMergeWithStyledComments(root, 'level1'));
+  assert.equal(ancestor.parentNote, root);
+  assert.equal(category.parentNote, ancestor);
+  assert.equal(leaf.parentNote, null);
+  assert.equal(ancestor.title, 'retained ancestor');
+  assert.deepEqual(tags(ancestor), ['ancestor-before', 'local-before', 'local-check', 'local-after']);
+  assert.deepEqual(foldedTags(ancestor), ['local-before', 'local-check']);
+  assert.equal(ancestor.comments.at(-1).collapsed, false);
 });
 
 console.log(`proof merge Check folding regression: ${passed} scenarios passed`);

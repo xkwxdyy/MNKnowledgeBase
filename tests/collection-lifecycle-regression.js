@@ -22,8 +22,9 @@ async function run() {
     await Promise.resolve(); await Promise.resolve()
     mode = 'intensive'
     assert.equal(h.service.state(h.main).receiver.active, false)
-    assert.equal((await h.service.processExcerpt(h.main, h.add('proof-step'))).handled, false)
-    await assert.rejects(h.command('setReceiver', { noteId: r.noteId }), /scene-inactive/)
+    assert.equal((await h.service.processExcerpt(h.main, h.add('proof-step'))).skipped, 'no-active-receiver')
+    await h.command('setReceiver', { noteId: r.noteId })
+    assert.equal(h.service.state(h.main).receiver.active, true)
     finish(); assert.equal((await waiting).skipped, 'context-changed'); assert.equal((await queued).skipped, 'context-changed')
     h.ocr(null); mode = 'broad'
     assert.equal(h.service.state(h.main).receiver.active, false)

@@ -6,12 +6,17 @@ const {harness} = require('./research-core-regression');
   const h=harness(); let mode='intensive'; h.deps.collectionMode=()=>mode;
   const n=h.add('selected'); const options=[]; let late;
   h.deps.makeCard=(note,type,valid,settings)=>{assert(valid());options.push(settings);late=valid;return {note,pending:false,addedToReview:settings.addToReview};};
-  assert.equal(h.service.isSceneActive(h.main),false);
-  assert.equal((await h.service.processExcerpt(h.main,n)).handled,false);
+  assert.equal(h.service.isSceneActive(h.main),true);
+  assert.equal((await h.service.processExcerpt(h.main,n)).skipped,'no-active-receiver');
   const made=await h.command('makeCard',{noteId:n.noteId});
   assert.equal(made.reviewAllowed,true);assert.equal(made.addedToReview,true);assert.equal(options.at(-1).addToReview,true);
   await h.command('addTemplate',{noteId:n.noteId});
-  for(const command of ['setReceiver','stopReceiver','setInbox','registerProject','startProject']) await assert.rejects(h.command(command,{noteId:n.noteId}),/research-scene-inactive/);
+  const receiver=h.add('receiver','归类');receiver.acceptType='命题';
+  await h.command('setReceiver',{noteId:receiver.noteId});
+  assert.equal(h.service.state(h.main).receiver.active,true);
+  await h.command('stopReceiver');
+  await assert.rejects(h.command('setReceiver',{noteId:n.noteId}),/receiver-must-be-classification$/);
+  for(const command of ['setInbox','registerProject','startProject']) await assert.rejects(h.command(command,{noteId:n.noteId}),/research-scene-inactive/);
   await assert.rejects(h.command('makeCard',{noteId:'missing'}),/note-unavailable/);
   mode='broad';assert.equal(late(),false,'A scene switch invalidates intensive deferred card work');
   const broad=await h.command('makeCard',{noteId:n.noteId});assert.equal(broad.reviewAllowed,false);assert.equal(options.at(-1).addToReview,false);
@@ -43,5 +48,5 @@ const {harness} = require('./research-core-regression');
     if(currentMode==='broad') {await command('setInbox');assert.equal(saves,1);assert.equal(config.referenceNoteIds.roots.classInput,note.noteURL);assert.equal(config.referenceNoteIds.roots.existing,'keep');assert.equal(config.referenceNoteIds.templates.definition,'keep');assert.equal(instance.classInputRootNote,note);}
     assert.equal(config.readingFollowMode,true,'Saved reading flags remain unchanged');
   }
-  console.log('Reading scene core: intensive explicit commands, review intent, no routing, lifecycle guard and explicit Inbox configuration passed');
+  console.log('Reading scene core: intensive explicit commands, review intent, explicit classification receivers, lifecycle guard and explicit Inbox configuration passed');
 })().catch(e=>{console.error(e);process.exitCode=1});

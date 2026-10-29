@@ -1485,6 +1485,10 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
     // 统一动作名称，兼容大小写差异
     const action = (config.host || "").trim()
     const actionLower = action.toLowerCase()
+    if (actionLower.startsWith("organization")) {
+      await KnowledgeBaseOrganizationRuntime.handle(this, actionLower, config.params || {});
+      return;
+    }
     const sidebarSectionByAction = {
       mergeDuplicateKnowledgeNoteToTargetNote: 'merge',
       moveFocusNoteToTargetNoteAsChild: 'move',
@@ -2348,7 +2352,8 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
 
       case 'mergeDuplicateKnowledgeNoteToTargetNote':
       case 'mergeduplicateknowledgenotetotargetnote':
-        MNUtil.undoGrouping(() => {
+        let pendingKnowledgeMergeResult = null;
+        const executeDuplicateMerge = () => {
           if (!targetNote) {
             MNUtil.showHUD("未找到目标卡片")
             return
@@ -2407,7 +2412,8 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
             mergeOptions.skipFields = ["所属"]
           }
           const mergeResult = KnowledgeBaseTemplate.renewKnowledgeNotes(targetNote, sourceNote, mergeOptions)
-          if (!mergeResult || mergeResult.success !== true) {
+          pendingKnowledgeMergeResult = mergeResult;
+          if (!mergeResult || (mergeResult.success !== true && !mergeResult.pendingVerification)) {
             sidebarFailure = mergeResult && mergeResult.error ? String(mergeResult.error) : "合并未返回完成结果"
             return
           }
@@ -2415,7 +2421,15 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
             appendOldClassificationParentLink(oldClassificationParent, targetNote, { showHUD: false })
           }
           success = true
-        })
+        };
+        executeDuplicateMerge();
+        if (pendingKnowledgeMergeResult && pendingKnowledgeMergeResult.verification) {
+          await pendingKnowledgeMergeResult.verification;
+          if (pendingKnowledgeMergeResult.success !== true) {
+            success = false;
+            sidebarFailure = String(pendingKnowledgeMergeResult.error || "合并提交状态尚未核验");
+          }
+        }
         break
 
       case "focusCardInMindMap":

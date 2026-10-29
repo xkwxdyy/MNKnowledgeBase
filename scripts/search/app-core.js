@@ -1057,6 +1057,7 @@ function logPerfMetric(label, startTime, details = '') {
 
 function bumpSearchExecutionRevision(reason = '') {
   searchExecutionRevision += 1;
+  window.MNKBOrganizationUI?.cancelSearch?.();
   lastExecutedSearchFingerprint = '';
   if (reason !== 'aiCardSearch' && state.aiCardSearch?.active
     && typeof deactivateAICardSearch === 'function') {
@@ -1373,18 +1374,12 @@ function sanitizeMergeOptions(rawOptions = {}) {
 }
 
 function loadMergeOptions() {
-  const meta = getPanelMeta('merge');
-  setPanelOptions('merge', loadPanelOptions(
-    meta.storageKey,
-    DEFAULT_MERGE_OPTIONS,
-    sanitizeMergeOptions,
-    meta.errorLabel,
-  ));
+  // Keep previously saved preferences intact; custom options now apply only to this target.
+  setPanelOptions('merge', sanitizeMergeOptions(DEFAULT_MERGE_OPTIONS));
 }
 
 function saveMergeOptions() {
-  const meta = getPanelMeta('merge');
-  savePanelOptions(meta.storageKey, state.mergeOptions, meta.errorLabel);
+  // Deliberately session-only. Semantic actions never read these custom options.
 }
 
 function formatMergeOptionsSummary(options = state.mergeOptions) {
@@ -1607,18 +1602,12 @@ function sanitizeMoveOptions(rawOptions = {}) {
 }
 
 function loadMoveOptions() {
-  const meta = getPanelMeta('move');
-  setPanelOptions('move', loadPanelOptions(
-    meta.storageKey,
-    DEFAULT_MOVE_OPTIONS,
-    sanitizeMoveOptions,
-    meta.errorLabel,
-  ));
+  // Keep previously saved preferences intact; custom options now apply only to this target.
+  setPanelOptions('move', sanitizeMoveOptions(DEFAULT_MOVE_OPTIONS));
 }
 
 function saveMoveOptions() {
-  const meta = getPanelMeta('move');
-  savePanelOptions(meta.storageKey, state.moveOptions, meta.errorLabel);
+  // Deliberately session-only. Semantic actions never read these custom options.
 }
 
 function formatMoveOptionsSummary(options = state.moveOptions) {

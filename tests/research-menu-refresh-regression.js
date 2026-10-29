@@ -37,7 +37,7 @@ function fixture() {
     getQuickReadingMakeCardPolicy: () => ({ mode: 'rough' }),
     makeQuickReadingRoughCard: () => { throw Error('saved rough policy must not replace explicit full make') },
     _beginMakeCardPerf() {}, _finishMakeCardPerf() {}, _makeCardPerfNow: () => 0, _recordMakeCardPerf() {},
-    sanitizeNoteCommentsForMake() {}, renewNote: () => calls.push(['renew']),
+    isOldTemplateCard: () => false, isIntermediateKnowledge: () => false, completeIntermediateKnowledge() {}, queueIntermediateKnowledgeCompletion() {}, sanitizeNoteCommentsForMake() {}, renewNote: note => { calls.push(['renew']); return note; },
     mergeTemplateAndAutoMoveNoteContent: () => { calls.push(['fields']); if (makeError) throw makeError },
     templateMergedCardMake: () => calls.push(['links']),
     syncFinalMakeCardIndex: () => calls.push(['final.index']), shouldSuppressQuickReadingDefinitionIndexHUD: () => true,

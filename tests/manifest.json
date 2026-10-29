@@ -27,6 +27,7 @@
     "literature-reading-index-state-regression.js",
     "main-index-supplementary-root-regression.js",
     "make-card-conversion-regression.js",
+    "old-template-recognition-regression.js",
     "markdown-link-escaping-regression.js",
     "math-term-ai-search-regression.js",
     "merge-classification-belonging-regression.js",
@@ -91,7 +92,14 @@
     "collection-lifecycle-regression.js",
     "reading-scene-commands-regression.js",
     "ocr-minus-normalization-regression.js",
-    "managed-reading-scenes-regression.js"
+    "managed-reading-scenes-regression.js",
+    "title-rename-gesture-regression.js",
+    "intermediate-knowledge-workflow-regression.js",
+    "organization-regression.js",
+    "migration-selection-guard-regression.js",
+    "merge-pin-history-regression.js",
+    "intermediate-knowledge-merge-regression.js",
+    "native-merge-result-regression.js"
   ],
   "integration": [
     "definition-concept-toolbar-regression.js",
@@ -113,12 +121,15 @@
     "problem-chain-make-card-regression.js",
     "quick-reading-make-card-regression.js",
     "subtree-content-export-regression.js",
-    "toolbar-usage-export-regression.js"
+    "toolbar-usage-export-regression.js",
+    "toolbar-usage-native-io-regression.js",
+    "legacy-toolbar-organization-regression.js"
   ],
   "browser": [
     "ai-card-search.browser.mjs",
     "proof-reader.browser.mjs",
     "search-ui-interaction.browser.mjs",
-    "definition-merge.browser.mjs"
+    "definition-merge.browser.mjs",
+    "organization.browser.mjs"
   ]
 }

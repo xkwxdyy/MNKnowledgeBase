@@ -867,6 +867,7 @@ function renderSelectedCardInfo(title, subtitle) {
 }
 
 function updateSelectionInfo() {
+  if (window.MNKBOrganizationUI) window.MNKBOrganizationUI.updateSelection();
   if (!state.selectedCardId) {
     dom.selectedCardInfo.textContent = '未选中卡片';
     dom.selectedCardInfo.classList.add('empty');

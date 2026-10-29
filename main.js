@@ -20,8 +20,13 @@ JSB.newAddon = function(mainPath){
   JSB.require('KnowledgeBaseHandwritingOCR');
   JSB.require('KnowledgeBaseDefinitionConcept');
   JSB.require('KnowledgeBaseOCRPostprocess');
+  JSB.require('KnowledgeBaseMergeTransaction');
+  JSB.require('KnowledgeBaseMergeHistory');
   JSB.require('utils');
+  JSB.require('KnowledgeBaseOrganization');
+  JSB.require('KnowledgeBaseOrganizationRuntime');
   JSB.require('KnowledgeBaseResearchCore');
+  JSB.require('KnowledgeBaseTitleRename');
   KnowledgeBaseResearchCore.trace('addon.loaded')
   JSB.require('toolbarUsageExport');
   JSB.require('knowledgebaseWebController');
@@ -201,7 +206,18 @@ JSB.newAddon = function(mainPath){
      * 
      * 注意：此时可能还没有笔记本或文档打开
      */
+    onKBTitleRenameNativeSelection: function(sender) { KnowledgeBaseTitleRename.observe(self, sender, 'native.selection') },
+    onKBTitleRenameTemplateChanged: function(sender) { KnowledgeBaseTitleRename.observe(self, sender, 'template.changed') },
+    onKBTitleRenameDiagnostic: function() { try { KnowledgeBaseTitleRename.showDiagnostic(self) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) } },
+    controllerWillLayoutSubviews: function(controller) {
+      KnowledgeBaseMergeHistory.schedule()
+      KnowledgeBaseTitleRename.observe(self, controller, 'layout')
+    },
+    onKBTitleRenameSelection: function(sender) { try { KnowledgeBaseTitleRename.bind(self, sender) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) } },
+    onKBTitleRenameClosed: function(sender) { try { KnowledgeBaseTitleRename.closed(self, sender) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) } },
+    onKBTitleRenameSwipe: function(gesture) { try { KnowledgeBaseTitleRename.swipe(self, gesture) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) } },
     sceneWillConnect: function() {
+      try { KnowledgeBaseTitleRename.connect(self) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) }
       var researchInitStage = 'observer.register'
       KnowledgeBaseResearchCore.trace('scene.connect.started')
       // Keep research communication available when unrelated saved-mode initialization fails.
@@ -296,6 +312,7 @@ JSB.newAddon = function(mainPath){
      * - 释放占用的资源
      */
     sceneDidDisconnect: function() {
+      KnowledgeBaseTitleRename.disconnect(self)
       // Unregister even when Core or legacy cleanup cannot finish.
       try {
         NSNotificationCenter.defaultCenter().removeObserverName(self, 'MNKBResearchCommand')
@@ -342,6 +359,7 @@ JSB.newAddon = function(mainPath){
     },
 
     sceneWillResignActive: function() {
+      KnowledgeBaseTitleRename.clear(self)
       // 示例中为空实现
     },
     
@@ -369,6 +387,7 @@ JSB.newAddon = function(mainPath){
      * @param {String} notebookid 笔记本的唯一标识符
      */
     notebookWillOpen: function(notebookid) {
+      KnowledgeBaseTitleRename.clear(self)
       // 笔记本打开时的处理（控制器已在 queryAddonCommandStatus 中延迟初始化）
     },
     
@@ -383,6 +402,7 @@ JSB.newAddon = function(mainPath){
      * @param {String} notebookid 笔记本的唯一标识符
      */
     notebookWillClose: function(notebookid) {
+      KnowledgeBaseTitleRename.clear(self)
       if (typeof KnowledgeBaseResearchCore !== 'undefined') {
         KnowledgeBaseResearchCore.getRuntime().close(self, notebookid)
       }
@@ -1579,12 +1599,21 @@ JSB.newAddon = function(mainPath){
 
     exportToolbarUsage: async function() {
       try { await KBToolbarUsage.exportUsage() }
-      catch (error) { MNUtil.showHUD('导出工具栏统计失败：' + error.message, 2) }
+      catch (error) {
+        KBToolbarUsage.logFailure('exportUsage', error)
+        MNUtil.showHUD('导出工具栏统计失败：' + error.message, 2)
+      }
     },
 
-    toggleToolbarUsage: async function() {
-      try { await KBToolbarUsage.toggle() }
-      catch (error) { MNUtil.showHUD('设置工具栏统计失败：' + error.message, 2) }
+    toggleToolbarUsage: async function(button) {
+      try {
+        await KBToolbarUsage.toggle()
+        self.openMaintenanceMenu(button)
+      }
+      catch (error) {
+        KBToolbarUsage.logFailure('toggle', error)
+        MNUtil.showHUD('设置工具栏统计失败：' + error.message, 2)
+      }
     },
 
     exportActualSearchIndex: function() {
@@ -1773,6 +1802,7 @@ JSB.newAddon = function(mainPath){
 
 
     onPopupMenuOnNote: async function (sender) {
+      KnowledgeBaseMergeHistory.schedule()
       try {
         const selectedNoteId = sender && sender.userInfo && sender.userInfo.note && sender.userInfo.note.noteId
         if (selectedNoteId) {
@@ -3259,6 +3289,7 @@ JSB.newAddon = function(mainPath){
       this.indentedTableItem('🧭 问题研究工作台', 'openQuestionResearchWorkbench:'),
       this.menuSeparator(),
       this.indentedTableItem('📤 导出实际搜索索引 JSON', 'exportActualSearchIndex:'),
+      this.indentedTableItem('🧪 左滑重命名诊断', 'onKBTitleRenameDiagnostic:'),
     ]
   }
 
@@ -3373,7 +3404,7 @@ JSB.newAddon = function(mainPath){
       this.tableItem('📤 导出历史索引卡点 JSON', 'exportHistoryIndexCheckpoint:'),
       this.tableItem('📤 导出持久化诊断日志', 'exportPersistentDiagnosticLog:'),
       this.tableItem('📤 导出工具栏使用统计', 'exportToolbarUsage:'),
-      this.tableItem('⏯ 启用或暂停工具栏使用统计', 'toggleToolbarUsage:'),
+      this.tableItem(KBToolbarUsage.toggleTitle(), 'toggleToolbarUsage:', button),
       this.menuSeparator(),
       this.tableItem('🧭 卡点定位（极简）', 'diagnoseIntermediateIndex:', button),
       this.tableItem('🧯 跳过卡点继续索引', 'skipLastIntermediateIndexCheckpointAndIndex:'),
@@ -8562,7 +8593,9 @@ JSB.newAddon = function(mainPath){
     }
 
     const mode = KnowledgeBaseConfig.getSearchIndexMode()
-    const indexedNote = this.convertExcerptToNoExcerptIfNeeded(note) || note
+    // Transaction callers have already completed card mutations in their undo
+    // group. Their asynchronous index updates must not create or convert cards.
+    const indexedNote = options.allowCardMutation === false ? note : (this.convertExcerptToNoExcerptIfNeeded(note) || note)
     const indexedNoteId = indexedNote && indexedNote.noteId ? String(indexedNote.noteId) : rawId
     const staleIds = indexedNoteId === rawId ? [] : [rawId]
     const previousUsageScore = this.normalizeSearchUsageScore(
@@ -8637,6 +8670,9 @@ JSB.newAddon = function(mainPath){
     }
 
     if (canPushPatch && !this.isWebViewPushResultSuccess(pushResult)) {
+      if (options.allowCardMutation === false) {
+        return { success: false, id: indexedNoteId, persisted: true, error: '索引已保存，搜索界面更新失败' }
+      }
       const fallback = await this._loadSearchDataToWebView({
         showSuccessHUD: false,
         showErrorHUD,

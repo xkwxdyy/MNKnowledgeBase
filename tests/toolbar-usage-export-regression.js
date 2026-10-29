@@ -84,9 +84,17 @@ assert.throws(() => exporter.aggregate([{ ...event('valid', '2026-10-17', 'menu_
     const params = Object.fromEntries(new URLSearchParams(data.message.split('?')[1]));
     assert.equal(params.action, 'setUsageEnabled');
     assert.equal(params.enabled, 'false', 'custom Toolbar starts enabled even before settings are written');
+    files.set(dir + 'settings.json', JSON.stringify({ enabled: false }));
     exporter.receive({ source: 'mntoolbar', requestId: params.requestId, windowToken: params.windowToken, ok: '1' });
   };
   await exporter.toggle();
+  assert.match(exporter.toggleTitle(), /已暂停.*启用/);
+  context.MNUtil.postNotification = (name, data) => {
+    const params = Object.fromEntries(new URLSearchParams(data.message.split('?')[1]));
+    exporter.receive({ source: 'mntoolbar', requestId: params.requestId, windowToken: params.windowToken, ok: '1' });
+  };
+  await assert.rejects(exporter.toggle(), /未保存/, 'An acknowledgement without a saved change must fail');
+  files.delete(dir + 'settings.json');
   // Exercise the real MNUtil URL parser: it decodes query JSON into booleans/numbers.
   const utilSource = fs.readFileSync(path.join(__dirname, '../../mnutils/mnutils/mnutils.js'), 'utf8');
   const parserStart = utilSource.indexOf('  static parseURL(urlString) {');

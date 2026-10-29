@@ -57,6 +57,25 @@ async function start(h, id = 'P', instance = h.main) {
   return anchor
 }
 async function tests() {
+  for (const mode of ['research', 'intensive']) {
+    const h = harness(), parent = h.add('parent'), receiver = h.add('receiver', '归类');
+    receiver.acceptType = '命题'; h.deps.collectionMode = () => mode;
+    await h.command('setReceiver', {noteId: receiver.noteId});
+    const before = h.service.state(h.main).receiver;
+    h.deps.addTemplate = () => { throw Error('shortcut must not prompt for a title') };
+    h.deps.createRequiredKnowledge = n => { assert.equal(n, parent); return h.add('required', '归类', n) };
+    const result = await h.command('createRequiredKnowledge', {noteId: parent.noteId});
+    assert.equal(result.noteId, 'required'); assert.deepEqual(result.receiver, before);
+    assert.deepEqual(h.calls, []);
+    h.deps.createRequiredKnowledge = () => { throw Error('missing-template') };
+    await assert.rejects(h.command('createRequiredKnowledge', {noteId: parent.noteId}), /missing-template/);
+    h.deps.createRequiredKnowledge = () => null;
+    await assert.rejects(h.command('createRequiredKnowledge', {noteId: parent.noteId}), /classification-create-failed/);
+    h.deps.isCurrentWindow = () => false;
+    h.deps.createRequiredKnowledge = () => { throw Error('must not write after switching windows') };
+    await assert.rejects(h.command('createRequiredKnowledge', {noteId: parent.noteId}), /context-changed|window|research-scene-inactive/);
+  }
+
   {
     const source = fs.readFileSync(path.join(root, 'utils.js'), 'utf8'), entries = []
     const start = source.indexOf('  static _logMakeCardPerf('), end = source.indexOf('  static _beginMakeCardPerf(', start)
@@ -282,7 +301,7 @@ async function tests() {
       getQuickReadingMakeCardPolicy: () => ({ mode: 'rough', noteType: '命题' }),
       makeQuickReadingRoughCard: () => { throw Error('Research must not use legacy rough policy') },
       _beginMakeCardPerf: () => null, _finishMakeCardPerf: () => {}, _makeCardPerfNow: () => 0, _recordMakeCardPerf: () => {},
-      sanitizeNoteCommentsForMake: () => {}, renewNote: () => calls.push(['renew']),
+      isOldTemplateCard: () => false, isIntermediateKnowledge: () => false, completeIntermediateKnowledge() {}, queueIntermediateKnowledgeCompletion() {}, sanitizeNoteCommentsForMake: () => {}, renewNote: note => { calls.push(['renew']); return note; },
       mergeTemplateAndAutoMoveNoteContent: () => calls.push(['fields']), templateMergedCardMake: () => calls.push(['full']),
       addToReview: () => { throw Error('Review is forbidden') }, syncFinalMakeCardIndex: () => {}, shouldSuppressQuickReadingDefinitionIndexHUD: () => true,
       runUndoGroupingWithoutGlobalDBRefresh: block => block(), toNoExcerptVersion: n => n,
@@ -410,7 +429,7 @@ async function tests() {
     h.ocr(async () => true)
     assert.equal((await service.processExcerpt(h.main, h.add('AFTER_LOG_ERROR'))).handled, true)
   }
-  // Exercise legacy AddTemplate case 3 and createTemplateChain against an OCR-only definition.
+  // Exercise AddTemplate sibling creation and createTemplateChain against an OCR-only definition.
   {
     const source = fs.readFileSync(path.join(root, 'utils.js'), 'utf8')
     const addStart = source.indexOf('static async addTemplate(note, focusLastNote = true)')
@@ -429,7 +448,7 @@ async function tests() {
     const diagnostics = new Proxy({}, { get: () => () => ({}) })
     const context = { module: { exports: {} }, console,
       Application: { sharedInstance: () => ({ studyController: () => ({ notebookController: { notebookId: 'study' } }) }), immersiveTemplateForAddon: () => ({ allowed: true, config: { scene: 'research' } }) },
-      MNUtil: { currentWindow: win, currentNotebookId: 'study', copy: () => {}, showHUD: message => { throw Error(String(message)) }, userInput: async () => ({ button: 3, input }) },
+      MNUtil: { currentWindow: win, currentNotebookId: 'study', copy: () => {}, showHUD: message => { throw Error(String(message)) }, userInput: async () => ({ button: 2, input }) },
       MNNote: { new: id => notes.get(id), clone: () => { const n = makeNote('created-' + ++sequence); created.push(n); return n } },
       NSUserDefaults: { standardUserDefaults: () => ({ objectForKey: k => saved.get(k), setObjectForKey: (v,k) => saved.set(k,v) }) },
       KnowledgeBaseConfig: { config: {}, getConfig: () => null }, KnowledgeBaseUtils: diagnostics, KnowledgeBaseIndexer: { addToIncrementalIndex: () => {} },
@@ -476,6 +495,7 @@ async function tests() {
     for (const failure of ['', 'config', 'date', 'observer', 'runtime']) {
       const calls = [], traces = [], errors = [], instance = { window: {} }
       const ctx = { self: instance, mainPath: '/fixture', ROOT_NOTE_IDS: {},
+        KnowledgeBaseTitleRename: { connect() {}, disconnect() {}, clear() {}, fail() {} },
         NSNotificationCenter: { defaultCenter: () => ({ addObserverSelectorName: (owner, selector, name) => {
           calls.push('observer.register')
           if (failure === 'observer') throw Error('native-register-failed')
@@ -518,6 +538,7 @@ async function tests() {
         },
       }
       const ctx = { self: instance, mainPath: '/fixture', ROOT_NOTE_IDS: {},
+        KnowledgeBaseTitleRename: { connect() {}, disconnect() {}, clear() {}, fail() {} },
         NSNotificationCenter: { defaultCenter: () => nativeCenter },
         KnowledgeBaseResearchCore: { trace: (stage, details = {}) => traces.push({ stage, ...details }), getRuntime: () => ({ connect: () => calls.push('core.connect'), disconnect: () => { calls.push('core.disconnect'); if (failure === 'core-disconnect') throw Error('core-disconnect-failed') } }) },
         KnowledgeBaseConfig: { config: { autoApplyCircularPatch: false }, init: () => {} }, resolveAvailableNote: () => null, safeGetChildNotes: () => ({ childNotes: [] }),

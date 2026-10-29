@@ -18,7 +18,7 @@ async function run(classificationMode, options = {}) {
     processReadingModeNote: () => calls.push('reading'), processInboxAutoMoveNote: () => calls.push('inbox') }
   const prototype = {}
   for (const name of ['refreshOpenCommentManagerForNote', 'refreshOpenTemplateWorkbenchForNote', 'refreshOpenQuestionResearchWorkbenchForNote']) prototype[name] = async () => calls.push('refresh')
-  const ctx = { self, MNKnowledgeBaseClass: { prototype }, MNUtil: { currentWindow: 'window', copy: () => calls.push('copy') }, MNNote: { new: () => note },
+  const ctx = { self, KnowledgeBaseMergeHistory: { schedule() {} }, MNKnowledgeBaseClass: { prototype }, MNUtil: { currentWindow: 'window', copy: () => calls.push('copy') }, MNNote: { new: () => note },
     KnowledgeBaseConfig: { config, save: () => calls.push('save') },
     KnowledgeBaseResearchCore: { getRuntime: () => ({ isSceneActive: () => !!options.research }) },
     KnowledgeBaseClassUtils: { createClassificationNoteAfterTextEditingInMindMap: () => { calls.push('convert'); note.title = 'unexpected-conversion' } },

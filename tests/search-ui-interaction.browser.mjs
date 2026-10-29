@@ -13,7 +13,7 @@ await fs.mkdir(output, { recursive: true });
 const server = http.createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
   // Serve only the page and runtime assets; never expose .tmp or repository metadata.
-  if (!/^\/(search\.html|styles\/search\.css|scripts\/search\/[\w-]+\.js)$/.test(pathname)) {
+  if (!/^\/(search\.html|KnowledgeBaseOrganization\.js|styles\/(?:search|organization)\.css|scripts\/search\/[\w-]+\.js)$/.test(pathname)) {
     response.writeHead(404).end();
     return;
   }

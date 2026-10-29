@@ -5,7 +5,7 @@ var KnowledgeBaseResearchCore = (function () {
   var COMMAND = 'MNKBResearchCommand', RESULT = 'MNKBResearchResult'
   var STORE_KEY = 'MNKB_ResearchCore_v1'
   var REVISION = '1.87.8', DIAGNOSTICS_KEY = 'MNKB_ResearchDiagnostics_v1'
-  var commands = ['ping', 'getState', 'registerProject', 'startProject', 'stopProject', 'setReceiver', 'stopReceiver', 'setInbox', 'makeCard', 'addTemplate']
+  var commands = ['ping', 'getState', 'registerProject', 'startProject', 'stopProject', 'setReceiver', 'stopReceiver', 'setInbox', 'makeCard', 'addTemplate', 'createRequiredKnowledge']
   function text(value) { return value == null ? '' : String(value).trim() }
   function value(object, key) {
     if (!object) return undefined
@@ -114,7 +114,7 @@ var KnowledgeBaseResearchCore = (function () {
       if (typeof saved === 'string') saved = JSON.parse(saved)
       if (saved && saved.version === 1 && saved.notebooks && typeof saved.notebooks === 'object' && !Array.isArray(saved.notebooks)) stored = saved
     } catch (_) {}
-    var sessions = [], receiverActive = false, receiverRevision = 0, excerptSequence = 0
+    var sessions = [], receiverActive = false, receiverMode = '', receiverRevision = 0, excerptSequence = 0
     function persist() { deps.save(clone(stored)) }
     function session(instance) {
       var found = sessions.find(function (item) { return item.window === instance.window })
@@ -144,7 +144,7 @@ var KnowledgeBaseResearchCore = (function () {
     }
     function isSceneActive(instance) {
       var s = context(instance)
-      return !!deps.isCurrentWindow(instance) && !s.closed && (s.mode === 'research' || s.mode === 'broad')
+      return !!deps.isCurrentWindow(instance) && !s.closed && (s.mode === 'research' || s.mode === 'broad' || s.mode === 'intensive')
     }
     function note(id, notebookId) {
       var result = deps.getNote(identifier(id))
@@ -167,7 +167,8 @@ var KnowledgeBaseResearchCore = (function () {
       if (!saved || saved.notebookId !== s.notebookId) return null
       var current, policy
       try { current = note(saved.noteId, s.notebookId); policy = receiverPolicy(current) } catch (_) {}
-      return { noteId: saved.noteId, notebookId: saved.notebookId, title: current ? deps.title(current) : saved.title, type: policy ? policy.type : saved.type, kind: policy ? policy.kind : saved.kind, active: receiverActive && !!policy, available: !!policy }
+      if (s.mode === 'intensive' && policy && policy.kind !== 'classification') policy = null
+      return { noteId: saved.noteId, notebookId: saved.notebookId, title: current ? deps.title(current) : saved.title, type: policy ? policy.type : saved.type, kind: policy ? policy.kind : saved.kind, active: receiverActive && receiverMode === s.mode && !!policy, available: !!policy }
     }
     function state(instance) {
       var s = context(instance)
@@ -183,10 +184,11 @@ var KnowledgeBaseResearchCore = (function () {
       }
     }
     function setReceiver(s, target) {
+      if (s.mode === 'intensive' && !deps.isClassification(target)) throw new Error('receiver-must-be-classification')
       var policy = receiverPolicy(target)
       if (!policy) throw new Error(deps.isClassification(target) ? 'receiver-type-missing' : 'receiver-must-be-classification-or-proposition')
       stored.receiver = { noteId: text(target.noteId), notebookId: s.notebookId, title: deps.title(target), type: policy.type, kind: policy.kind }
-      receiverActive = true; receiverRevision += 1; persist()
+      receiverActive = true; receiverMode = s.mode; receiverRevision += 1; persist()
       return target
     }
     async function dispatch(instance, request) {
@@ -194,7 +196,8 @@ var KnowledgeBaseResearchCore = (function () {
       var s = context(instance), requestedNotebook = text(request.notebookId), command = text(request.command), payload = request.payload || {}
       if (requestedNotebook && requestedNotebook !== s.notebookId) throw new Error('different-notebook')
       if (command === 'ping' || command === 'getState') return state(instance)
-      var explicitCardAction = s.mode === 'intensive' && (command === 'makeCard' || command === 'addTemplate')
+      if (s.mode === 'intensive' && ['setReceiver', 'stopReceiver', 'makeCard', 'addTemplate', 'createRequiredKnowledge'].indexOf(command) < 0) throw new Error('research-scene-inactive')
+      var explicitCardAction = s.mode === 'intensive' && (command === 'makeCard' || command === 'addTemplate' || command === 'createRequiredKnowledge')
       if (!isSceneActive(instance) && !guard(instance, s.notebookId, s.lifecycle, explicitCardAction)) throw new Error('research-scene-inactive')
       if (!s.notebookId) throw new Error('notebook-unavailable')
       var original, processed, result, type, lifecycle = s.lifecycle
@@ -229,6 +232,13 @@ var KnowledgeBaseResearchCore = (function () {
         processed = result.note || processed
         retarget(original, processed)
         result = { noteId: text(processed.noteId), cardPending: !!result.pending, addedToReview: result.addedToReview === true, reviewAllowed: s.mode === 'intensive' }
+      } else if (command === 'createRequiredKnowledge') {
+        original = note(payload.noteId, s.notebookId)
+        if (!guard(instance, s.notebookId, lifecycle, explicitCardAction)) throw new Error('context-changed')
+        processed = deps.createRequiredKnowledge(original)
+        if (!processed) throw new Error('classification-create-failed')
+        processed = note(processed.noteId, s.notebookId)
+        result = { noteId: text(processed.noteId) }
       } else if (command === 'addTemplate') {
         original = note(payload.noteId, s.notebookId)
         processed = await deps.addTemplate(original, payload)
@@ -250,9 +260,12 @@ var KnowledgeBaseResearchCore = (function () {
       try { note(sourceId, s.notebookId) } catch (error) { return Promise.resolve({ handled: true, skipped: error.message }) }
       if (s.seen.has(sourceId)) return Promise.resolve({ handled: true, noteId: sourceId, duplicate: true })
       remember(s, sourceId)
+      var receiver = receiverInfo(s)
+      if (s.mode === 'intensive' && !(receiver && receiver.active && receiver.kind === 'classification')) return Promise.resolve({ handled: true, noteId: sourceId, skipped: 'no-active-receiver' })
       // Type resolution consumes recognized tag comments. Read exactly once at event time.
-      var type = deps.excerptType(instance, inputNote), receiver = receiverInfo(s), project = s.mode === 'research' ? activeProject(s) : null
+      var type = deps.excerptType(instance, inputNote), project = s.mode === 'research' ? activeProject(s) : null
       var manual = !!(receiver && receiver.active && (receiver.kind === 'proposition' || (type && receiver.type === type)))
+      if (s.mode === 'intensive' && !manual) return Promise.resolve({ handled: true, noteId: sourceId, skipped: 'receiver-type-mismatch' })
       var fullCard = manual && receiver.kind === 'classification'
       var inbox = !manual && s.mode === 'broad' && deps.defaultAnchor ? deps.defaultAnchor(instance) : null
       if (inbox) inbox = note(inbox.noteId, s.notebookId)
@@ -451,6 +464,7 @@ var KnowledgeBaseResearchCore = (function () {
       },
       makeCard: makeSceneCard,
       assertCard: function (n, type) { cardFacade(n, type).assertMakeCardTemplateAvailable(n, { noteType: type || null, directMakeCard: true }) },
+      createRequiredKnowledge: function (n) { return template().createRequiredKnowledgeClassification(n) },
       addTemplate: async function (n, payload) {
         // OCR-only cards have colors/types but no makeCard title prefix yet.
         // Adapt only this invocation; retain every parsed title field and any explicit type.

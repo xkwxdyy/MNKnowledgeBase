@@ -151,7 +151,7 @@ Array.from(app.matchAll(/getElementById\('([^']+)'\)/g), (match) => match[1]).fo
 ].forEach((token) => assert(main.includes(token), `main missing ${token}`));
 
 assert(utils.includes('static renewKnowledgeNotesInTransaction'));
-assert(utils.includes('this.renewKnowledgeNotesInTransaction(targetNote, sourceNote, options)'));
+assert(utils.includes('this.renewKnowledgeNotesInTransaction(targetNote, sourceNote, mergeOptions)'));
 assert(utils.includes('options.mergeRelatedLinks !== true'));
 assert(main.includes('两张定义卡不在同一学习集'));
 assert(main.includes('moveChildOrThrow'));
