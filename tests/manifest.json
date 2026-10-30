@@ -99,7 +99,8 @@
     "migration-selection-guard-regression.js",
     "merge-pin-history-regression.js",
     "intermediate-knowledge-merge-regression.js",
-    "native-merge-result-regression.js"
+    "native-merge-result-regression.js",
+    "mnutils-api-reuse-regression.js"
   ],
   "integration": [
     "definition-concept-toolbar-regression.js",

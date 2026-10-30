@@ -28701,7 +28701,13 @@ class KnowledgeBaseUtils {
       return null
     }
     if (typeof MNNotification === 'undefined' || !MNNotification) return null
-    if (typeof MNNotification.createNotificationWidget !== 'function') return null
+    if (typeof subscriptionUtils !== 'undefined' && subscriptionUtils && [false, 0, '0'].includes(subscriptionUtils.addonConnected)) return null
+    if (typeof MNNotification.createNotificationWidget !== 'function' && typeof MNNotification.progress !== 'function') return null
+    if (typeof notificationUtils !== 'undefined') {
+      if (!notificationUtils) return null
+      const controller = notificationUtils.notifyController
+      if (!notificationUtils.config || !controller || !controller.webviewResponse || Number(controller.isWebViewDidFinishLoad) !== 1) return null
+    }
     return MNNotification
   }
 
@@ -28713,6 +28719,9 @@ class KnowledgeBaseUtils {
 
   static _safeJSONStringify(value, fallback = '') {
     try {
+      if (typeof MNUtil !== 'undefined' && MNUtil && typeof MNUtil.stringifyWithCircularRef === 'function') {
+        return MNUtil.stringifyWithCircularRef(value)
+      }
       const seen = []
       return JSON.stringify(value, (key, item) => {
         if (item && typeof item === 'object') {
@@ -29101,11 +29110,25 @@ class KnowledgeBaseUtils {
     try {
       const api = this._getMNNotificationAPI()
       if (!api) {
-        if (fallbackMessage) {
+        if (fallbackMessage && option.type === 'error') {
           MNUtil.showHUD(fallbackMessage, 2)
         }
         return { success: false, fallback: true }
       }
+      const controller = typeof notificationUtils !== 'undefined' ? notificationUtils.notifyController : null
+      const webview = controller && controller.webviewResponse
+      const current = () => this._getMNNotificationAPI() === api
+        && (typeof notificationUtils === 'undefined' || (notificationUtils.notifyController === controller
+          && (!controller || controller.webviewResponse === webview)))
+      option = Object.assign({}, option)
+      for (const key of ['onManualClose', 'onAutoClose']) {
+        const callback = option[key]
+        if (typeof callback === 'function') option[key] = (...args) => { if (current()) return callback(...args) }
+      }
+      if (Array.isArray(option.actions)) option.actions = option.actions.map(action => {
+        if (!action || typeof action.onClicked !== 'function') return action
+        return Object.assign({}, action, { onClicked: (...args) => { if (current()) return action.onClicked(...args) } })
+      })
       if (option && option.id && typeof api.updateNotification === 'function') {
         try {
           const status = typeof api.getNotificationStatus === 'function'
@@ -29118,10 +29141,14 @@ class KnowledgeBaseUtils {
           }
         } catch (_) {}
       }
+      if (option.type === 'progress' && typeof api.progress === 'function') {
+        return await api.progress(option.title, option.desc, option.progress || 0, option)
+      }
+      if (typeof api.createNotificationWidget !== 'function') return { success: false, error: 'notification-type-unavailable' }
       return await api.createNotificationWidget(option)
     } catch (error) {
       this.addErrorLog(error, 'createNotification', { option }, false)
-      if (fallbackMessage) {
+      if (fallbackMessage && option.type === 'error') {
         MNUtil.showHUD(fallbackMessage, 2)
       }
       return { success: false, error: error?.message || String(error) }
@@ -29180,7 +29207,7 @@ class KnowledgeBaseUtils {
       } else if (sameNotification) {
         return false
       } else {
-        await api.createNotificationWidget({
+        const receipt = await this.createNotification({
           id: notificationId,
           title: message,
           desc,
@@ -29189,6 +29216,7 @@ class KnowledgeBaseUtils {
           source,
           autoCloseSeconds: 0,
         })
+        if (!receipt || receipt.success === false || receipt.reason === 'CreateFailed') return false
         this.indexProgressNotificationState[notificationId] = {
           notificationId,
           progressKey: progressKey || source,
@@ -29212,7 +29240,6 @@ class KnowledgeBaseUtils {
     try {
       const api = this._getMNNotificationAPI()
       if (!api || typeof api.setProgress !== 'function') {
-        MNUtil.showHUD(title, 2)
         return
       }
       const notificationId = `mnkb-progress-${this._safeNotificationId(progressKey || source)}`
@@ -29227,7 +29254,6 @@ class KnowledgeBaseUtils {
       }
     } catch (error) {
       this.addErrorLog(error, 'finishProgressNotification', { progressKey, title }, false)
-      MNUtil.showHUD(title, 2)
     }
   }
 
@@ -29701,6 +29727,30 @@ class KnowledgeBaseUtils {
 }
 
 class KnowledgeBaseNetwork {
+  static async sendSharedRequest(request, preferResponse = false) {
+    if ((!preferResponse || typeof MNConnection.sendRequestDev !== "function") && typeof MNConnection.sendRequest === "function") return await MNConnection.sendRequest(request)
+    const response = await MNConnection.sendRequestDev(request)
+    if (!response) throw new Error("MNUtils network response missing")
+    const statusCode = Number(response.status || response.statusCode || 0)
+    const failed = response.ok === false || response.error || statusCode >= 400
+    let data
+    try {
+      data = typeof response.json === "function" ? await response.json() : response
+      // Native MNUtils may return a SyntaxError value instead of throwing.
+      if (data instanceof Error) throw data
+    } catch (error) {
+      // An HTML/proxy error body must not hide the HTTP failure status.
+      if (!failed) throw error
+      return { statusCode, error: response.error || ("HTTP " + statusCode) }
+    }
+    if (failed) {
+      // An HTTP failure must not expose a success-shaped choices payload.
+      return { data, statusCode, error: (data && data.error) || response.error || ("HTTP " + statusCode) }
+    }
+    return data
+  }
+
+
   static AI_SEARCH_QUERY_MODEL_PREFERENCES = [
     { source: "Subscription", model: "gemini-3-flash-minimal" },
     { source: "Subscription", model: "doubao-seed-2-0-mini-nothinking" },
@@ -32595,10 +32645,10 @@ ${this.OCRNumberingRules}
       const requestStartedAt = Date.now()
       const useSharedRequest = (requestTimeoutSeconds > 0 || typeof ocrNetwork.sendRequest !== 'function') &&
         typeof MNConnection !== 'undefined' && MNConnection &&
-        typeof MNConnection.sendRequest === 'function'
+        (typeof MNConnection.sendRequestDev === 'function' || typeof MNConnection.sendRequest === 'function')
       let res = await this.waitForOCRNetwork(
         () => useSharedRequest
-          ? MNConnection.sendRequest(request)
+          ? this.sendSharedRequest(request)
           : ocrNetwork.sendRequest(request,"ChatGPTVision",false,!isDoubao18),
         requestTimeoutSeconds, source,
       )
