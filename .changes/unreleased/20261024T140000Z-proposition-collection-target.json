@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "topic": "proposition-collection-target",
+  "changes": [{
+    "id": "proposition-collection-target",
+    "type": "added",
+    "zh": "科研收集与泛读允许命题卡片作为目标，摘录仅执行 OCR 和转非摘录；归类目标规则及个人配置保持。",
+    "changelog": false,
+    "announce": false
+  }]
+}

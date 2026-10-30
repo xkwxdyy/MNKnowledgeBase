@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "ocr-model-reading-settings",
+  "changes": [
+    {
+      "id": "ocr-model-reading-settings-20261024",
+      "type": "added",
+      "zh": "显示 OCR 任务的生效模型及来源，并在阅读设置中保留 Markdown 模式入口。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

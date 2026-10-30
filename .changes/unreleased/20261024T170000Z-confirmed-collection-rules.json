@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "confirmed-collection-rules",
+  "changes": [
+    {
+      "id": "confirmed-collection-rules",
+      "type": "changed",
+      "zh": "落实已确认的创建与接收分离、显式目标恢复、泛读 Inbox、完整制卡及场景退出保护，保留原配置。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

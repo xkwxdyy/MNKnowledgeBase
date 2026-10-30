@@ -139,7 +139,39 @@ function assertExcerptConversionRemovesOnlyTheStaleStructuralParent() {
   }
 }
 
+function assertTopLevelExcerptConversion() {
+  const context = loadTemplate()
+  const Template = context.KnowledgeBaseTemplate
+  Template.collectClassificationNotesForContainSync = () => []
+  Template.getFirstClassificationParentNote = () => null
+  Template.cleanupConvertedExcerptSourceLinks = () => {}
+  const sourceNote = {
+    noteId: 'ROOT-SOURCE', noteTitle: 'Root excerpt', notebookId: 'BOOK-1',
+    docMd5: 'DOC-1', startPage: 3, colorIndex: 2,
+    excerptType: 'image', parentNote: null, indexInBrotherNotes: -1,
+    mergeInto(target) { target.comments.push({ type: 'LinkNote', noteid: this.noteId }) },
+  }
+  const target = { noteId: 'ROOT-TARGET', parentNote: null, comments: [],
+    moveTo() { assert.fail('A root note cannot move through a parent') } }
+  let createdConfig
+  context.MNNote.new = config => { createdConfig = config; return target }
+  assert.strictEqual(Template.toNoExcerptVersion(sourceNote), sourceNote, 'Legacy callers retain the root guard')
+  const result = Template.toNoExcerptVersion(sourceNote, undefined, { allowTopLevel: true })
+  assert.strictEqual(result, target)
+  assert.equal(createdConfig.notebookId, 'BOOK-1')
+  assert.equal(createdConfig.docId, 'DOC-1')
+  assert.equal(createdConfig.pageNumber, 3)
+  assert.equal(result.parentNote, null)
+  assert.equal(result.comments[0].noteid, 'ROOT-SOURCE')
+  assert.equal(result.kbSourceExcerptNoteId, 'ROOT-SOURCE')
+  sourceNote.noteTitle = 'Title before failed creation'
+  context.MNNote.new = () => null
+  assert.throws(() => Template.toNoExcerptVersion(sourceNote, undefined, { allowTopLevel: true }), /non-excerpt-create-failed/)
+  assert.equal(sourceNote.noteTitle, 'Title before failed creation')
+}
+
 assertExcerptConversionRemovesOnlyTheStaleStructuralParent()
+assertTopLevelExcerptConversion()
 assert(!source.includes('makeCardConversionDiagnostic'))
 assert(!source.includes('_mnkbMakeCardDiagnostic'))
 console.log('make-card conversion regression: ok')

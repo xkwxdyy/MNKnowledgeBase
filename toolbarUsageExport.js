@@ -23,7 +23,7 @@ var KBToolbarUsage = (() => {
     if (!request || request.window !== MNUtil.currentWindow || request.windowToken !== params.windowToken) return false;
     pending.delete(params.requestId);
     clearTimeout(request.timer);
-    request.resolve(params.ok === 1 || params.ok === '1');
+    request.resolve(params.ok === 1 || params.ok === '1', String(params.errorMessage || '').slice(0, 240));
     return true;
   }
   function request(action, enabled) {
@@ -32,7 +32,7 @@ var KBToolbarUsage = (() => {
     const requestId = 'usage-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
     return new Promise(resolve => {
       const timer = setTimeout(() => { pending.delete(requestId); resolve({ requestId, windowToken: token, ready: false, timedOut: true }); }, 2000);
-      pending.set(requestId, { timer, window: MNUtil.currentWindow, windowToken: token, resolve: ok => resolve({ requestId, windowToken: token, ready: ok, timedOut: false }) });
+      pending.set(requestId, { timer, window: MNUtil.currentWindow, windowToken: token, resolve: (ok, errorMessage) => resolve({ requestId, windowToken: token, ready: ok, timedOut: false, errorMessage }) });
       try {
         MNUtil.postNotification('AddonBroadcast', { message: 'mntoolbar?action=' + action + '&source=mnknowledgebase&requestId=' + requestId + '&windowToken=' + token + (enabled === undefined ? '' : '&enabled=' + !!enabled) });
       } catch (_) { clearTimeout(timer); pending.delete(requestId); resolve({ requestId, windowToken: token, ready: false, timedOut: true }); }
@@ -48,7 +48,7 @@ var KBToolbarUsage = (() => {
       });
       return { files, cutoff: manifest.cutoff, fresh: true, sourceId: manifest.sourceId, writeFailureObserved: manifest.writeFailureObserved === true };
     }
-    if (!requestResult.timedOut) throw new Error('工具栏统计快照生成失败，未导出不完整数据');
+    if (!requestResult.timedOut) throw new Error('工具栏统计快照生成失败，未导出不完整数据' + (requestResult.errorMessage ? '：' + requestResult.errorMessage : ''));
     const files = list(rootPath()).filter(name => /^\d{4}-\d{2}-\d{2}(?:-\d{6})?\.json$/.test(name)).sort().map(name => rootPath() + '/' + name);
     return { files, cutoff: null, fresh: false };
   }
@@ -118,15 +118,23 @@ var KBToolbarUsage = (() => {
       if (!base) throw new Error('无法获取导出目录');
       const path = base + '/mntoolbar-usage-' + Date.now() + '.json';
       if (!KnowledgeBaseUtils.writeTextFile(path, '')) throw new Error('无法创建统计导出文件');
-      const handle = NSFileHandle.fileHandleForWritingAtPath(path);
-      if (!handle) throw new Error('无法打开统计导出文件');
-      let summary;
+      let handle = null;
+      if (typeof NSFileHandle !== 'undefined' && typeof NSFileHandle.fileHandleForWritingAtPath === 'function') {
+        handle = NSFileHandle.fileHandleForWritingAtPath(path);
+        if (!handle) throw new Error('无法打开统计导出文件');
+      }
+      // Older JSBridge hosts expose NSMutableData but do not export NSFileHandle.
+      const buffer = handle ? null : NSMutableData.new();
       try {
-        summary = exportFiles(snapshot, { append: text => handle.writeData(MNUtil.string2data(text)) });
-        handle.synchronizeFile();
-      } finally { handle.closeFile(); }
+        exportFiles(snapshot, { append(text) {
+          const data = MNUtil.string2data(text);
+          if (handle) handle.writeData(data);
+          else buffer.appendData(data);
+        } });
+        if (handle) handle.synchronizeFile();
+        else if (!buffer.writeToFileAtomically(path, true)) throw new Error('统计导出文件写入失败');
+      } finally { if (handle) handle.closeFile(); }
       try { MNUtil.saveFile(path, 'public.json'); } catch (_) { MNUtil.saveFile(path, ['public.json']); }
-      MNUtil.showHUD(`已导出工具栏统计：${summary.totalActions} 次功能触发` + (snapshot.fresh ? '' : '；仅含已落盘历史'), 2);
       return true;
     } finally {
       if (result.ready) {
@@ -134,13 +142,26 @@ var KBToolbarUsage = (() => {
       }
     }
   }
-  async function toggle() {
+  function isEnabled() {
     const path = rootPath() + '/settings.json';
-    const enabled = NSFileManager.defaultManager().fileExistsAtPath(path) ? read(path).enabled === true : true;
-    const result = await request('setUsageEnabled', !enabled);
-    if (!result.ready || result.windowToken !== windowToken(MNUtil.currentWindow)) throw new Error('未收到当前窗口确认，请检查统计开关状态');
-    MNUtil.showHUD(!enabled ? '工具栏使用统计已启用' : '工具栏使用统计已暂停');
+    return NSFileManager.defaultManager().fileExistsAtPath(path) ? read(path).enabled === true : true;
   }
-  return { receive, request, collectFiles, aggregate, exportFiles, exportUsage, toggle, windowToken };
+  function toggleTitle() {
+    try { return isEnabled() ? '⏸ 统计已启用 · 点击暂停' : '▶️ 统计已暂停 · 点击启用'; }
+    catch (_) { return '⚠️ 统计状态读取失败 · 点击重试'; }
+  }
+  async function toggle() {
+    const enabled = isEnabled();
+    const result = await request('setUsageEnabled', !enabled);
+    if (!result.ready || result.windowToken !== windowToken(MNUtil.currentWindow)) throw new Error('未收到当前窗口确认，请检查统计开关状态' + (result.errorMessage ? '：' + result.errorMessage : ''));
+    if (isEnabled() !== !enabled) throw new Error('统计开关状态未保存，请重试');
+    return !enabled;
+  }
+  function logFailure(action, error) {
+    const detail = { action, errorMessage: String(error && error.message || error), stack: String(error && error.stack || '') };
+    try { KnowledgeBaseUtils.emitRuntimeLog('ERROR', detail.errorMessage, 'toolbarUsage.' + action, detail); } catch (_) {}
+    try { KnowledgeBaseUtils.appendPersistentDiagnosticLog('mnknowledgebase.toolbarUsage', 'operation.failed', detail, 'ERROR'); } catch (_) {}
+  }
+  return { receive, request, collectFiles, aggregate, exportFiles, exportUsage, isEnabled, toggleTitle, toggle, windowToken, logFailure };
 })();
 if (typeof module !== 'undefined') module.exports = KBToolbarUsage;

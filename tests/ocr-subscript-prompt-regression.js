@@ -34,10 +34,21 @@ const literatureRules = extractTemplate(
   'static OCRScriptFallbackRules',
 );
 
-assert.strictEqual(
-  literatureRules,
-  knowledgeBaseRules,
-  'MNKnowledgeBase and MN Literature must ship the same plain-text script rules',
+assert.ok(
+  literatureRules.includes('A_{B_C}') &&
+    literatureRules.includes('嵌套下标必须保留层级'),
+  'the independent MN Literature prompt must continue preserving nested script scope',
+);
+assert.ok(
+  knowledgeBaseRules.includes('允许保留必要的 _') &&
+    knowledgeBaseRules.includes('必要时允许保留 ^') &&
+    !knowledgeBaseRules.includes('整个下标必须统一降级') &&
+    !knowledgeBaseRules.includes('整个上标统一写成'),
+  'MNKnowledgeBase must prefer accurate Unicode without forcing script syntax or deleting valid formula structure',
+);
+assert.ok(
+  !knowledgeBaseSource.includes('否则整段统一用 ^{...} / _{...}'),
+  'MNKnowledgeBase checklist wording must not reinstate the old mandatory script format',
 );
 assert.ok(
   knowledgeBaseRules.includes('Xₙ₌₀'),
@@ -46,14 +57,14 @@ assert.ok(
 assert.ok(
   knowledgeBaseRules.includes('X_{n≠0}') &&
     knowledgeBaseRules.includes('n≠0') &&
-    knowledgeBaseRules.includes('整体降级'),
-  'one unsupported subscript character must force whole-fragment _{...} fallback',
+    knowledgeBaseRules.includes('下标作用范围'),
+  'unsupported Unicode must retain the full subscript scope with a usable formula fallback',
 );
 assert.ok(
   knowledgeBaseRules.includes('A_{B_C}') &&
     knowledgeBaseRules.includes('A_B_C') &&
     knowledgeBaseRules.includes('嵌套下标必须保留层级'),
-  'nested subscripts must preserve hierarchy with braces',
+  'nested subscripts must preserve hierarchy and avoid ambiguous flattening',
 );
 assert.ok(
   !knowledgeBaseRules.includes('xₙₖ\\`（对应 \\`x_{n_k}'),
@@ -74,8 +85,10 @@ assert.ok(
 assert.ok(
   knowledgeBaseRules.includes('𝒜̂') &&
     knowledgeBaseRules.includes('ℝ̄') &&
-    knowledgeBaseRules.includes('s̄p̄ān̄'),
-  'combining marks must cover styled symbols and whole multi-character identifiers',
+    knowledgeBaseRules.includes('多字符整组或嵌套重音') &&
+    knowledgeBaseRules.includes('整体作用范围') &&
+    !knowledgeBaseRules.includes('对每个基础字符附加组合标记'),
+  'single-symbol combining marks must not flatten whole-group or nested accent scopes',
 );
 assert.ok(
   knowledgeBaseRules.includes('\\\\bar{...}') &&

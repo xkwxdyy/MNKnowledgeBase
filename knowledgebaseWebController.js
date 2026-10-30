@@ -1485,6 +1485,10 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
     // 统一动作名称，兼容大小写差异
     const action = (config.host || "").trim()
     const actionLower = action.toLowerCase()
+    if (actionLower.startsWith("organization")) {
+      await KnowledgeBaseOrganizationRuntime.handle(this, actionLower, config.params || {});
+      return;
+    }
     const sidebarSectionByAction = {
       mergeDuplicateKnowledgeNoteToTargetNote: 'merge',
       moveFocusNoteToTargetNoteAsChild: 'move',
@@ -2348,7 +2352,8 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
 
       case 'mergeDuplicateKnowledgeNoteToTargetNote':
       case 'mergeduplicateknowledgenotetotargetnote':
-        MNUtil.undoGrouping(() => {
+        let pendingKnowledgeMergeResult = null;
+        const executeDuplicateMerge = () => {
           if (!targetNote) {
             MNUtil.showHUD("未找到目标卡片")
             return
@@ -2407,7 +2412,8 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
             mergeOptions.skipFields = ["所属"]
           }
           const mergeResult = KnowledgeBaseTemplate.renewKnowledgeNotes(targetNote, sourceNote, mergeOptions)
-          if (!mergeResult || mergeResult.success !== true) {
+          pendingKnowledgeMergeResult = mergeResult;
+          if (!mergeResult || (mergeResult.success !== true && !mergeResult.pendingVerification)) {
             sidebarFailure = mergeResult && mergeResult.error ? String(mergeResult.error) : "合并未返回完成结果"
             return
           }
@@ -2415,7 +2421,15 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
             appendOldClassificationParentLink(oldClassificationParent, targetNote, { showHUD: false })
           }
           success = true
-        })
+        };
+        executeDuplicateMerge();
+        if (pendingKnowledgeMergeResult && pendingKnowledgeMergeResult.verification) {
+          await pendingKnowledgeMergeResult.verification;
+          if (pendingKnowledgeMergeResult.success !== true) {
+            success = false;
+            sidebarFailure = String(pendingKnowledgeMergeResult.error || "合并提交状态尚未核验");
+          }
+        }
         break
 
       case "focusCardInMindMap":
@@ -3420,27 +3434,35 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
             break
           }
           if (requestId && cache.has(requestId)) {
-            const cachedResult = cache.get(requestId)
+            const cachedResult = await cache.get(requestId)
             await this.notifyDefinitionMergeActionComplete(cachedResult)
             success = cachedResult.success === true
             break
           }
           const plan = parseMaybeJSONParam(config.params.plan)
           const instance = global.MNKnowledgeBaseInstance
-          const result = instance && typeof instance.applyDefinitionMergePlan === 'function'
-            ? await instance.applyDefinitionMergePlan({ requestId, plan })
-            : { success: false, error: 'Native 定义卡合并接口不可用' }
-          const response = Object.assign({
-            requestId,
-            action: 'executeDefinitionMerge',
-            message: result && result.success
-              ? ''
-              : (result && result.error ? result.error : '合并失败，请刷新后重试'),
-          }, result || {})
-          if (requestId) {
-            cache.set(requestId, response)
-            while (cache.size > 40) cache.delete(cache.keys().next().value)
-          }
+          const pending = (async () => {
+            let result
+            try {
+              result = instance && typeof instance.applyDefinitionMergePlan === 'function'
+                ? await instance.applyDefinitionMergePlan({ requestId, plan })
+                : { success: false, error: 'Native 定义卡合并接口不可用' }
+            } catch (error) {
+              KnowledgeBaseUtils.addErrorLog(error, 'executeDefinitionMerge')
+              result = { success: false, requiresUndo: true, error: '合并中断，请在 MarginNote 撤销一次并刷新' }
+            }
+            return Object.assign({
+              requestId,
+              action: 'executeDefinitionMerge',
+              message: result && result.success
+                ? ''
+                : (result && result.error ? result.error : '合并失败，请刷新后重试'),
+            }, result || {})
+          })()
+          cache.set(requestId, pending)
+          const response = await pending
+          cache.set(requestId, response)
+          while (cache.size > 40) cache.delete(cache.keys().next().value)
           await this.notifyDefinitionMergeActionComplete(response)
           success = response.success === true
         }
@@ -3457,14 +3479,22 @@ knowledgebaseWebController.prototype.executeAction = async function(config, clos
             MNUtil.showHUD('刷新失败：缺少来源卡片或目标卡片')
             break
           }
-          if (global.MNKnowledgeBaseInstance) {
-            global.MNKnowledgeBaseInstance.currentDefinitionMergeContext = {
+          const instance = global.MNKnowledgeBaseInstance
+          if (actionLower === 'swapdefinitionmergeworkbench') {
+            const candidate = instance && instance.prepareDefinitionMergeWorkbenchData(sourceNoteId, targetDefinitionId)
+            if (!candidate || candidate.canExecute !== true) {
+              MNUtil.showHUD((candidate && candidate.errors && candidate.errors[0]) || '当前卡片不能交换合并方向')
+              break
+            }
+          }
+          const result = await this.loadDefinitionMergeWorkbenchData(sourceNoteId, targetDefinitionId)
+          if (instance && result && result.success) {
+            instance.currentDefinitionMergeContext = {
               sourceNoteId,
               targetNoteId: targetDefinitionId,
             }
-            global.MNKnowledgeBaseInstance.currentManagedNote = MNNote.new(targetDefinitionId, false)
+            instance.currentManagedNote = MNNote.new(targetDefinitionId, false)
           }
-          const result = await this.loadDefinitionMergeWorkbenchData(sourceNoteId, targetDefinitionId)
           success = !!(result && result.success)
         }
         break

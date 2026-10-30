@@ -2,12 +2,14 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="color-scheme" content="light">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>MNKnowledgeBase · 归类卡片标题整理</title>
   <style>
     /* Hallmark · genre: modern-minimal · macrostructure: Map / Diagram · theme: Cobalt · enrichment: none · nav: N9 · footer: Ft2 */
     :root {
+      color-scheme: light dark;
+      accent-color: var(--accent);
       --paper: oklch(98.5% 0.004 250);
       --paper-2: oklch(96.8% 0.006 250);
       --paper-3: oklch(94.8% 0.008 250);
@@ -28,7 +30,28 @@
       --font-body: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: oklch(18% 0.015 255);
+        --paper-2: oklch(21.5% 0.018 255);
+        --paper-3: oklch(25% 0.02 255);
+        --ink: oklch(94% 0.01 250);
+        --ink-2: oklch(84% 0.014 252);
+        --muted: oklch(68% 0.02 255);
+        --rule: oklch(32% 0.02 255);
+        --rule-strong: oklch(44% 0.026 255);
+        --accent: oklch(68% 0.16 256);
+        --accent-soft: oklch(28% 0.055 256);
+        --accent-ink: oklch(15% 0.015 255);
+        --graphite: oklch(8% 0.01 260);
+        --success: oklch(72% 0.13 155);
+        --warning: oklch(76% 0.14 75);
+        --highlight: oklch(42% 0.12 92);
+        --highlight-branch: oklch(38% 0.1 245);
+      }
+    }
     * { box-sizing: border-box; }
+    ::selection { background: var(--accent-soft); color: var(--ink); }
     html, body { min-height: 100%; overflow-x: clip; }
     body { margin: 0; color: var(--ink-2); background: var(--paper); font: 14px/1.45 var(--font-body); -webkit-text-size-adjust: 100%; }
     button, input, select { font: inherit; }
@@ -64,7 +87,7 @@
     .map-head h2 { margin-top: 5px; color: var(--ink); font: 600 18px/1.1 var(--font-display); }
     .map-head p { margin-top: 5px; color: var(--muted); font-size: 12px; }
     .map-hint { color: var(--accent); font: 500 11px var(--font-mono); text-align: right; }
-    .map-scroll { min-height: 0; overflow: auto; background: var(--paper); }
+    .map-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; background: var(--paper); }
     .mindmap-stage { position: relative; min-width: 900px; min-height: 620px; padding: 22px; }
     .mindmap-lines { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
     .mindmap-lines path { fill: none; stroke: var(--rule-strong); stroke-width: 1.5; }
@@ -90,7 +113,7 @@
     .mind-node.root .node-marker { background: var(--accent); }
     .empty-map { display: grid; place-items: center; min-height: 560px; color: var(--muted); }
 
-    .inspector { min-width: 0; min-height: 0; overflow: auto; background: var(--paper-2); }
+    .inspector { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; background: var(--paper-2); }
     .inspector-head { padding: 15px 16px 12px; border-bottom: 1px solid var(--rule); }
     .inspector-head h2 { margin-top: 6px; color: var(--ink); font: 600 18px/1.1 var(--font-display); }
     .inspector-head p { margin-top: 6px; color: var(--muted); font-size: 12px; }
@@ -127,9 +150,12 @@
     .toast { position: fixed; right: 18px; bottom: 62px; z-index: 10; max-width: min(430px, calc(100vw - 36px)); padding: 10px 12px; border: 1px solid var(--rule-strong); color: var(--ink); background: var(--paper); box-shadow: 0 5px 18px color-mix(in oklab, var(--ink) 12%, transparent); opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
     .toast.show { opacity: 1; transform: none; }
     code { font: 10px var(--font-mono); }
+    h1, .map-head h2, .inspector-head h2, .modal h2 { text-wrap: balance; }
+    .lede, .map-head p, .inspector-head p, .modal p, .final-step p { text-wrap: pretty; }
+    .status, .toolbar .count, .mind-node .node-count, .plan-box .plan-number { font-variant-numeric: tabular-nums; }
     @media (max-width: 980px) { .main { grid-template-columns: 1fr; } .map-panel { min-height: 660px; border-right: 0; border-bottom: 1px solid var(--rule); } .inspector { min-height: 420px; } .toolbar { flex-wrap: wrap; } .toolbar .count { margin-left: 0; } }
     @media (max-width: 620px) { .topbar { display: block; padding: 16px; } .top-actions { justify-content: flex-start; margin-top: 14px; } .toolbar { padding: 10px 16px; } .toolbar select, .toolbar input { min-width: 0; width: 100%; } .map-head { display: block; padding: 13px 16px; } .map-hint { margin-top: 8px; text-align: left; } .footer { align-items: flex-start; flex-direction: column; } .footer-actions { width: 100%; } .footer-actions .btn { flex: 1; } }
-    @media (pointer: coarse) { .btn { min-height: 40px; padding: 8px 14px; } .toolbar select, .toolbar input { min-height: 40px; } .option { min-height: 36px; align-items: center; } }
+    @media (pointer: coarse), (any-pointer: coarse) { .btn { min-height: 44px; padding: 8px 14px; } .toolbar select, .toolbar input { min-height: 44px; } .option { min-height: 44px; align-items: center; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
   </style>
 </head>
@@ -337,8 +363,8 @@
         const title = node.querySelector('.node-title'); title.addEventListener('focus', () => { const wasEditing = state.editingId === id; state.editingId = id; state.editingOriginal = getEffectiveTitle(id, working); if (!state.drafts.has(id)) state.draftMeta.set(id, { oldTitle: state.editingOriginal }); if (!wasEditing) { title.textContent = state.editingOriginal; placeCaretAtEnd(title); } });
         title.addEventListener('input', () => { if (!state.drafts.has(id)) state.draftMeta.set(id, { oldTitle: state.editingOriginal || state.byId.get(id)?.title || '' }); state.drafts.set(id, title.textContent); refreshLivePreview(); });
         title.addEventListener('blur', () => { const value = title.textContent.trim(); if (value) state.drafts.set(id, value); else state.drafts.delete(id); state.editingId = null; renderMindMap(); syncInspector(); });
-        title.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); title.blur(); } if (event.key === 'Escape') { event.preventDefault(); state.drafts.delete(id); state.draftMeta.delete(id); state.editingId = null; renderMindMap(); syncInspector(); } });
-        node.addEventListener('click', (event) => { if (event.target === title && id === state.selectedId) return; selectNode(id); }); node.addEventListener('keydown', (event) => { if (event.target === title) return; if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectNode(id); } }); nodes.appendChild(node);
+        title.addEventListener('keydown', (event) => { if (event.isComposing || event.keyCode === 229) return; if (event.key === 'Enter') { event.preventDefault(); title.blur(); } if (event.key === 'Escape') { event.preventDefault(); state.drafts.delete(id); state.draftMeta.delete(id); state.editingId = null; renderMindMap(); syncInspector(); } });
+        node.addEventListener('click', (event) => { if (event.target === title && id === state.selectedId) return; selectNode(id); }); node.addEventListener('keydown', (event) => { if (event.isComposing || event.keyCode === 229) return; if (event.target === title) return; if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectNode(id); } }); nodes.appendChild(node);
       }
       for (const [parentId, childIds] of state.classChildren) { const parentPos = layout.positions.get(parentId); if (!parentPos) continue; for (const childId of childIds) { const childPos = layout.positions.get(childId); if (!childPos) continue; const x1 = parentPos.x + 260; const y1 = parentPos.y + 43; const x2 = childPos.x; const y2 = childPos.y + 43; const bend = Math.max(42, (x2 - x1) * .44); const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('d', `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`); if (state.classEdgeMeta.get(childId)?.hiddenCount > 0) path.classList.add('compressed-path'); if (parentId === state.selectedId || childId === state.selectedId) path.classList.add('selected-path'); lines.appendChild(path); } }
     }
@@ -351,8 +377,25 @@
       window.location.href = `mnknowledgebase-comment://${action}${query ? `?${query}` : ''}`;
       return true;
     }
-    function showBatchConfirm(changes) { state.pendingChanges = changes; $('batchConfirmSummary').textContent = `将保存 ${changes.length} 张归类卡片标题；选择“保存并更新子孙”后，会继续处理该根节点下的命题卡和知识点卡片前缀与链接。`; $('batchConfirm').hidden = false; $('titleAndBatchBtn').focus(); }
-    function hideBatchConfirm() { $('batchConfirm').hidden = true; }
+    function showBatchConfirm(changes) {
+      state.pendingChanges = changes;
+      state.batchFocusOrigin = document.activeElement;
+      const appEl = document.querySelector('.app');
+      if (appEl) { appEl.inert = true; appEl.setAttribute('aria-hidden', 'true'); }
+      $('batchConfirmSummary').textContent = `将保存 ${changes.length} 张归类卡片标题；选择“保存并更新子孙”后，会继续处理该根节点下的命题卡和知识点卡片前缀与链接。`;
+      $('batchConfirm').hidden = false;
+      $('titleAndBatchBtn').focus();
+    }
+    function hideBatchConfirm(restoreFocus = true) {
+      $('batchConfirm').hidden = true;
+      const appEl = document.querySelector('.app');
+      if (appEl) { appEl.inert = false; appEl.removeAttribute('aria-hidden'); }
+      const target = state.batchFocusOrigin && document.documentElement.contains(state.batchFocusOrigin)
+        ? state.batchFocusOrigin
+        : $('applyBtn');
+      state.batchFocusOrigin = null;
+      if (restoreFocus && target && typeof target.focus === 'function') target.focus();
+    }
     function commitLocalPreview(changes) { state.undo = changes.map((item) => ({ id: item.id, title: item.oldTitle })); for (const item of changes) { if (state.byId.has(item.id)) state.byId.get(item.id).title = item.newTitle; state.drafts.delete(item.id); state.draftMeta.delete(item.id); } state.pendingChanges = []; state.editingId = null; render(); }
     function dispatchTitlePlan(runPrefixRelink) {
       const changes = state.pendingChanges; if (!changes.length) return;
@@ -419,11 +462,30 @@
     $('batchConfirm').addEventListener('click', (event) => { if (event.target === $('batchConfirm')) { hideBatchConfirm(); state.pendingChanges = []; } });
     document.addEventListener('keydown', (event) => {
       if (event.isComposing || event.keyCode === 229) return;
-      if (event.key === 'Escape' && !$('batchConfirm').hidden) {
-        event.preventDefault();
-        hideBatchConfirm();
-        state.pendingChanges = [];
-        return;
+      if (!$('batchConfirm').hidden) {
+        if (event.key === 'Tab') {
+          const focusable = Array.from($('batchConfirm').querySelectorAll('button:not([disabled])'));
+          if (!focusable.length) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          } else if (!$('batchConfirm').contains(document.activeElement)) {
+            event.preventDefault();
+            first.focus();
+          }
+          return;
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          hideBatchConfirm();
+          state.pendingChanges = [];
+          return;
+        }
       }
       if ((event.metaKey || event.ctrlKey) && (event.key.toLowerCase() === 's' || event.key === 'Enter')) {
         if ($('batchConfirm').hidden) {

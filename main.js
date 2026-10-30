@@ -18,7 +18,16 @@ JSB.newAddon = function(mainPath){
     runtimeRoot.global = runtimeRoot
   }
   JSB.require('KnowledgeBaseHandwritingOCR');
+  JSB.require('KnowledgeBaseDefinitionConcept');
+  JSB.require('KnowledgeBaseOCRPostprocess');
+  JSB.require('KnowledgeBaseMergeTransaction');
+  JSB.require('KnowledgeBaseMergeHistory');
   JSB.require('utils');
+  JSB.require('KnowledgeBaseOrganization');
+  JSB.require('KnowledgeBaseOrganizationRuntime');
+  JSB.require('KnowledgeBaseResearchCore');
+  JSB.require('KnowledgeBaseTitleRename');
+  KnowledgeBaseResearchCore.trace('addon.loaded')
   JSB.require('toolbarUsageExport');
   JSB.require('knowledgebaseWebController');
 
@@ -197,9 +206,34 @@ JSB.newAddon = function(mainPath){
      * 
      * 注意：此时可能还没有笔记本或文档打开
      */
+    onKBTitleRenameNativeSelection: function(sender) { KnowledgeBaseTitleRename.observe(self, sender, 'native.selection') },
+    onKBTitleRenameTemplateChanged: function(sender) { KnowledgeBaseTitleRename.observe(self, sender, 'template.changed') },
+    onKBTitleRenameDiagnostic: function() { try { KnowledgeBaseTitleRename.showDiagnostic(self) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) } },
+    controllerWillLayoutSubviews: function(controller) {
+      KnowledgeBaseMergeHistory.schedule()
+      KnowledgeBaseTitleRename.observe(self, controller, 'layout')
+    },
+    onKBTitleRenameSelection: function(sender) { try { KnowledgeBaseTitleRename.bind(self, sender) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) } },
+    onKBTitleRenameClosed: function(sender) { try { KnowledgeBaseTitleRename.closed(self, sender) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) } },
+    onKBTitleRenameSwipe: function(gesture) { try { KnowledgeBaseTitleRename.swipe(self, gesture) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) } },
     sceneWillConnect: function() {
+      try { KnowledgeBaseTitleRename.connect(self) } catch(error) { KnowledgeBaseTitleRename.fail(self, error) }
+      var researchInitStage = 'observer.register'
+      KnowledgeBaseResearchCore.trace('scene.connect.started')
+      // Keep research communication available when unrelated saved-mode initialization fails.
+      try {
+        NSNotificationCenter.defaultCenter().addObserverSelectorName(self, 'onResearchCoreCommand:', 'MNKBResearchCommand')
+        KnowledgeBaseResearchCore.trace('observer.registered')
+        researchInitStage = 'runtime.connect'
+        KnowledgeBaseResearchCore.getRuntime().connect(self)
+      } catch (error) {
+        KnowledgeBaseResearchCore.trace('scene.research.failed', { initStage: researchInitStage, errorCode: String(error && error.name || 'init-error') })
+        KnowledgeBaseUtils.addErrorLog(error, 'sceneWillConnect.research')
+      }
+      researchInitStage = 'config.init'
       try {
         KnowledgeBaseConfig.init(mainPath)
+        researchInitStage = 'legacy.roots'
         self.preExcerptRootNote = resolveAvailableNote(ROOT_NOTE_IDS.preExcerpt)
         self.classInputRootNote = resolveAvailableNote(ROOT_NOTE_IDS.classInput)
         self.readingAutoRootNote = resolveAvailableNote(ROOT_NOTE_IDS.readingAuto)
@@ -218,6 +252,7 @@ JSB.newAddon = function(mainPath){
 
         // 注册插件通信观察者
         MNUtil.addObserver(self, 'onAddonBroadcast:', 'AddonBroadcast')
+        researchInitStage = 'legacy.observers'
         // MNUtil.addObserver(self, 'onOpenKnowledgeBaseSearch:', 'openKnowledgeBaseSearch')
 
         // 注册文本编辑生命周期观察者（用于检测新卡片创建）
@@ -225,7 +260,7 @@ JSB.newAddon = function(mainPath){
         MNUtil.addObserver(self, 'onTextDidEndEditing:', 'UITextViewTextDidEndEditingNotification')
 
         // self.toggled = false
-        self.preExcerptMode = false  // 预摘录模式
+        self.preExcerptMode = false  // Retired compatibility field
         self.classAutoMoveMode = false
         self.inboxRootMissingNotified = false
         self.inboxAutoMoveError = null
@@ -261,7 +296,9 @@ JSB.newAddon = function(mainPath){
             }
           }
         }
+        KnowledgeBaseResearchCore.trace('scene.connect.ready')
       } catch (error) {
+        KnowledgeBaseResearchCore.trace('scene.legacy.failed', { initStage: researchInitStage, errorCode: String(error && error.name || 'init-error') })
         KnowledgeBaseUtils.addErrorLog(error, "sceneWillConnect")
       }
     },
@@ -275,10 +312,24 @@ JSB.newAddon = function(mainPath){
      * - 释放占用的资源
      */
     sceneDidDisconnect: function() {
+      KnowledgeBaseTitleRename.disconnect(self)
+      // Unregister even when Core or legacy cleanup cannot finish.
+      try {
+        NSNotificationCenter.defaultCenter().removeObserverName(self, 'MNKBResearchCommand')
+        KnowledgeBaseResearchCore.trace('observer.removed')
+      } catch (error) {
+        KnowledgeBaseResearchCore.trace('observer.remove-failed', { errorCode: 'observer-remove-failed' })
+      }
+      try {
+        if (typeof KnowledgeBaseResearchCore !== 'undefined') KnowledgeBaseResearchCore.getRuntime().disconnect(self)
+      } catch (error) {
+        KnowledgeBaseResearchCore.trace('scene.research.disconnect-failed', { errorCode: String(error && error.name || 'disconnect-error') })
+      }
       MNUtil.undoGrouping(()=>{
         try {
           MNUtil.removeObservers(self, [
             'AddonBroadcast',
+            'MNKBResearchCommand',
             'ProcessNewExcerpt',
             'UITextViewTextDidBeginEditingNotification',
             'UITextViewTextDidEndEditingNotification',
@@ -298,7 +349,17 @@ JSB.newAddon = function(mainPath){
      * - 保存用户的临时操作状态
      * - 释放一些临时资源
      */
+    notebookWillClose: function(topicid) {
+      try { self.readingCollectionStopped = true; KnowledgeBaseResearchCore.getRuntime().close(self, topicid) }
+      catch (error) { KnowledgeBaseUtils.addErrorLog(error, 'notebookWillClose') }
+    },
+    notebookWillOpen: function(topicid) {
+      try { KnowledgeBaseResearchCore.getRuntime().connect(self) }
+      catch (error) { KnowledgeBaseUtils.addErrorLog(error, 'notebookWillOpen') }
+    },
+
     sceneWillResignActive: function() {
+      KnowledgeBaseTitleRename.clear(self)
       // 示例中为空实现
     },
     
@@ -311,7 +372,8 @@ JSB.newAddon = function(mainPath){
      * - 重新获取最新数据
      */
     sceneDidBecomeActive: function() {
-      // 示例中为空实现
+      try { KnowledgeBaseResearchCore.getRuntime().state(self) }
+      catch (error) { KnowledgeBaseUtils.addErrorLog(error, 'sceneDidBecomeActive') }
     },
     
     /**
@@ -325,6 +387,7 @@ JSB.newAddon = function(mainPath){
      * @param {String} notebookid 笔记本的唯一标识符
      */
     notebookWillOpen: function(notebookid) {
+      KnowledgeBaseTitleRename.clear(self)
       // 笔记本打开时的处理（控制器已在 queryAddonCommandStatus 中延迟初始化）
     },
     
@@ -339,6 +402,10 @@ JSB.newAddon = function(mainPath){
      * @param {String} notebookid 笔记本的唯一标识符
      */
     notebookWillClose: function(notebookid) {
+      KnowledgeBaseTitleRename.clear(self)
+      if (typeof KnowledgeBaseResearchCore !== 'undefined') {
+        KnowledgeBaseResearchCore.getRuntime().close(self, notebookid)
+      }
       JSB.log('MNLOG Close Notebook: %@',notebookid);
     },
     
@@ -445,6 +512,9 @@ JSB.newAddon = function(mainPath){
         if (self.window !== MNUtil.currentWindow) {
           return;
         }
+        // Research keeps manually created cards in place; saved Inbox/classification flags stay intact.
+        if (typeof KnowledgeBaseResearchCore !== 'undefined' &&
+            KnowledgeBaseResearchCore.getRuntime().isSceneActive(self)) return
 
         // 2. 检查是否是新卡片编辑结束
         if (!self.isCreatingNewNote || !self.newNoteCreatedFromMindMap) {
@@ -455,12 +525,9 @@ JSB.newAddon = function(mainPath){
         let note = MNNote.new(self.newNoteCreatedFromMindMap.noteId);
 
         if (note && note.noteTitle) {
-          if (KnowledgeBaseConfig.config.readingAutoClassifyMode || KnowledgeBaseConfig.config.readingFollowMode) {
+          if (KnowledgeBaseConfig.config.readingFollowMode) {
             self.processReadingModeNote(note, { source: "mindmap" })
             return
-          }
-          if (KnowledgeBaseConfig.config.classificationMode) {
-            KnowledgeBaseClassUtils.createClassificationNoteAfterTextEditingInMindMap(note)
           }
           if (self.classAutoMoveMode) {
             self.processInboxAutoMoveNote(note, { source: 'mindmap' })
@@ -484,13 +551,22 @@ JSB.newAddon = function(mainPath){
      * @param {{userInfo:{noteid:String}}} sender
      * @returns
      */
+    onResearchCoreCommand: async function(sender) {
+      try {
+        await KnowledgeBaseResearchCore.handleNotification(self, sender)
+      } catch (error) {
+        KnowledgeBaseUtils.addErrorLog(error, 'onResearchCoreCommand')
+      }
+    },
+
     onProcessNewExcerpt: async function (sender) {
       /**
-       * 1. 自动移动到预备知识库
+       * 1. 按当前收集规则处理新摘录
        * 2. 调用 MNOCR 插件进行 OCR 到标题，方便后续索引
        */
       if (typeof MNUtil === 'undefined') return
       if (self.window !== MNUtil.currentWindow) return;
+      let definitionConceptTask = null
       try {
         const startTime = Date.now();
         const noteId = sender.userInfo.noteid
@@ -500,12 +576,17 @@ JSB.newAddon = function(mainPath){
           return
         }
 
-        if (KnowledgeBaseConfig.config.readingAutoClassifyMode || KnowledgeBaseConfig.config.readingFollowMode) {
-          if (KnowledgeBaseConfig.config.readingFollowMode) {
-            MNKnowledgeBaseClass.prototype.markReadingFollowSource.call(self, noteId)
+        // Collection uses explicit receivers; intensive reading never enters legacy routing.
+        if (typeof KnowledgeBaseResearchCore !== 'undefined') {
+          const runtime = KnowledgeBaseResearchCore.getRuntime()
+          if (runtime.isSceneActive(self)) {
+            await runtime.processExcerpt(self, note)
+            return
           }
-          await self.processReadingModeNote(note, { source: "excerpt" })
-          return
+          if (KnowledgeBaseTemplate.getReadingScene() || KnowledgeBaseConfig.config.readingFollowMode) return
+        }
+        if (self.shouldSkipReadingOCR(note) && typeof KnowledgeBaseDefinitionConcept !== 'undefined') {
+          definitionConceptTask = KnowledgeBaseDefinitionConcept.getRuntime().begin(note)
         }
 
         // KnowledgeBaseUtils.log("开始执行 onProcessNewExcerpt", "onProcessNewExcerpt", {
@@ -527,7 +608,7 @@ JSB.newAddon = function(mainPath){
           //   preExcerptMode: self.preExcerptMode
           // })
 
-          let OCRResult = await KnowledgeBaseNetwork.OCRToTitle(note, excerptOCRMode, self.preExcerptMode)
+          let OCRResult = definitionConceptTask ? false : await KnowledgeBaseNetwork.OCRToTitle(note, excerptOCRMode, false)
 
           if (directOCRTagOnly) {
             const processedNote = self.processDirectOCRTaggedExcerptTitleOnly(note, {
@@ -580,31 +661,6 @@ JSB.newAddon = function(mainPath){
           return
         }
 
-        if (self.preExcerptMode && self.preExcerptRootNote) {
-          // 预摘录模式：自动移动到预备知识库
-          // KnowledgeBaseUtils.log("进入预摘录模式", "onProcessNewExcerpt", {
-          //   noteId: noteId,
-          //   elapsedMs: Date.now() - startTime
-          // })
-
-          MNUtil.undoGrouping(()=>{
-            // const preExcerptStartTime = Date.now();
-            self.preExcerptRootNote.addChild(note)
-            const processedNote = KnowledgeBaseTemplate.toNoExcerptVersion(note)
-            self.syncConvertedIntermediateIndexIfNeeded(note, processedNote)
-            // KnowledgeBaseUtils.log("预摘录模式处理完成", "onProcessNewExcerpt", {
-            //   noteId: noteId,
-            //   durationMs: Date.now() - preExcerptStartTime
-            // })
-          })
-
-          // KnowledgeBaseUtils.log("预摘录模式执行完成", "onProcessNewExcerpt", {
-          //   noteId: noteId,
-          //   totalDurationMs: Date.now() - startTime
-          // })
-          return
-        }
-
         if (self.classAutoMoveMode) {
           await self.processInboxAutoMoveNote(note, { source: 'excerpt' })
           return
@@ -632,10 +688,15 @@ JSB.newAddon = function(mainPath){
         // })
       } catch (error) {
         KnowledgeBaseUtils.addErrorLog(error, "onProcessNewExcerpt")
+      } finally {
+        if (definitionConceptTask) {
+          KnowledgeBaseDefinitionConcept.getRuntime().finish(definitionConceptTask)
+        }
       }
     },
 
     queryAddonCommandStatus: function() {
+      if (typeof KnowledgeBaseResearchCore !== 'undefined') KnowledgeBaseResearchCore.getRuntime().state(self)
       // 延迟初始化控制器（参考 mnliterature）
       KnowledgeBaseUtils.checkWebViewController()
 
@@ -843,7 +904,15 @@ JSB.newAddon = function(mainPath){
       }
     },
 
-	    excerptOCRModeSetting: function(button) {
+	    openReadingSettingsMenu: function(button) {
+      try {
+        MNKnowledgeBaseClass.prototype.openReadingSettingsMenuInternal.call(self, button)
+      } catch (error) {
+        KnowledgeBaseUtils.addErrorLog(error, 'openReadingSettingsMenu')
+      }
+    },
+
+    excerptOCRModeSetting: function(button) {
 	      try {
 	        self.checkPopover()
 	        const modeNames = ['❌ 关闭', '📝 直接 OCR', '🔤 Markdown 格式']
@@ -1135,10 +1204,10 @@ JSB.newAddon = function(mainPath){
       }
     },
 
-    readingFollowModeToggled: function() {
+    readingFollowModeToggled: async function() {
       try {
         self.checkPopover()
-        MNKnowledgeBaseClass.prototype.toggleReadingFollowMode.call(self)
+        await MNKnowledgeBaseClass.prototype.toggleReadingFollowMode.call(self)
       } catch (error) {
         KnowledgeBaseUtils.addErrorLog(error, "readingFollowModeToggled")
       }
@@ -1530,12 +1599,21 @@ JSB.newAddon = function(mainPath){
 
     exportToolbarUsage: async function() {
       try { await KBToolbarUsage.exportUsage() }
-      catch (error) { MNUtil.showHUD('导出工具栏统计失败：' + error.message, 2) }
+      catch (error) {
+        KBToolbarUsage.logFailure('exportUsage', error)
+        MNUtil.showHUD('导出工具栏统计失败：' + error.message, 2)
+      }
     },
 
-    toggleToolbarUsage: async function() {
-      try { await KBToolbarUsage.toggle() }
-      catch (error) { MNUtil.showHUD('设置工具栏统计失败：' + error.message, 2) }
+    toggleToolbarUsage: async function(button) {
+      try {
+        await KBToolbarUsage.toggle()
+        self.openMaintenanceMenu(button)
+      }
+      catch (error) {
+        KBToolbarUsage.logFailure('toggle', error)
+        MNUtil.showHUD('设置工具栏统计失败：' + error.message, 2)
+      }
     },
 
     exportActualSearchIndex: function() {
@@ -1724,6 +1802,7 @@ JSB.newAddon = function(mainPath){
 
 
     onPopupMenuOnNote: async function (sender) {
+      KnowledgeBaseMergeHistory.schedule()
       try {
         const selectedNoteId = sender && sender.userInfo && sender.userInfo.note && sender.userInfo.note.noteId
         if (selectedNoteId) {
@@ -1749,38 +1828,11 @@ JSB.newAddon = function(mainPath){
             })
           }
         }
-        if (selectedNoteId && KnowledgeBaseConfig.config.readingFollowMode) {
-          const selectedNote = MNNote.new(selectedNoteId)
-          if (selectedNote && selectedNote.noteTitle) {
-            MNKnowledgeBaseClass.prototype.commitReadingFollowTarget.call(self, selectedNoteId, 'popup-titled')
-          } else if (selectedNote) {
-            MNKnowledgeBaseClass.prototype.scheduleUntitledReadingFollowTarget.call(self, selectedNoteId)
-          }
-        }
+
       } catch (error) {
         KnowledgeBaseUtils.addErrorLog(error, "onPopupMenuOnNote")
       }
-      if (KnowledgeBaseConfig.config.classificationMode && sender.userInfo.note.noteId) {
-        let note = MNNote.new(sender.userInfo.note.noteId, false)
-        if (!note) { return }
-        if (KnowledgeBaseTemplate.getNoteType(note) && KnowledgeBaseTemplate.parseNoteTitle(note)) {
-          // KnowledgeBaseUtils.log("复制前的类型"+ KnowledgeBaseTemplate.getNoteType(note), "onPopupMenuOnNote")
-          switch (KnowledgeBaseTemplate.getNoteType(note)) {
-            case "归类":
-              MNUtil.copy(
-                KnowledgeBaseTemplate.parseNoteTitle(note).content || ""
-              )
-              break;
-            default:
-              MNUtil.copy(
-                KnowledgeBaseTemplate.parseNoteTitle(note).prefixContent + "｜" + KnowledgeBaseTemplate.parseNoteTitle(note).content || ""
-              )
-              break;
-          }
-          // KnowledgeBaseUtils.log("复制后的类型"+ KnowledgeBaseTemplate.getNoteType(note), "onPopupMenuOnNote")
-        }
 
-      }
     },
     /**
      * 处理来自其他插件的通信消息
@@ -2040,85 +2092,8 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.cleanupHistoricalReadingAutoNotes = function(dateNotes = []) {
-    const cleanupResult = {
-      deletedClassificationCount: 0,
-      deletedDateCount: 0,
-    }
-
-    if (!Array.isArray(dateNotes) || dateNotes.length === 0 || !this.readingDateStr) {
-      return cleanupResult
-    }
-
-    dateNotes.forEach((dateNote) => {
-      try {
-        const dateStr = this.extractReadingDateStrFromTitle(dateNote && dateNote.noteTitle)
-        if (!dateStr || dateStr >= this.readingDateStr) {
-          return
-        }
-
-        const classificationResult = safeGetChildNotes(
-          dateNote,
-          'cleanupHistoricalReadingAutoNotes.dateNote'
-        )
-        if (!classificationResult.ok) return
-
-        let deletedChild = false
-        classificationResult.childNotes.slice().forEach((classificationNote) => {
-          try {
-            if (KnowledgeBaseTemplate.getNoteType(classificationNote) !== '归类') {
-              return
-            }
-
-            const contentResult = safeGetChildNotes(
-              classificationNote,
-              'cleanupHistoricalReadingAutoNotes.classificationNote'
-            )
-            if (!contentResult.ok || contentResult.childNotes.length > 0) {
-              return
-            }
-
-            if (typeof classificationNote.delete === 'function') {
-              classificationNote.delete()
-              cleanupResult.deletedClassificationCount += 1
-              deletedChild = true
-            }
-          } catch (error) {
-            KnowledgeBaseUtils.addErrorLog(error, 'cleanupHistoricalReadingAutoNotes.deleteClassificationNote')
-          }
-        })
-
-        if (deletedChild && dateNote && typeof dateNote.refresh === 'function') {
-          try {
-            dateNote.refresh()
-          } catch (_) {}
-        }
-
-        const remainingResult = safeGetChildNotes(
-          dateNote,
-          'cleanupHistoricalReadingAutoNotes.dateNote.afterClassificationCleanup'
-        )
-        if (!remainingResult.ok || remainingResult.childNotes.length > 0) {
-          return
-        }
-
-        if (typeof dateNote.delete === 'function') {
-          dateNote.delete()
-          cleanupResult.deletedDateCount += 1
-        }
-      } catch (error) {
-        KnowledgeBaseUtils.addErrorLog(error, 'cleanupHistoricalReadingAutoNotes')
-      }
-    })
-
-    if (cleanupResult.deletedClassificationCount > 0 || cleanupResult.deletedDateCount > 0) {
-      KnowledgeBaseUtils.log(
-        '已清理阅读自动归类历史残留卡片',
-        'cleanupHistoricalReadingAutoNotes',
-        cleanupResult
-      )
-    }
-
-    return cleanupResult
+    // Historical cards are user content; empty children do not prove safe deletion.
+    return { deletedClassificationCount: 0, deletedDateCount: 0 }
   }
 
   MNKnowledgeBaseClass.prototype.ensureReadingAutoMoveTargets = function() {
@@ -2181,7 +2156,7 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.getManagedAutomationModeKeys = function() {
-    return ['excerptOCR', 'preExcerpt', 'classAutoMove', 'readingAutoClassify', 'readingFollow', 'prefixMode']
+    return ['excerptOCR', 'classAutoMove', 'readingFollow', 'prefixMode']
   }
 
   MNKnowledgeBaseClass.prototype.getManagedAutomationModeLabel = function(modeKey) {
@@ -2203,12 +2178,8 @@ JSB.newAddon = function(mainPath){
         return Number(KnowledgeBaseConfig.config.excerptOCRMode) > 0
       case 'preProcess':
         return !!KnowledgeBaseConfig.config.preProcessMode
-      case 'preExcerpt':
-        return !!this.preExcerptMode
       case 'classAutoMove':
         return !!this.classAutoMoveMode
-      case 'readingAutoClassify':
-        return !!KnowledgeBaseConfig.config.readingAutoClassifyMode
       case 'readingFollow':
         return !!KnowledgeBaseConfig.config.readingFollowMode
       case 'prefixMode':
@@ -2232,14 +2203,8 @@ JSB.newAddon = function(mainPath){
       case 'preProcess':
         KnowledgeBaseConfig.config.preProcessMode = false
         break
-      case 'preExcerpt':
-        this.preExcerptMode = false
-        break
       case 'classAutoMove':
         this.classAutoMoveMode = false
-        break
-      case 'readingAutoClassify':
-        KnowledgeBaseConfig.config.readingAutoClassifyMode = false
         break
       case 'readingFollow':
         KnowledgeBaseConfig.config.readingFollowMode = false
@@ -2274,11 +2239,11 @@ JSB.newAddon = function(mainPath){
   MNKnowledgeBaseClass.prototype.getConflictingAutomationModeKeys = function(targetModeKey) {
     switch (targetModeKey) {
       case 'excerptOCR':
-        return ['preExcerpt', 'classAutoMove', 'readingAutoClassify', 'readingFollow', 'prefixMode']
+        return ['classAutoMove', 'readingFollow', 'prefixMode']
       case 'preProcess':
         return ['prefixMode']
       case 'prefixMode':
-        return ['excerptOCR', 'preProcess', 'preExcerpt', 'classAutoMove', 'readingAutoClassify', 'readingFollow']
+        return ['excerptOCR', 'preProcess', 'classAutoMove', 'readingFollow']
       default:
         return this.getManagedAutomationModeKeys().filter((modeKey) => modeKey !== targetModeKey)
     }
@@ -2378,41 +2343,25 @@ JSB.newAddon = function(mainPath){
     const normalizedMode = Number.isFinite(parsedMode)
       ? Math.max(0, Math.min(2, parsedMode))
       : 0
-    const modeNames = ['关闭', '直接 OCR', 'Markdown 格式']
 
     if (normalizedMode < 1) {
       KnowledgeBaseConfig.config.excerptOCRMode = 0
       KnowledgeBaseConfig.save()
       this.refreshAddonCommandStatus()
-      MNUtil.showHUD('已关闭摘录 OCR 模式', 1)
       return
     }
 
-    const result = this.applyAutomationConflictsBeforeEnable('excerptOCR')
+    this.applyAutomationConflictsBeforeEnable('excerptOCR')
     KnowledgeBaseConfig.config.excerptOCRMode = normalizedMode
     KnowledgeBaseConfig.save()
     this.refreshAddonCommandStatus()
-    this.showManagedAutomationModeHUD(
-      `已开启摘录 OCR 模式：${modeNames[normalizedMode]}`,
-      result.disabledLabels,
-      { externalReadingStopped: result.externalReadingStopped }
-    )
+
   }
 
   MNKnowledgeBaseClass.prototype.togglePreExcerptModeInternal = function() {
-    const next = !this.preExcerptMode
-    if (!next) {
-      this.preExcerptMode = false
-      MNUtil.showHUD('已关闭预摘录模式', 1)
-      return
-    }
-
-    const result = this.applyAutomationConflictsBeforeEnable('preExcerpt')
-    this.preExcerptMode = true
-    KnowledgeBaseConfig.save()
-    this.showManagedAutomationModeHUD('已开启预摘录模式', result.disabledLabels, {
-      externalReadingStopped: result.externalReadingStopped,
-    })
+    // Preserve the old selector without enabling a second collection flow.
+    this.preExcerptMode = false
+    return false
   }
 
   MNKnowledgeBaseClass.prototype.togglePrefixModeInternal = function() {
@@ -2474,43 +2423,44 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.toggleReadingAutoClassifyMode = function() {
-    const next = !KnowledgeBaseConfig.config.readingAutoClassifyMode
-    if (!next) {
-      KnowledgeBaseConfig.config.readingAutoClassifyMode = false
-      KnowledgeBaseConfig.save()
-      MNUtil.showHUD('已关闭阅读自动归类模式', 1)
-      return
-    }
-
-    const result = this.applyAutomationConflictsBeforeEnable('readingAutoClassify', {
-      preserveReadingOCRMode: true,
-    })
-    KnowledgeBaseConfig.config.readingAutoClassifyMode = true
-    KnowledgeBaseConfig.save()
-    this.showManagedAutomationModeHUD('已开启阅读自动归类模式', result.disabledLabels, {
-      externalReadingStopped: result.externalReadingStopped,
-    })
+    // Retired selector remains callable without changing saved preferences.
+    return false
   }
 
-  MNKnowledgeBaseClass.prototype.toggleReadingFollowMode = function() {
-    const next = !KnowledgeBaseConfig.config.readingFollowMode
-    if (!next) {
-      KnowledgeBaseConfig.config.readingFollowMode = false
+  MNKnowledgeBaseClass.prototype.toggleReadingFollowMode = async function() {
+    const runtime = KnowledgeBaseResearchCore.getRuntime(), state = runtime.state(this)
+    const scene = KnowledgeBaseTemplate.getReadingScene()
+    if (scene === 'intensive') { MNUtil.showHUD('❌ 精读场景不接收摘录'); return }
+    const receiver = state.receiver
+    const actions = []
+    if (!scene) actions.push(state.sceneActive ? '关闭泛读收集' : '开启泛读收集')
+    if (state.sceneActive) {
+      actions.push('将选中卡片设为接收目标')
+      if (receiver && receiver.available && !receiver.active) actions.push('恢复上次接收目标')
+      if (receiver && receiver.active) actions.push('结束手动接收')
+    }
+    const summary = receiver ? `${receiver.type} · ${receiver.title}（${receiver.active ? '接收中' : '等待手动恢复'}）` : '未设置'
+    const choice = await MNUtil.userSelect('阅读收集', `手动目标：${summary}\n默认位置：${scene === 'research' ? '当前课题；未开始课题时原位处理' : '固定 Inbox'}`, actions)
+    if (!choice) return
+    if (String(MNUtil.currentNotebookId || '') !== state.notebookId || this.window !== MNUtil.currentWindow || runtime.state(this).collectionMode !== state.collectionMode) throw Error('context-changed')
+    const action = actions[choice - 1]
+    if (action === '开启泛读收集' || action === '关闭泛读收集') {
+      if (action === '关闭泛读收集') runtime.close(this, state.notebookId)
+      KnowledgeBaseConfig.config.readingFollowMode = action === '开启泛读收集'
       KnowledgeBaseConfig.save()
+      if (KnowledgeBaseConfig.config.readingFollowMode) { this.readingCollectionStopped = false; runtime.connect(this) }
       this.refreshAddonCommandStatus()
-      MNUtil.showHUD('已关闭快速阅读模式', 1)
       return
     }
-
-    const result = this.applyAutomationConflictsBeforeEnable('readingFollow', {
-      preserveReadingOCRMode: true,
-    })
-    KnowledgeBaseConfig.config.readingFollowMode = true
-    KnowledgeBaseConfig.save()
-    this.refreshAddonCommandStatus()
-    this.showManagedAutomationModeHUD('已开启快速阅读模式', result.disabledLabels, {
-      externalReadingStopped: result.externalReadingStopped,
-    })
+    let command = 'stopReceiver', payload = {}
+    if (action === '将选中卡片设为接收目标') {
+      const selected = this.getSelectedNotes()
+      if (selected.length !== 1) { MNUtil.showHUD('❌ 请选中一张归类卡或命题卡'); return }
+      command = 'setReceiver'; payload = { noteId: selected[0].noteId }
+    } else if (action === '恢复上次接收目标') {
+      command = 'setReceiver'; payload = { noteId: receiver.noteId }
+    } else if (action !== '结束手动接收') return
+    return runtime.dispatch(this, { version: 1, requestId: 'reading-' + Date.now(), notebookId: state.notebookId, command, payload })
   }
 
   MNKnowledgeBaseClass.prototype.demoModeToggledInternal = function() {
@@ -2546,11 +2496,11 @@ JSB.newAddon = function(mainPath){
     const result = await KnowledgeBaseNetwork.OCRToTitle(
       note,
       normalizedMode,
-      this.preExcerptMode,
+      false,
       'all',
       options,
     )
-    if (result) {
+    if (result && !(options && options.skipIndex === true)) {
       IntermediateKnowledgeIndexer.addToIncrementalIndex(note)
     }
     return result
@@ -2561,6 +2511,9 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.syncConvertedIntermediateIndexIfNeeded = function(originalNote, processedNote, options = {}) {
+    if (typeof KnowledgeBaseDefinitionConcept !== 'undefined') {
+      KnowledgeBaseDefinitionConcept.getRuntime().retarget(originalNote, processedNote)
+    }
     if (!originalNote || !processedNote || !originalNote.noteId || !processedNote.noteId) return
     const originalId = String(originalNote.noteId)
     const processedId = String(processedNote.noteId)
@@ -2789,10 +2742,16 @@ JSB.newAddon = function(mainPath){
     }
   }
 
+  MNKnowledgeBaseClass.prototype.isReadingFollowPropositionTarget = function(target) {
+    return !!target && !KnowledgeBaseTemplate.isClassificationNote(target) &&
+      KnowledgeBaseTemplate.getNoteType(target, true) === '命题'
+  }
+
   MNKnowledgeBaseClass.prototype.convertQuickReadingExcerptWithoutGlobalRefresh = function(note, parentNote) {
     let processedNote = note
     KnowledgeBaseTemplate.runUndoGroupingWithoutGlobalDBRefresh(() => {
       processedNote = KnowledgeBaseTemplate.toNoExcerptVersion(note, parentNote, {
+        allowTextExcerpt: this.isReadingFollowPropositionTarget(parentNote),
         createChildUndoGrouping: false,
       })
     }, {
@@ -3153,72 +3112,10 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.getReadingFollowParentNote = function(sourceNote) {
-    const pendingTargetId = String(
-      this.readingFollowPendingUntitledTarget && this.readingFollowPendingUntitledTarget.noteId || '',
-    ).trim()
-    if (pendingTargetId) {
-      const pendingTarget = resolveAvailableNote(pendingTargetId)
-      if (pendingTarget && this.isReadingFollowTargetCompatible(pendingTarget, sourceNote)) {
-        this.logQuickReadingDiagnostic('target.pendingUsedForFollow', {
-          target: this.getQuickReadingNoteDiagnostic(pendingTarget),
-        })
-        return pendingTarget
-      }
-      this.logQuickReadingDiagnostic('target.pendingDiscarded', {
-        target: this.getQuickReadingNoteDiagnostic(pendingTargetId),
-        source: this.getQuickReadingNoteDiagnostic(sourceNote),
-        reason: pendingTarget ? 'different-notebook' : 'unavailable',
-      }, 'warn')
-      this.readingFollowPendingUntitledTarget = null
-    }
-
-    const recentTargetIds = this.getReadingFollowRecentTargetIds()
-    const unavailableTargetIds = []
-    const incompatibleTargetIds = []
-    let resolvedTarget = null
-    let resolvedTargetId = ''
-    recentTargetIds.forEach((candidateId) => {
-      const candidate = resolveAvailableNote(candidateId)
-      if (!candidate) {
-        unavailableTargetIds.push(candidateId)
-        return
-      }
-      if (!this.isReadingFollowTargetCompatible(candidate, sourceNote)) {
-        incompatibleTargetIds.push(candidateId)
-        return
-      }
-      if (!resolvedTarget) {
-        resolvedTarget = candidate
-        resolvedTargetId = candidateId
-      }
-    })
-    const remainingTargetIds = recentTargetIds.filter(id => !unavailableTargetIds.includes(id))
-    if (resolvedTarget) {
-      const nextTargetIds = [resolvedTargetId]
-        .concat(remainingTargetIds.filter(id => id !== resolvedTargetId))
-        .slice(0, 3)
-      const queueResult = this.setReadingFollowRecentTargetIds(nextTargetIds)
-      if (queueResult.changed || unavailableTargetIds.length > 0 || incompatibleTargetIds.length > 0) {
-        this.logQuickReadingDiagnostic('target.recentFallbackUsed', {
-          source: this.getQuickReadingNoteDiagnostic(sourceNote),
-          target: this.getQuickReadingNoteDiagnostic(resolvedTarget),
-          unavailableTargetIds,
-          incompatibleTargetIds,
-          recentTargetIds: queueResult.recentTargetIds,
-        })
-      }
-      return resolvedTarget
-    }
-    if (unavailableTargetIds.length > 0) {
-      this.setReadingFollowRecentTargetIds(remainingTargetIds)
-    }
-
-    const selectedNotes = this.getSelectedNotes()
-    if (selectedNotes.length > 0 && this.isReadingFollowTargetCompatible(selectedNotes[0], sourceNote)) {
-      return selectedNotes[0]
-    }
-
-    return null
+    const receiver = KnowledgeBaseResearchCore.getRuntime().state(this).receiver
+    if (!receiver || !receiver.active) return null
+    const target = resolveAvailableNote(receiver.noteId)
+    return target && this.isReadingFollowTargetCompatible(target, sourceNote) ? target : null
   }
 
   MNKnowledgeBaseClass.prototype.getReadingFollowMoveParent = function(targetParent) {
@@ -3307,221 +3204,12 @@ JSB.newAddon = function(mainPath){
   }
 
   MNKnowledgeBaseClass.prototype.processReadingAutoClassifyNote = async function(note) {
-    if (!this.ensureReadingAutoMoveTargets()) return
-
-    const noteType = this.getReadingAutoTypeFromNote(note)
-    let targetParent = null
-
-    if (noteType) {
-      targetParent = this.getReadingClassificationNote(noteType)
-    }
-    if (!targetParent) {
-      targetParent = this.readingDateNote
-    }
-    if (!targetParent) return
-
-    MNUtil.undoGrouping(() => {
-      targetParent.addChild(note)
-    })
-
-    if (!this.shouldSkipReadingOCR(note, noteType)) {
-      await this.applyReadingOCRToTitle(note)
-    }
-
-    const processedNote = KnowledgeBaseTemplate.toNoExcerptVersion(note)
-    this.syncConvertedIntermediateIndexIfNeeded(note, processedNote)
-    if (processedNote) {
-      processedNote.focusInMindMap(0.4)
-    }
+    // Old direct callers must not restart retired date collection.
+    return note || null
   }
 
   MNKnowledgeBaseClass.prototype.processReadingFollowNote = async function(note) {
-    this.extractReadingTagTypeAndCleanup(note)
-
-    const flowId = `${Date.now()}-${String(note && note.noteId ? note.noteId : '').slice(-8)}`
-    const followStartedAt = Date.now()
-    const slowThresholdMs = 1000
-    let ocrDurationMs = 0
-    let ocrDiagnostic = {}
-    const logSlowFollowIfNeeded = (stage) => {
-      const totalDurationMs = Math.max(0, Date.now() - followStartedAt)
-      if (totalDurationMs < slowThresholdMs && ocrDurationMs < slowThresholdMs) return
-      this.logQuickReadingDiagnostic('follow.slow', {
-        flowId,
-        stage: String(stage || ''),
-        totalDurationMs,
-        ocrDurationMs,
-        ocr: ocrDiagnostic,
-      }, 'warn')
-    }
-    const sourceBefore = this.getQuickReadingNoteDiagnostic(note)
-    const targetParent = this.getReadingFollowParentNote(note)
-    const pendingTargetId = String(
-      this.readingFollowPendingUntitledTarget && this.readingFollowPendingUntitledTarget.noteId || '',
-    ).trim()
-    let targetParentForMove = this.getReadingFollowMoveParent(targetParent)
-    const targetSelectedState = this.getQuickReadingNoteDiagnostic(targetParent)
-    const targetMoveState = this.getQuickReadingNoteDiagnostic(targetParentForMove)
-    const pendingTargetState = pendingTargetId
-      ? this.getQuickReadingNoteDiagnostic(pendingTargetId)
-      : null
-    const sourceIds = [sourceBefore.noteId, sourceBefore.realGroupNoteId].filter(id => !!id)
-    const targetIds = [targetMoveState.noteId, targetMoveState.realGroupNoteId].filter(id => !!id)
-    const pendingTargetIds = [pendingTargetState && pendingTargetState.noteId, pendingTargetState && pendingTargetState.realGroupNoteId]
-      .filter(id => !!id)
-    const pendingTargetUsed = !!pendingTargetId && pendingTargetIds.some(id => [
-      targetSelectedState.noteId,
-      targetSelectedState.realGroupNoteId,
-      targetMoveState.noteId,
-      targetMoveState.realGroupNoteId,
-    ].includes(id))
-    const selfTarget = sourceIds.some(id => targetIds.includes(id))
-    if (selfTarget) {
-      this.logQuickReadingDiagnostic('follow.selfTargetBlocked', {
-        flowId,
-        source: sourceBefore,
-        targetSelected: targetSelectedState,
-        targetForMove: targetMoveState,
-      }, 'warn')
-      targetParentForMove = null
-    }
-
-    this.logQuickReadingDiagnostic('follow.start', {
-      flowId,
-      configuredTargetId: String(KnowledgeBaseConfig.config.readingFollowLastNoteId || '').trim(),
-      source: sourceBefore,
-      targetSelected: targetSelectedState,
-      targetForMove: targetMoveState,
-      selfTarget,
-    })
-
-    if (targetParentForMove) {
-      MNUtil.undoGrouping(() => {
-        targetParentForMove.addChild(note)
-      })
-
-      if (pendingTargetUsed && !selfTarget) {
-        this.commitReadingFollowTarget(pendingTargetId, 'follow-pending-confirmed')
-        this.readingFollowPendingUntitledTarget = null
-      }
-
-      const sourceAfterMove = this.getQuickReadingNoteDiagnostic(sourceBefore.noteId || note)
-      this.logQuickReadingDiagnostic('follow.afterAddChild', {
-        flowId,
-        sourceBefore,
-        sourceAfterMove,
-        targetForMove: this.getQuickReadingNoteDiagnostic(targetParentForMove),
-        containment: this.getReadingFollowChildContainment(targetParentForMove, sourceAfterMove),
-      })
-
-      let ocrSuccess = false
-      if (!this.shouldSkipReadingOCR(note)) {
-        const ocrStartedAt = Date.now()
-        ocrSuccess = !!await this.applyQuickReadingOCRToTitle(note, {
-          ocrDiagnosticTarget: ocrDiagnostic,
-        })
-        ocrDurationMs = Math.max(0, Date.now() - ocrStartedAt)
-      }
-
-      this.logQuickReadingDiagnostic('follow.beforeConversion', {
-        flowId,
-        source: this.getQuickReadingNoteDiagnostic(note),
-        targetForMove: this.getQuickReadingNoteDiagnostic(targetParentForMove),
-        excerptType: String(note && note.excerptType || ''),
-        ocrDurationMs,
-        ocr: ocrDiagnostic,
-      })
-      const processedNote = this.convertQuickReadingExcerptWithoutGlobalRefresh(note, targetParentForMove)
-      const processedState = this.getQuickReadingNoteDiagnostic(processedNote)
-      const expectedParentId = String(targetMoveState.realGroupNoteId || targetMoveState.noteId || '').trim()
-      const actualParentId = String(processedState.parentRealGroupNoteId || processedState.parentNoteId || '').trim()
-      this.logQuickReadingDiagnostic('follow.afterConversion', {
-        flowId,
-        expectedParentId,
-        actualParentId,
-        parentMatches: !!expectedParentId && expectedParentId === actualParentId,
-        processed: processedState,
-        targetForMove: this.getQuickReadingNoteDiagnostic(targetParentForMove),
-        containment: this.getReadingFollowChildContainment(targetParentForMove, processedState),
-        ocrDurationMs,
-        ocr: ocrDiagnostic,
-        totalDurationMs: Math.max(0, Date.now() - followStartedAt),
-     }, expectedParentId && actualParentId && expectedParentId !== actualParentId ? 'warn' : 'info')
-     this.syncConvertedIntermediateIndexIfNeeded(note, processedNote)
-
-      // 快速阅读自动制卡：摘录颜色与目标归类卡类型匹配时自动完整制卡
-      if (processedNote && targetParentForMove) {
-        const autoMakeNoteType = this.getReadingTypeFromColor(processedNote)
-        const autoMakeSupportedTypes = ['命题', '定义', '例子', '反例']
-        if (autoMakeSupportedTypes.includes(autoMakeNoteType)) {
-          if (KnowledgeBaseTemplate.isClassificationNote(targetParentForMove) &&
-              !KnowledgeBaseTemplate.isReadingClassificationNote(targetParentForMove)) {
-            const targetParsed = KnowledgeBaseTemplate.parseNoteTitle(targetParentForMove)
-            const targetType = (targetParsed && targetParsed.type) ? String(targetParsed.type).trim() : ''
-            const typeMatched = autoMakeNoteType === targetType
-            this.logQuickReadingDiagnostic('follow.autoMakeCard', {
-              flowId,
-              noteType: autoMakeNoteType,
-              targetType,
-              typeMatched,
-            })
-            if (typeMatched) {
-              try {
-                KnowledgeBaseTemplate.makeCard(processedNote, false, true, {
-                  noteType: autoMakeNoteType,
-                })
-              } catch (makeCardError) {
-                this.logQuickReadingDiagnostic('follow.autoMakeCard.error', {
-                  flowId,
-                  noteType: autoMakeNoteType,
-                  targetType,
-                  error: String(makeCardError && makeCardError.message || makeCardError || ''),
-                }, 'warn')
-              }
-            }
-          }
-        }
-      }
-
-     if (processedNote) {
-       processedNote.focusInMindMap(0.4)
-     }
-     if (ocrSuccess) {
-       this.refreshAfterQuickReadingOCR(processedNote || note, 'afterConversion')
-     }
-      logSlowFollowIfNeeded('afterConversion')
-      return
-    }
-
-    let ocrSuccess = false
-    if (!this.shouldSkipReadingOCR(note)) {
-      const ocrStartedAt = Date.now()
-      ocrSuccess = !!await this.applyQuickReadingOCRToTitle(note, {
-        ocrDiagnosticTarget: ocrDiagnostic,
-      })
-      ocrDurationMs = Math.max(0, Date.now() - ocrStartedAt)
-    }
-    if (selfTarget) {
-      this.logQuickReadingDiagnostic('follow.selfTargetPreservedPreviousTarget', {
-        flowId,
-        source: sourceBefore,
-        configuredTargetId: String(KnowledgeBaseConfig.config.readingFollowLastNoteId || '').trim(),
-        ocrDurationMs,
-        totalDurationMs: Math.max(0, Date.now() - followStartedAt),
-      }, 'warn')
-      if (ocrSuccess) {
-        this.refreshAfterQuickReadingOCR(note, 'selfTarget')
-      }
-      logSlowFollowIfNeeded('selfTarget')
-      return
-    }
-    if (note && note.noteId) {
-      this.commitReadingFollowTarget(note.noteId, 'follow-no-target')
-    }
-    if (ocrSuccess) {
-      this.refreshAfterQuickReadingOCR(note, 'noTarget')
-    }
-    logSlowFollowIfNeeded('noTarget')
+    return KnowledgeBaseResearchCore.getRuntime().processExcerpt(this, note)
   }
 
   MNKnowledgeBaseClass.prototype.processReadingModeNote = async function(note, options = {}) {
@@ -3529,10 +3217,6 @@ JSB.newAddon = function(mainPath){
       // 快速阅读只处理文档摘录；脑图手动输入的卡片留在用户创建的位置。
       const source = String(options.source || '').trim()
       if (source !== 'excerpt') {
-        return
-      }
-      if (KnowledgeBaseConfig.config.readingAutoClassifyMode) {
-        await this.processReadingAutoClassifyNote(note)
         return
       }
       if (KnowledgeBaseConfig.config.readingFollowMode) {
@@ -3605,6 +3289,7 @@ JSB.newAddon = function(mainPath){
       this.indentedTableItem('🧭 问题研究工作台', 'openQuestionResearchWorkbench:'),
       this.menuSeparator(),
       this.indentedTableItem('📤 导出实际搜索索引 JSON', 'exportActualSearchIndex:'),
+      this.indentedTableItem('🧪 左滑重命名诊断', 'onKBTitleRenameDiagnostic:'),
     ]
   }
 
@@ -3613,6 +3298,7 @@ JSB.newAddon = function(mainPath){
 
     return [
       this.indentedTableItem('📖 快速阅读', 'readingFollowModeToggled:', undefined, !!KnowledgeBaseConfig.config.readingFollowMode),
+      this.indentedTableItem('⚙️ 阅读设置', 'openReadingSettingsMenu:', button),
       this.menuSeparator(),
       this.indentedTableItem('❌ 关闭摘录 OCR', 'setExcerptOCRMode:', 0, currentMode === 0),
       this.nestedTableItem('📝 直接 OCR', 'setExcerptOCRMode:', 1, currentMode === 1),
@@ -3621,9 +3307,7 @@ JSB.newAddon = function(mainPath){
       this.indentedTableItem('🔤 前缀模式', 'prefixModeToggled:', undefined, !!KnowledgeBaseConfig.config.prefixMode),
       this.indentedTableItem('📥 Inbox 自动移动', 'classAutoMoveModeToggled:', undefined, !!this.classAutoMoveMode),
       this.menuSeparator(),
-      this.indentedTableItem('🤖 预摘录卡片', 'preExcerptModeToggled:', undefined, !!this.preExcerptMode),
       this.indentedTableItem('📌 Inbox 自动 Pin', 'classAutoPinModeToggled:', undefined, !!KnowledgeBaseConfig.config.classAutoPinMode),
-      this.indentedTableItem('📖 阅读自动归类', 'readingAutoClassifyModeToggled:', undefined, !!KnowledgeBaseConfig.config.readingAutoClassifyMode),
       this.indentedTableItem('🎬 演示模式', 'demoModeToggled:', undefined, !!KnowledgeBaseConfig.config.demoMode),
     ]
   }
@@ -3647,6 +3331,36 @@ JSB.newAddon = function(mainPath){
     this.popoverController = MNUtil.getPopoverAndPresent(button, commandTable, 360, 0)
   }
 
+  MNKnowledgeBaseClass.prototype.openReadingSettingsMenuInternal = function(button) {
+    this.checkPopover()
+    const mode = this.getSupportedExcerptOCRMode()
+    const commandTable = [
+      this.tableItem('🔤 Markdown 格式', 'setExcerptOCRMode:', 2, mode === 2),
+      this.tableItem('📝 直接 OCR', 'setExcerptOCRMode:', 1, mode === 1),
+      this.tableItem('❌ 关闭摘录 OCR', 'setExcerptOCRMode:', 0, mode === 0),
+      this.menuSeparator(),
+      this.tableItem('⚙️ Markdown OCR 模型', 'excerptOCRModelSettingForMode2:', button),
+    ]
+    this.popoverController = MNUtil.getPopoverAndPresent(button, commandTable, 360, 0)
+  }
+
+  MNKnowledgeBaseClass.prototype.getOCRTaskModelMenuText = function(task) {
+    const config = KnowledgeBaseConfig.config
+    const saved = key => String(config[key] || '').trim()
+    const base = saved('excerptOCRModel')
+    const direct = saved('excerptOCRModelForMode1') || base
+    const markdown = saved('excerptOCRModelForMode2') || base
+    const taskKeys = { direct: 'excerptOCRModelForMode1', markdown: 'excerptOCRModelForMode2', translate: 'excerptOCRTranslateModel', reading: 'quickReadingOCRModel' }
+    if (task === 'default') return `${base || '未配置'}（默认设置）`
+    const dedicated = saved(taskKeys[task])
+    if (dedicated) return `${dedicated}（专用设置）`
+    if (task === 'translate') return `跟随当前 OCR 任务（直接：${direct || '未配置'}；Markdown：${markdown || '未配置'}）`
+    if (task === 'reading' && saved('excerptOCRTranslateModel')) return `${saved('excerptOCRTranslateModel')}（继承翻译 OCR）`
+    const inherited = task === 'reading' ? direct : base
+    const origin = task === 'reading' && saved('excerptOCRModelForMode1') ? '直接 OCR' : '默认 OCR'
+    return `${inherited || '未配置'}（继承${origin}）`
+  }
+
   MNKnowledgeBaseClass.prototype.openModelSettingsMenu = function(button) {
     this.checkPopover()
 
@@ -3655,21 +3369,27 @@ JSB.newAddon = function(mainPath){
     const overrideEnabled = !!KnowledgeBaseConfig.config.mnaiModelOverrideEnabled
     const overrideText = overrideEnabled
       ? (source && model ? `${source}: ${model}` : (source || model || '已启用'))
-      : '未启用'
+      : '未启用；继承 MNAI 设置'
 
-    const commandTable = [
-      this.tableItem('⚙️ 默认 OCR 模型', 'excerptOCRModelSetting:', button),
-      this.tableItem('⚙️ Unicode OCR 模型', 'excerptOCRModelSettingForMode1:', button),
-      this.tableItem('⚙️ Markdown OCR 模型', 'excerptOCRModelSettingForMode2:', button),
-      this.tableItem('⚙️ 翻译 OCR 模型', 'excerptOCRTranslateModelSetting:', button),
-      this.tableItem('⚙️ 快速阅读 OCR 模型', 'quickReadingOCRModelSetting:', button),
+    const commandTable = []
+    if (typeof KnowledgeBaseNetwork !== 'undefined' && KnowledgeBaseNetwork.usesResearchOCR()) {
+      const activeModel = KnowledgeBaseConfig.getResearchOCRModel()
+      commandTable.push(this.menuGroupTitle(`科研场景 OCR：${activeModel}（场景优先）`))
+      commandTable.push(this.menuGroupTitle('以下为全局 OCR 设置'))
+    }
+    commandTable.push(
+      this.tableItem(`⚙️ 默认 OCR 模型：${this.getOCRTaskModelMenuText('default')}`, 'excerptOCRModelSetting:', button),
+      this.tableItem(`⚙️ Unicode OCR 模型：${this.getOCRTaskModelMenuText('direct')}`, 'excerptOCRModelSettingForMode1:', button),
+      this.tableItem(`⚙️ Markdown OCR 模型：${this.getOCRTaskModelMenuText('markdown')}`, 'excerptOCRModelSettingForMode2:', button),
+      this.tableItem(`⚙️ 翻译 OCR 模型：${this.getOCRTaskModelMenuText('translate')}`, 'excerptOCRTranslateModelSetting:', button),
+      this.tableItem(`⚙️ 快速阅读 OCR 模型：${this.getOCRTaskModelMenuText('reading')}`, 'quickReadingOCRModelSetting:', button),
       this.menuSeparator(),
       this.tableItem(`⚙️ AI 模型覆盖（${overrideText}）`, 'mnaiModelOverrideToggled:', undefined, overrideEnabled),
       this.tableItem('⚙️ 选择 AI Source', 'mnaiModelSourceSetting:', button),
       this.tableItem('⚙️ 选择 AI Model', 'mnaiModelNameSetting:', button),
-    ]
+    )
 
-    this.popoverController = MNUtil.getPopoverAndPresent(button, commandTable, 360, 0)
+    this.popoverController = MNUtil.getPopoverAndPresent(button, commandTable, 440, 0)
   }
 
   MNKnowledgeBaseClass.prototype.openMaintenanceMenu = function(button) {
@@ -3684,7 +3404,7 @@ JSB.newAddon = function(mainPath){
       this.tableItem('📤 导出历史索引卡点 JSON', 'exportHistoryIndexCheckpoint:'),
       this.tableItem('📤 导出持久化诊断日志', 'exportPersistentDiagnosticLog:'),
       this.tableItem('📤 导出工具栏使用统计', 'exportToolbarUsage:'),
-      this.tableItem('⏯ 启用或暂停工具栏使用统计', 'toggleToolbarUsage:'),
+      this.tableItem(KBToolbarUsage.toggleTitle(), 'toggleToolbarUsage:', button),
       this.menuSeparator(),
       this.tableItem('🧭 卡点定位（极简）', 'diagnoseIntermediateIndex:', button),
       this.tableItem('🧯 跳过卡点继续索引', 'skipLastIntermediateIndexCheckpointAndIndex:'),
@@ -4875,7 +4595,7 @@ JSB.newAddon = function(mainPath){
 
       // 获取过程知识库根卡片
       const configuredRoots = KnowledgeBaseConfig.config && KnowledgeBaseConfig.config.circularScanRootIds;
-      const intermediateRootIds = Array.isArray(configuredRoots) ? configuredRoots : [];
+      const intermediateRootIds = Array.isArray(configuredRoots) ? configuredRoots : KnowledgeBaseConfig.defaultConfig.circularScanRootIds;
       if (!intermediateRootIds.length) { MNUtil.showHUD('请先配置循环引用扫描的根目录'); return; }
 
       const rootNotes = []
@@ -5517,9 +5237,14 @@ JSB.newAddon = function(mainPath){
         cardMap.set(key, card)
         return
       }
+      const indexSources = Array.from(new Set([
+        ...(previous.indexSources || [previous.indexSource]),
+        ...(card.indexSources || [card.indexSource]),
+      ].filter(Boolean)))
       cardMap.set(key, {
         ...previous,
         ...card,
+        ...(indexSources.length > 1 ? { indexSources } : {}),
         usageScore: Math.max(
           normalizeUsageScore(previous.usageScore),
           normalizeUsageScore(card.usageScore),
@@ -8362,6 +8087,7 @@ JSB.newAddon = function(mainPath){
     cards.forEach((card) => {
       if (card && typeof card === 'object' && card.id) {
         card.indexSource = normalized
+        delete card.indexSources // Rebuild membership from the current source indexes.
       }
     })
     return cards
@@ -8867,7 +8593,9 @@ JSB.newAddon = function(mainPath){
     }
 
     const mode = KnowledgeBaseConfig.getSearchIndexMode()
-    const indexedNote = this.convertExcerptToNoExcerptIfNeeded(note) || note
+    // Transaction callers have already completed card mutations in their undo
+    // group. Their asynchronous index updates must not create or convert cards.
+    const indexedNote = options.allowCardMutation === false ? note : (this.convertExcerptToNoExcerptIfNeeded(note) || note)
     const indexedNoteId = indexedNote && indexedNote.noteId ? String(indexedNote.noteId) : rawId
     const staleIds = indexedNoteId === rawId ? [] : [rawId]
     const previousUsageScore = this.normalizeSearchUsageScore(
@@ -8942,6 +8670,9 @@ JSB.newAddon = function(mainPath){
     }
 
     if (canPushPatch && !this.isWebViewPushResultSuccess(pushResult)) {
+      if (options.allowCardMutation === false) {
+        return { success: false, id: indexedNoteId, persisted: true, error: '索引已保存，搜索界面更新失败' }
+      }
       const fallback = await this._loadSearchDataToWebView({
         showSuccessHUD: false,
         showErrorHUD,
@@ -10611,9 +10342,10 @@ JSB.newAddon = function(mainPath){
                     const prefixes = [
                       "思路：",   // idea
                       "方法：",   // method
-                      "CHECK",   // check (无冒号)
-                      "SKETCH",  // sketch (无冒号)
-                      "SKETCH: " // sketch 可能有冒号+空格的情况
+                      "CHECK: ",  // check 带冒号+空格
+                      "CHECK",    // check (无冒号)
+                      "SKETCH: ", // sketch 可能有冒号+空格的情况
+                      "SKETCH"    // sketch (无冒号)
                     ];
                     prefixes.forEach(prefix => {
                       if (pureContent.startsWith(prefix)) {
@@ -11240,8 +10972,8 @@ JSB.newAddon = function(mainPath){
         return false
       }
 
-      self.currentManagedNote = note
-      self.currentProofStructureContext = {
+      this.currentManagedNote = note
+      this.currentProofStructureContext = {
         noteId: payload.noteId,
         fieldName: payload.field.name,
       }
@@ -11799,8 +11531,13 @@ JSB.newAddon = function(mainPath){
       hash = Math.imul(hash, 16777619)
     }
     const seen = new Set()
+    let exceededLimit = false
     const walk = note => {
-      if (!note || !note.noteId || seen.has(String(note.noteId)) || seen.size >= 500) return
+      if (!note || !note.noteId || seen.has(String(note.noteId))) return
+      if (seen.size >= 500) {
+        exceededLimit = true
+        return
+      }
       const noteId = String(note.noteId)
       seen.add(noteId)
       feed(this.getCommentRevisionForManager(note))
@@ -11812,7 +11549,7 @@ JSB.newAddon = function(mainPath){
     }
     walk(sourceDefinition)
     walk(targetDefinition)
-    return `definition-merge:${seen.size}:${(hash >>> 0).toString(16)}`
+    return exceededLimit ? "" : `definition-merge:${seen.size}:${(hash >>> 0).toString(16)}`
   }
 
   MNKnowledgeBaseClass.prototype.getDefinitionMergeClassificationTitle = function(note) {
@@ -11918,10 +11655,17 @@ JSB.newAddon = function(mainPath){
       }
       return false
     }
+    const sourceIsDirectChild = !!(sourceDefinition && sourceDefinition.parentNote && targetDefinition &&
+      String(sourceDefinition.parentNote.noteId) === String(targetDefinition.noteId))
+    const targetIsAncestor = isAncestor(targetDefinition, sourceDefinition)
     if (errors.length === 0 &&
-      (isAncestor(sourceDefinition, targetDefinition) || isAncestor(targetDefinition, sourceDefinition))) {
-      errors.push("两张定义卡存在祖先关系，不能合并")
+      (isAncestor(sourceDefinition, targetDefinition) || (targetIsAncestor && !sourceIsDirectChild))) {
+      errors.push("两张定义卡存在祖先关系，仅支持子定义并入直接父定义")
     }
+    const revision = errors.length === 0
+      ? this.getDefinitionMergeWorkbenchRevision(sourceDefinition, targetDefinition)
+      : ""
+    if (errors.length === 0 && !revision) errors.push("合并范围超过 500 张卡片，请缩小范围后重试")
 
     const safeChildren = note => {
       try { return note && Array.isArray(note.childNotes) ? note.childNotes.slice() : [] } catch (_) { return [] }
@@ -11971,9 +11715,9 @@ JSB.newAddon = function(mainPath){
       } : null,
       sourceNodes,
       targetNodes,
-      revision: errors.length === 0
-        ? this.getDefinitionMergeWorkbenchRevision(sourceDefinition, targetDefinition)
-        : "",
+      revision,
+      canSwap: errors.length === 0 && !targetIsAncestor,
+      swapDisabledReason: targetIsAncestor ? "子定义只能并入直接父定义，不能交换合并方向" : "",
       canExecute: errors.length === 0,
       errors,
     }
@@ -12054,6 +11798,18 @@ JSB.newAddon = function(mainPath){
       }
       KnowledgeBaseTemplate.linkParentNote(child, true, false)
       changedNoteIds.add(String(child.noteId))
+    }
+    const mergeNoteOrThrow = (target, source, options) => {
+      safeChildren(source).forEach(child => {
+        const movedChild = moveChildOrThrow(target, child)
+        refreshAndRelinkMovedChild(movedChild)
+      })
+      // Counterpart links would become self-links when the source is absorbed.
+      KnowledgeBaseTemplate.removeLinksToNoteInField(source, "相关链接", String(target.noteId))
+      KnowledgeBaseTemplate.removeLinksToNoteInField(target, "相关链接", String(source.noteId))
+      const result = KnowledgeBaseTemplate.renewKnowledgeNotesInTransaction(target, source, options)
+      if (result && result.success === false) throw new Error(result.error || "卡片合并失败")
+      KnowledgeBaseTemplate.removeLinksToNoteInField(target, "相关链接", String(target.noteId))
     }
 
     const sourceOperations = []
@@ -12137,11 +11893,14 @@ JSB.newAddon = function(mainPath){
             if (!targetKnowledge || !targetKnowledge.noteId) {
               throw new Error(`合并失败：未找到目标知识点 ${knowledgeMerge.targetKnowledgeId}`)
             }
-            KnowledgeBaseTemplate.renewKnowledgeNotesInTransaction(targetKnowledge, child, {
+            KnowledgeBaseTemplate.removeLinksToNoteInField(child, "相关链接", String(sourceClassification.noteId))
+            mergeNoteOrThrow(targetKnowledge, child, {
               focusAfterMerge: false,
+              mergeRelatedLinks: true,
               showHUD: false,
               refreshTarget: false,
             })
+            KnowledgeBaseTemplate.removeDuplicateLinksInField(targetKnowledge, "相关链接", { includeMarkdown: true })
             changedNoteIds.add(String(targetKnowledge.noteId))
             deletedNoteIds.add(String(child.noteId))
             mergedKnowledgeCount += 1
@@ -12151,7 +11910,7 @@ JSB.newAddon = function(mainPath){
           refreshAndRelinkMovedChild(movedChild)
           if (KnowledgeBaseTemplate.getNoteType(movedChild) !== "归类") movedKnowledgeCount += 1
         })
-        KnowledgeBaseTemplate.renewKnowledgeNotesInTransaction(targetClassification, sourceClassification, {
+        mergeNoteOrThrow(targetClassification, sourceClassification, {
           removeTitle: true,
           focusAfterMerge: false,
           mergeRelatedLinks: true,
@@ -12179,7 +11938,7 @@ JSB.newAddon = function(mainPath){
       structuralLinkIds.forEach(noteId => {
         KnowledgeBaseTemplate.removeLinksToNoteInField(sourceDefinition, "相关链接", noteId)
       })
-      KnowledgeBaseTemplate.renewKnowledgeNotesInTransaction(targetDefinition, sourceDefinition, {
+      mergeNoteOrThrow(targetDefinition, sourceDefinition, {
         removeTitle: true,
         focusAfterMerge: false,
         mergeRelatedLinks: true,

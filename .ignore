@@ -1,0 +1,6 @@
+# Preserve authored resources/; omit temporary snapshots and generated packages.
+/.tmp/
+/.ci-output/
+/dist/
+/artifacts/
+/output/

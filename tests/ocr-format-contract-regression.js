@@ -34,6 +34,21 @@ assert.match(
   /直接 OCR/,
   'direct OCR must reject parenthesized inline LaTeX math',
 );
+for (const formula of [
+  String.raw`\bar{ab}`, String.raw`\hat{ab}`, String.raw`\tilde{ab}`,
+  String.raw`\overline{ab}`, String.raw`\overline{\hat{ab}c}`,
+  'U_σ^J A_{B_n} (1-z)²⁺ᵅ',
+]) {
+  assert.strictEqual(runtime.getOCRResultFormatViolation(formula, 1), '',
+    'necessary grouped accent scope and script fallback must remain usable in direct OCR');
+}
+for (const formula of [
+  String.raw`\frac{a}{b}`, String.raw`\sum_{n=1}^{N}a_n`,
+  String.raw`\mathbb{R}`, String.raw`\infty`, String.raw`\[a+b\]`,
+]) {
+  assert.match(runtime.getOCRResultFormatViolation(formula, 1), /直接 OCR/,
+    'allowing grouped accent fallback must not remove the existing direct-mode formula boundary');
+}
 
 assert.strictEqual(
   runtime.getOCRResultFormatViolation(String.raw`设 $T\in\mathcal{B}(H)$ 是算子`, 2),

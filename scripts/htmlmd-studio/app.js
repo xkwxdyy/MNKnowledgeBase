@@ -22,23 +22,23 @@
   ];
 
   const BUILTIN_STYLE_MAP = {
-    danger: 'font-weight:700;color:#6A0C0C;background:#FFC9C9;border-left:6px solid #A93226;font-size:1em;padding:8px 15px;display:inline-block;transform:skew(-3deg);box-shadow:2px 2px 5px rgba(0,0,0,0.1);',
-    alert: 'background:#FFF;color:#FF8C5A;border:2px solid currentColor;border-radius:3px;padding:6px 12px;font-weight:600;box-shadow:0 1px 3px rgba(255,140,90,0.2);display:inline-block;',
-    key: 'color:#B33F00;background:#FFF1E6;border-left:6px solid #FF6B35;padding:16px 12px 1px;line-height:2;position:relative;top:6px;display:inline-block;font-family:monospace;margin-top:-2px;',
-    level1: 'font-weight:600;color:#1E40AF;background:linear-gradient(15deg,#EFF6FF 30%,#DBEAFE);border:2px solid #3B82F6;border-radius:12px;padding:10px 18px;display:inline-block;box-shadow:2px 2px 0px #BFDBFE,4px 4px 8px rgba(59,130,246,0.12);position:relative;margin:4px 8px;',
-    level2: 'font-weight:600;color:#4F79A3;background:linear-gradient(90deg,#F3E5F5 50%,#ede0f7);font-size:1.1em;padding:6px 12px;border-left:4px solid #7A9DB7;transform:skew(-1.5deg);box-shadow:1px 1px 3px rgba(0,0,0,0.05);margin-left:40px;position:relative;',
-    level3: 'font-weight:500;color:#7A9DB7;background:#E8F0FE;padding:4px 10px;border-radius:12px;border:1px solid #B3D4FF;font-size:0.95em;margin-left:80px;position:relative;',
-    level4: 'font-weight:400;color:#9DB7CA;background:#F8FBFF;padding:3px 8px;border-left:2px dashed #B3D4FF;font-size:0.9em;margin-left:120px;position:relative;',
-    level5: 'font-weight:300;color:#B3D4FF;background:#FFFFFF;padding:2px 6px;border-radius:8px;border:1px dashed #B3D4FF;font-size:0.85em;margin-left:160px;position:relative;',
-    remark: 'background:#F5E6C9;color:#6d4c41;display:inline-block;border-left:5px solid #D4AF37;padding:2px 8px 3px 12px;border-radius:0 4px 4px 0;box-shadow:1px 1px 3px rgba(0,0,0,0.08);margin:0 2px;line-height:1.3;vertical-align:baseline;position:relative;',
-    goal: 'font-weight:900;font-size:0.7em;color:#8B2635;background:linear-gradient(135deg,#F87171 0%,#FCA5A5 25%,#FECACA 60%,#FEF2F2 100%);padding:12px 24px;border-radius:50px;display:inline-block;position:relative;box-shadow:0 4px 8px rgba(248,113,113,0.25),inset 0 1px 0 rgba(255,255,255,0.5);text-shadow:0 1px 1px rgba(255,255,255,0.4);border:2px solid rgba(248,113,113,0.4);',
-    question: 'font-weight:700;color:#3D1A67;background:linear-gradient(15deg,#F8F4FF 30%,#F1E8FF);border:3px double #8B5CF6;border-radius:16px 4px 16px 4px;padding:14px 22px;display:inline-block;box-shadow:4px 4px 0px #DDD6FE,8px 8px 12px rgba(99,102,241,0.12);position:relative;margin:4px 8px;',
-    idea: 'font-weight:600;color:#4A4EB2;background:linear-gradient(15deg,#F0F4FF 30%,#E6EDFF);border:2px dashed #7B7FD1;border-radius:12px;padding:10px 18px;display:inline-block;box-shadow:0 0 0 2px rgba(123,127,209,0.2),inset 0 0 10px rgba(123,127,209,0.1);position:relative;margin:4px 8px;',
-    method: 'display:block;font-weight:700;color:#1B4332;background:linear-gradient(135deg,#74C69D 0%,#95D5B2 25%,#C7F0DB 60%,#E8F5E8 100%);font-size:1.3em;padding:12px 20px 12px 24px;border-left:10px solid #2D6A4F;margin:0 0 12px 0;border-radius:0 6px 6px 0;box-shadow:0 4px 12px rgba(116,198,157,0.2),inset 0 1px 0 rgba(255,255,255,0.5);text-shadow:0 1px 1px rgba(255,255,255,0.4);position:relative;',
-    check: 'font-weight:600;color:#34A853;background:#E6F7EE;border:2px solid #34A853;border-radius:4px;padding:4px 8px;display:inline-block;box-shadow:0 1px 2px rgba(52,168,83,0.2);margin:0 2px;line-height:1.3;vertical-align:baseline;position:relative;',
-    sketch: 'background:transparent;color:#5D4037;display:inline-block;border-bottom:2px dotted #FF9800;padding:0 4px 2px;margin:0 2px;line-height:1.2;vertical-align:baseline;position:relative;font-size:0.9em;font-style:italic;',
-    case: 'font-weight:600;color:#2563EB;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:2px solid #3B82F6;border-radius:8px;padding:8px 16px;display:inline-block;box-shadow:0 2px 4px rgba(37,99,235,0.2);margin:4px 0;',
-    step: 'font-weight:500;color:#059669;background:#ECFDF5;border-left:4px solid #10B981;padding:6px 12px;display:inline-block;border-radius:0 4px 4px 0;margin:4px 0;',
+    danger: 'display:inline-block;box-sizing:border-box;font-weight:700;font-size:0.96em;line-height:1.55;color:#991B1B;background:linear-gradient(90deg,rgba(220,38,38,0.14) 0%,rgba(220,38,38,0.03) 85%,transparent 100%);border-left:5px solid #DC2626;padding:5px 12px;margin:3px 0;',
+    alert: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.94em;line-height:1.5;color:#92400E;background:linear-gradient(90deg,rgba(245,158,11,0.14) 0%,transparent 90%);border-left:3.5px solid #F59E0B;padding:3px 10px;margin:2px 0;',
+    key: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.96em;line-height:1.55;color:#92400E;background:linear-gradient(90deg,rgba(217,119,6,0.13) 0%,rgba(217,119,6,0.02) 85%,transparent 100%);border-left:4px solid #D97706;padding:5px 11px;margin:3px 0;',
+    level1: 'display:inline-block;box-sizing:border-box;font-weight:700;font-size:1.02em;line-height:1.5;color:#1E3A8A;background:linear-gradient(90deg,rgba(37,99,235,0.11) 0%,rgba(37,99,235,0.02) 75%,transparent 100%);border-left:4px solid #2563EB;padding:5px 12px;margin:4px 0;',
+    level2: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.98em;line-height:1.5;color:#1E40AF;background:linear-gradient(90deg,rgba(59,130,246,0.08) 0%,transparent 85%);border-left:3.5px solid #3B82F6;padding:4px 10px;margin:3px 0 3px 15px;',
+    level3: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.95em;line-height:1.45;color:#2563EB;background:linear-gradient(90deg,rgba(96,165,250,0.06) 0%,transparent 80%);border-left:2.5px solid #60A5FA;padding:3px 9px;margin:2px 0 2px 30px;',
+    level4: 'display:inline-block;box-sizing:border-box;font-weight:500;font-size:0.92em;line-height:1.45;color:#334155;background:transparent;border-left:2px solid #64748B;padding:2px 8px;margin:2px 0 2px 45px;',
+    level5: 'display:inline-block;box-sizing:border-box;font-weight:500;font-size:0.89em;line-height:1.4;color:#475569;background:transparent;border-left:2px dashed #94A3B8;padding:2px 8px;margin:2px 0 2px 60px;',
+    remark: 'display:inline-block;box-sizing:border-box;font-weight:400;font-size:0.93em;line-height:1.5;color:#57534E;background:transparent;border-left:3px solid #D6D3D1;padding:2px 9px;margin:2px 0;vertical-align:baseline;',
+    goal: 'display:block;box-sizing:border-box;font-weight:700;font-size:1.06em;line-height:1.55;color:#0F172A;background:#F8FAFC;border-top:2px solid #1E3A8A;border-bottom:1.5px solid #93C5FD;padding:8px 13px;margin:6px 0;',
+    question: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.96em;line-height:1.55;color:#581C87;background:linear-gradient(90deg,rgba(147,51,234,0.09) 0%,transparent 85%);border-left:3.5px solid #9333EA;padding:4px 11px;margin:3px 0;',
+    idea: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.95em;line-height:1.5;color:#4C1D95;background:linear-gradient(90deg,rgba(139,92,246,0.10) 0%,transparent 85%);border-left:3px dashed #8B5CF6;padding:4px 11px;margin:3px 0;',
+    method: 'display:block;box-sizing:border-box;font-weight:700;font-size:1.05em;line-height:1.55;color:#064E3B;background:linear-gradient(90deg,rgba(5,150,105,0.12) 0%,rgba(5,150,105,0.03) 60%,transparent 100%);border-left:5px solid #059669;padding:8px 14px;margin:6px 0;',
+    check: 'display:inline-block;box-sizing:border-box;font-weight:700;font-size:0.88em;line-height:1.35;letter-spacing:0.02em;color:#065F46;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.45);border-radius:999px;padding:2px 10px;margin:2px 2px;vertical-align:baseline;',
+    sketch: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.9em;line-height:1.35;color:#78350F;background:linear-gradient(90deg,rgba(245,158,11,0.12) 0%,transparent 95%);border-left:2.5px dashed #D97706;padding:2px 9px;margin:2px 2px;vertical-align:baseline;',
+    case: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.95em;line-height:1.5;color:#9A3412;background:linear-gradient(90deg,rgba(234,88,12,0.11) 0%,rgba(234,88,12,0.02) 80%,transparent 100%);border-left:3.5px solid #EA580C;padding:4px 11px;margin:3px 0;',
+    step: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.95em;line-height:1.5;color:#0F766E;background:linear-gradient(90deg,rgba(20,184,166,0.09) 0%,transparent 85%);border-left:3px solid #14B8A6;padding:3px 10px;margin:2px 0;',
   };
 
   const TONE_OPTIONS = [
@@ -88,6 +88,28 @@
   ];
   const EMPTY_CONTENT_TYPES = new Set(['check', 'sketch']);
   const STYLE_PARSE_CACHE = {};
+  const LEGACY_STYLE_PARSE_CACHE = {};
+  const LEGACY_BUILTIN_STYLE_MAPS = [
+    {
+      danger: 'font-weight:700;color:#6A0C0C;background:#FFC9C9;border-left:6px solid #A93226;font-size:1em;padding:8px 15px;display:inline-block;transform:skew(-3deg);box-shadow:2px 2px 5px rgba(0,0,0,0.1);',
+      alert: 'background:#FFF;color:#FF8C5A;border:2px solid currentColor;border-radius:3px;padding:6px 12px;font-weight:600;box-shadow:0 1px 3px rgba(255,140,90,0.2);display:inline-block;',
+      key: 'color:#B33F00;background:#FFF1E6;border-left:6px solid #FF6B35;padding:16px 12px 1px;line-height:2;position:relative;top:6px;display:inline-block;font-family:monospace;margin-top:-2px;',
+      level1: 'font-weight:600;color:#1E40AF;background:linear-gradient(15deg,#EFF6FF 30%,#DBEAFE);border:2px solid #3B82F6;border-radius:12px;padding:10px 18px;display:inline-block;box-shadow:2px 2px 0px #BFDBFE,4px 4px 8px rgba(59,130,246,0.12);position:relative;margin:4px 8px;',
+      level2: 'font-weight:600;color:#4F79A3;background:linear-gradient(90deg,#F3E5F5 50%,#ede0f7);font-size:1.1em;padding:6px 12px;border-left:4px solid #7A9DB7;transform:skew(-1.5deg);box-shadow:1px 1px 3px rgba(0,0,0,0.05);margin-left:40px;position:relative;',
+      level3: 'font-weight:500;color:#7A9DB7;background:#E8F0FE;padding:4px 10px;border-radius:12px;border:1px solid #B3D4FF;font-size:0.95em;margin-left:80px;position:relative;',
+      level4: 'font-weight:400;color:#9DB7CA;background:#F8FBFF;padding:3px 8px;border-left:2px dashed #B3D4FF;font-size:0.9em;margin-left:120px;position:relative;',
+      level5: 'font-weight:300;color:#B3D4FF;background:#FFFFFF;padding:2px 6px;border-radius:8px;border:1px dashed #B3D4FF;font-size:0.85em;margin-left:160px;position:relative;',
+      remark: 'background:#F5E6C9;color:#6d4c41;display:inline-block;border-left:5px solid #D4AF37;padding:2px 8px 3px 12px;border-radius:0 4px 4px 0;box-shadow:1px 1px 3px rgba(0,0,0,0.08);margin:0 2px;line-height:1.3;vertical-align:baseline;position:relative;',
+      goal: 'font-weight:900;font-size:0.7em;color:#8B2635;background:linear-gradient(135deg,#F87171 0%,#FCA5A5 25%,#FECACA 60%,#FEF2F2 100%);padding:12px 24px;border-radius:50px;display:inline-block;position:relative;box-shadow:0 4px 8px rgba(248,113,113,0.25),inset 0 1px 0 rgba(255,255,255,0.5);text-shadow:0 1px 1px rgba(255,255,255,0.4);border:2px solid rgba(248,113,113,0.4);',
+      question: 'font-weight:700;color:#3D1A67;background:linear-gradient(15deg,#F8F4FF 30%,#F1E8FF);border:3px double #8B5CF6;border-radius:16px 4px 16px 4px;padding:14px 22px;display:inline-block;box-shadow:4px 4px 0px #DDD6FE,8px 8px 12px rgba(99,102,241,0.12);position:relative;margin:4px 8px;',
+      idea: 'font-weight:600;color:#4A4EB2;background:linear-gradient(15deg,#F0F4FF 30%,#E6EDFF);border:2px dashed #7B7FD1;border-radius:12px;padding:10px 18px;display:inline-block;box-shadow:0 0 0 2px rgba(123,127,209,0.2),inset 0 0 10px rgba(123,127,209,0.1);position:relative;margin:4px 8px;',
+      method: 'display:block;font-weight:700;color:#1B4332;background:linear-gradient(135deg,#74C69D 0%,#95D5B2 25%,#C7F0DB 60%,#E8F5E8 100%);font-size:1.3em;padding:12px 20px 12px 24px;border-left:10px solid #2D6A4F;margin:0 0 12px 0;border-radius:0 6px 6px 0;box-shadow:0 4px 12px rgba(116,198,157,0.2),inset 0 1px 0 rgba(255,255,255,0.5);text-shadow:0 1px 1px rgba(255,255,255,0.4);position:relative;',
+      check: 'font-weight:600;color:#34A853;background:#E6F7EE;border:2px solid #34A853;border-radius:4px;padding:4px 8px;display:inline-block;box-shadow:0 1px 2px rgba(52,168,83,0.2);margin:0 2px;line-height:1.3;vertical-align:baseline;position:relative;',
+      sketch: 'background:transparent;color:#5D4037;display:inline-block;border-bottom:2px dotted #FF9800;padding:0 4px 2px;margin:0 2px;line-height:1.2;vertical-align:baseline;position:relative;font-size:0.9em;font-style:italic;',
+      case: 'font-weight:600;color:#2563EB;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:2px solid #3B82F6;border-radius:8px;padding:8px 16px;display:inline-block;box-shadow:0 2px 4px rgba(37,99,235,0.2);margin:4px 0;',
+      step: 'font-weight:500;color:#059669;background:#ECFDF5;border-left:4px solid #10B981;padding:6px 12px;display:inline-block;border-radius:0 4px 4px 0;margin:4px 0;',
+    },
+  ];
   const TONE_VALUE_MAP = {
     slate: '#334155',
     blue: '#1d4ed8',
@@ -233,6 +255,7 @@
       'batchCopy',
       'levelUpBtn',
       'levelDownBtn',
+      'refreshPresetStyleBtn',
       'applyBtn',
       'appendBtn',
       'applyBatchBtn',
@@ -380,6 +403,17 @@
     return cloneStyleMap(STYLE_PARSE_CACHE[baseType]);
   }
 
+  function getLegacyBaseStyleMaps(typeId) {
+    const baseType = getTypeDefinition(typeId).baseType || typeId || 'remark';
+    if (!LEGACY_STYLE_PARSE_CACHE[baseType]) {
+      LEGACY_STYLE_PARSE_CACHE[baseType] = LEGACY_BUILTIN_STYLE_MAPS
+        .map((map) => map[baseType] || map.remark || '')
+        .filter(Boolean)
+        .map((styleText) => parseStyleTextToMap(styleText));
+    }
+    return LEGACY_STYLE_PARSE_CACHE[baseType];
+  }
+
   function removeStyleKeys(styleMap, keys) {
     keys.forEach((key) => {
       delete styleMap[key];
@@ -404,10 +438,22 @@
     return residue;
   }
 
+  function stripLegacyBuiltinResidue(typeId, residueMap) {
+    const legacyMaps = getLegacyBaseStyleMaps(typeId);
+    legacyMaps.forEach((legacyMap) => {
+      Object.keys(residueMap || {}).forEach((key) => {
+        if (legacyMap[key] && normalizeCssValue(residueMap[key]) === normalizeCssValue(legacyMap[key])) {
+          delete residueMap[key];
+        }
+      });
+    });
+  }
+
   function inferOverridesFromStyle(typeId, styleText) {
     const currentMap = parseStyleTextToMap(styleText);
     const baseMap = getBaseStyleMap(typeId);
     const residueMap = diffStyleMap(baseMap, currentMap);
+    stripLegacyBuiltinResidue(typeId, residueMap);
     const overrides = {
       tone: 'default',
       size: 'default',
@@ -520,6 +566,9 @@
     }
     if (definition.prefix && content.startsWith(definition.prefix)) {
       content = content.slice(definition.prefix.length).trim();
+      if (EMPTY_CONTENT_TYPES.has(definition.id)) {
+        content = content.replace(/^[:：]\s*/, '').trim();
+      }
     }
 
     return {
@@ -529,10 +578,10 @@
       leadingDash: stripped.leadingDash,
       legacyStyle: styleParseResult.legacyStyle || '',
       overrides: {
-        tone: attrs.tone || styleParseResult.overrides.tone,
-        size: attrs.size || styleParseResult.overrides.size,
-        highlight: attrs.highlight || styleParseResult.overrides.highlight,
-        emphasis: attrs.emphasis || styleParseResult.overrides.emphasis,
+        tone: attrs.tone !== 'default' ? attrs.tone : styleParseResult.overrides.tone,
+        size: attrs.size !== 'default' ? attrs.size : styleParseResult.overrides.size,
+        highlight: attrs.highlight !== 'default' ? attrs.highlight : styleParseResult.overrides.highlight,
+        emphasis: attrs.emphasis !== 'default' ? attrs.emphasis : styleParseResult.overrides.emphasis,
       },
     };
   }
@@ -879,6 +928,7 @@
 
     dom.levelUpBtn.disabled = mode !== 'batch' || selectedCount === 0;
     dom.levelDownBtn.disabled = mode !== 'batch' || selectedCount === 0;
+    dom.refreshPresetStyleBtn.disabled = mode !== 'batch' || selectedCount === 0;
     dom.copyMarkupBtn.disabled = !canGenerate || controlsLocked;
     dom.applyBtn.disabled = mode !== 'single' || state.activeIndex == null || !canGenerate;
     dom.appendBtn.disabled = mode !== 'new' || !state.noteId || !canGenerate;
@@ -1009,8 +1059,11 @@
     ]);
     const contentValue = draft.content || '';
     const needsBody = contentValue.trim().length > 0 || EMPTY_CONTENT_TYPES.has(draft.typeId);
+    const normalizedContent = EMPTY_CONTENT_TYPES.has(definition.id) && contentValue.trim().length > 0
+      ? `: ${contentValue.replace(/^[:：]\s*/, '')}`
+      : contentValue;
     const bodyText = needsBody
-      ? `${definition.icon || ''}${definition.icon ? ' ' : ''}${definition.prefix || ''}${contentValue}`.trimEnd()
+      ? `${definition.icon || ''}${definition.icon ? ' ' : ''}${definition.prefix || ''}${normalizedContent}`.trimEnd()
       : '';
 
     return {
@@ -1258,6 +1311,23 @@
         selectSingle(index);
       }
     });
+
+    dom.candidateList.addEventListener('keydown', (event) => {
+      if (event.isComposing || event.keyCode === 229) return;
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+      const selectButton = event.target.closest('[data-role="candidate-select"]');
+      if (!selectButton) return;
+      const buttons = Array.from(dom.candidateList.querySelectorAll('[data-role="candidate-select"]'));
+      const currentIdx = buttons.indexOf(selectButton);
+      if (currentIdx === -1 || buttons.length === 0) return;
+      event.preventDefault();
+      let nextIdx = currentIdx;
+      if (event.key === 'ArrowDown') nextIdx = Math.min(buttons.length - 1, currentIdx + 1);
+      else if (event.key === 'ArrowUp') nextIdx = Math.max(0, currentIdx - 1);
+      else if (event.key === 'Home') nextIdx = 0;
+      else if (event.key === 'End') nextIdx = buttons.length - 1;
+      if (buttons[nextIdx]) buttons[nextIdx].focus();
+    });
   }
 
   function copyText(text) {
@@ -1432,6 +1502,43 @@
     showToast(`已发送 ${updates.length} 条层级调整`);
   }
 
+  function refreshSelectedPresetStyles() {
+    const selected = Array.from(state.selectedIndices);
+    if (!state.noteId || selected.length === 0) {
+      showToast('请先选择要刷新样式的评论');
+      return;
+    }
+
+    const updates = selected.map((index) => {
+      const candidate = getCandidateByIndex(index);
+      if (!candidate || !candidate.parsedHtmlMD) return null;
+      const candidateDraft = createDraftFromCandidate(candidate);
+      const nextMarkup = buildHtmlMDMarkup({
+        ...candidateDraft,
+        typeId: candidate.parsedHtmlMD.typeId,
+        content: candidate.parsedHtmlMD.content,
+        leadingDash: candidate.parsedHtmlMD.leadingDash,
+        preserveLegacy: false,
+        legacyStyle: '',
+      });
+      return {
+        index,
+        text: nextMarkup,
+      };
+    }).filter(Boolean);
+
+    if (updates.length === 0) {
+      showToast('当前选择里没有可刷新样式的 HtmlMD');
+      return;
+    }
+
+    postToNative('applyHtmlMDCommentUpdates', {
+      id: state.noteId,
+      updates: JSON.stringify(updates),
+    });
+    showToast(`已发送 ${updates.length} 条预设样式刷新`);
+  }
+
   let clearDraftConfirmArmed = false;
   let clearDraftConfirmTimer = null;
 
@@ -1486,6 +1593,28 @@
       activeDraft().typeId = button.dataset.type || 'remark';
       render();
     });
+    dom.typePicker.addEventListener('keydown', (event) => {
+      if (event.isComposing || event.keyCode === 229) return;
+      if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+      const button = event.target.closest('[data-role="type-option"]');
+      if (!button) return;
+      const options = Array.from(dom.typePicker.querySelectorAll('[data-role="type-option"]:not(:disabled)')).filter((el) => el.offsetParent !== null);
+      const idx = options.indexOf(button);
+      if (idx === -1 || options.length === 0) return;
+      event.preventDefault();
+      let nextIdx = idx;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIdx = (idx + 1) % options.length;
+      else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIdx = (idx - 1 + options.length) % options.length;
+      else if (event.key === 'Home') nextIdx = 0;
+      else if (event.key === 'End') nextIdx = options.length - 1;
+      const nextBtn = options[nextIdx];
+      if (nextBtn) {
+        activeDraft().typeId = nextBtn.dataset.type || 'remark';
+        render();
+        const refreshed = dom.typePicker.querySelector(`[data-role="type-option"][data-type="${CSS.escape(nextBtn.dataset.type || 'remark')}"]`);
+        if (refreshed) refreshed.focus();
+      }
+    });
     dom.toneSelect.addEventListener('change', (event) => {
       activeDraft().overrides.tone = event.target.value || 'default';
       render();
@@ -1526,11 +1655,39 @@
       }
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
-        const mode = currentMode();
+        const mode = getMode();
         if (mode === 'new' && !dom.appendBtn.disabled) {
           appendNewComment();
         } else if (mode === 'single' && !dom.applyBtn.disabled) {
           applySingle();
+        } else if (mode === 'batch' && !dom.applyBatchBtn.disabled) {
+          applyBatch();
+        }
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.isComposing || event.keyCode === 229 || event.defaultPrevented) return;
+      if (event.key === 'Escape') {
+        if (clearDraftConfirmArmed) {
+          event.preventDefault();
+          disarmClearDraftConfirm();
+        } else if (state.workflowMode === 'edit' && state.selectedIndices.size > 0 && document.activeElement !== dom.sourceTextarea) {
+          event.preventDefault();
+          clearEditSelection();
+        }
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        const mode = getMode();
+        if (mode === 'new' && !dom.appendBtn.disabled) {
+          event.preventDefault();
+          appendNewComment();
+        } else if (mode === 'single' && !dom.applyBtn.disabled) {
+          event.preventDefault();
+          applySingle();
+        } else if (mode === 'batch' && !dom.applyBatchBtn.disabled) {
+          event.preventDefault();
+          applyBatch();
         }
       }
     });
@@ -1539,6 +1696,7 @@
     dom.copyMarkupBtn.addEventListener('click', () => copyText(dom.markupOutput.value || ''));
     dom.levelUpBtn.addEventListener('click', () => shiftLevel('up'));
     dom.levelDownBtn.addEventListener('click', () => shiftLevel('down'));
+    dom.refreshPresetStyleBtn.addEventListener('click', refreshSelectedPresetStyles);
     dom.appendBtn.addEventListener('click', appendNewComment);
   }
 

@@ -710,16 +710,19 @@ const kbOCRConfig = {
     {
       pattern: /\^∞/g,
       replacement: '∞',
+      requiresImage: true,
       description: '移除积分/求和上限中不必要的 ^'
     },
     {
       pattern: /\s*(?:φ|Φ)\s*/g,
       replacement: 'ϕ',
+      requiresImage: true,
       description: '统一 phi 字符为直立形式 (U+03D5)'
     },
     {
       pattern: /∑/g,
       replacement: 'Σ',
+      requiresImage: true,
       description: '求和符号用小的'
     },
     {
@@ -735,11 +738,13 @@ const kbOCRConfig = {
     {
       pattern: /((?:等价(?:关系|条件|刻画)?|当且仅当|充要(?:条件)?|iff|if and only if|equivalent|equivalence)\s*)⇨/gi,
       replacement: '$1⇔',
+      requiresImage: true,
       description: '等价语义上下文中将误识别的右向箭头修正为双向等价箭头'
     },
     {
       pattern: /⇨(\s*(?:等价(?:关系|条件|刻画)?|当且仅当|充要(?:条件)?|iff|if and only if|equivalent|equivalence))/gi,
       replacement: '⇔$1',
+      requiresImage: true,
       description: '等价语义上下文中将误识别的右向箭头修正为双向等价箭头'
     },
     {
@@ -755,6 +760,7 @@ const kbOCRConfig = {
     {
       pattern: /\{?(∂𝔻)\}?/g,
       replacement: "𝕋",
+      requiresImage: true,
       description: "替换数学符号（边界符号）"
     },
     {
@@ -763,7 +769,7 @@ const kbOCRConfig = {
       description: '统一 OCR 输出中的数学减号为键盘短横线/ASCII hyphen-minus'
     },
     {
-      pattern: /[‐‑‒–—―﹣－]/g,
+      pattern: /[‐‑‒–—―﹘﹣－➖˗]/g,
       replacement: '-',
       description: '统一 OCR 输出中的横线为键盘短横线/ASCII hyphen-minus'
     },
@@ -926,7 +932,7 @@ const kbOCRConfig = {
       description: '【定理编号-无编号残留】移除行首定理类标签（推论设 B... → 设 B...）'
     },
     {
-      pattern: /^(Theorem|Lemma|Corollary|Proposition|Definition|Example|Counterexample|Remark)\s+(?=(Let|Suppose|Assume|If|For|Given|There|A|An|Every|Each|The)\b)/ig,
+      pattern: /^(Theorem|Lemma|Corollary|Proposition|Definition|Example|Counterexample|Remark)\s+(?![A-Z](?:\.\d+)+\b)(?=(Let|Suppose|Assume|If|For|Given|There|A|An|Every|Each|The)\b)/ig,
       replacement: '',
       description: '【定理编号-无编号残留】移除行首英文定理类标签（Corollary Suppose... → Suppose...）'
     },
@@ -1045,11 +1051,13 @@ const kbOCRConfig = {
     {
       pattern: /^[（(]\s*[A-Z](?:\.\d+)+\s*[)）]\s*\(([^)]+)\)[:.:]?\s*([\s\S]+)/ig,
       replacement: '$2; $1',
+      requiresImage: true,
       description: '【附录-仅括号+英文括号】移除附录编号，将名称移到末尾（（A.1）(Name) Content → Content; Name）'
     },
     {
       pattern: /^[（(]\s*[A-Z](?:\.\d+)+\s*[)）][:.:]?\s*(.+)/ig,
       replacement: '$1',
+      requiresImage: true,
       description: '【附录-仅括号】移除附录编号（（A.1）内容 → 内容）'
     },
 
@@ -1165,6 +1173,7 @@ const kbOCRConfig = {
     {
       pattern: /Lᵃ²/g,
       replacement: "L²ₐ",
+      requiresImage: true,
       description: "调整上下标顺序"
     },
     {
@@ -1346,40 +1355,49 @@ const kbOCRConfig = {
     {
       pattern: /\^(?:\*|\(\*\))/g,
       replacement: "*",
+      requiresImage: true,
       description: "移除上标符号前的脱字符"
     },
     {
       pattern: /_ϕ\s*/g,
       replacement: "ᵩ ",
+      requiresImage: true,
       description: "下标 phi 符号转换"
     },
     {
       pattern: /^k/g,
       replacement: "ᵏ",
+      requiresImage: true,
     },
     {
       pattern: /^l/g,
       replacement: "ˡ",
+      requiresImage: true,
     },
     {
       pattern: /𝒴/g,
       replacement: "𝒱",
+      requiresImage: true,
     },
     {
       pattern: /V\*\s*\(/g,
       replacement: "𝒱*(",
+      requiresImage: true,
     },
     {
       pattern: /W\*\s*\(/g,
       replacement: "𝒲*(",
+      requiresImage: true,
     },
     {
       pattern: /բ/g,
       replacement: "_f",
+      requiresImage: true,
     },
     {
       pattern: /L_a²/g,
       replacement: "L²ₐ",
+      requiresImage: true,
     },
     // {
     //   pattern: /\sA\s/g,
@@ -1392,95 +1410,116 @@ const kbOCRConfig = {
     {
       pattern: /\sA⁺\s/g,
       replacement: "𝒜⁺",
+      requiresImage: true,
     },
     {
       pattern: /₀<ᵣ<₁/g,
       replacement: "_{0<r<1}",
+      requiresImage: true,
     },
     {
       pattern: /ᵣ→[1₁]/g,
       replacement: "_{r→1}",
+      requiresImage: true,
     },
     {
       pattern: /𝔻₁∞/g,
       replacement: "𝔻∞₁",
+      requiresImage: true,
     },
     {
       pattern: /𝔻₂∞/g,
       replacement: "𝔻∞₂",
+      requiresImage: true,
     },
     {
       pattern: /ₙ≥₀/g,
       replacement: "_{n≥0}",
+      requiresImage: true,
     },
     {
       pattern: /ₙ≥₁/g,
       replacement: "_{n≥1}",
+      requiresImage: true,
     },
     {
       pattern: /ₙ>₀/g,
       replacement: "_{n>0}",
+      requiresImage: true,
     },
     {
       pattern: /ₙ>₁/g,
       replacement: "_{n>1}",
+      requiresImage: true,
     },
     // Sᵀⁿ                                                          
     {
       pattern: /Sᵀⁿ\s*(?=[(\[\-])/g,                                
       replacement: '𝒮ⁿ_T',       // 后面是符号，不加空格
+      requiresImage: true,
     },                               
     {                                  
       pattern: /Sᵀⁿ\s*(?![(\[\-])/g,             
       replacement: '𝒮ⁿ_T ',      // 后面不是符号，加空格
+      requiresImage: true,
     },
 
     // Sᵀ
     {
       pattern: /Sᵀ\s*(?=[(\[\-])/g,
       replacement: '𝒮_T',
+      requiresImage: true,
     },
     {
       pattern: /Sᵀ\s*(?![(\[\-])/g,
       replacement: '𝒮_T ',
+      requiresImage: true,
     },
 
     // S_T
     {
       pattern: /S_T\s*(?=[(\[\-])/g,
       replacement: '𝒮_T',
+      requiresImage: true,
     },
     {
       pattern: /S_T\s*(?![(\[\-])/g,
       replacement: '𝒮_T ',
+      requiresImage: true,
     },
 
     // S_B
     {
       pattern: /S_B\s*(?=[(\[\-])/g,
       replacement: '𝒮_B',
+      requiresImage: true,
     },
     {
       pattern: /S_B\s*(?![(\[\-])/g,
       replacement: '𝒮_B ',
+      requiresImage: true,
     },
 
     {
       pattern: /Sᵣ\s*(?=[(\[\-])/g,
       replacement: '𝒮_T',
+      requiresImage: true,
     },
     {
       pattern: /Sᵣ\s*(?![(\[\-])/g,
       replacement: '𝒮_T ',
+      requiresImage: true,
     },
 
     {
       pattern: /Sᵣ\s*(?=[(\[\-])/g,
       replacement: '𝒮_T',
+      requiresImage: true,
     },
     {
       pattern: /Sᵣ\s*(?![(\[\-])/g,
       replacement: '𝒮_T ',
+      requiresImage: true,
     },
   ]
 };
@@ -1489,12 +1528,56 @@ const kbOCRConfig = {
 // 📦 类定义区（使用上面的配置）
 // ============================================
 
+// Personal builds inject only notebook references; public source has no personal defaults.
+const kbBundledReferenceNoteIds = {};
+
 class KnowledgeBaseTemplate {
+  static getReadingScene() {
+    try {
+      if (typeof Application === 'undefined') return ''
+      let snapshot
+      const addonId = 'marginnote.extension.mnknowledgebase'
+      if (typeof Application.immersiveTemplateForAddon === 'function') {
+        snapshot = Application.immersiveTemplateForAddon(addonId)
+      } else {
+        const app = typeof Application.sharedInstance === 'function' ? Application.sharedInstance() : null
+        if (!app || typeof app.immersiveTemplateForAddon !== 'function') return ''
+        snapshot = app.immersiveTemplateForAddon(addonId)
+      }
+      const value = (object, key) => {
+        if (!object) return undefined
+        try { if (object[key] !== undefined) return typeof object[key] === 'function' ? object[key]() : object[key] } catch (_) {}
+        try { if (typeof object.objectForKey === 'function') return object.objectForKey(key) } catch (_) {}
+        return undefined
+      }
+      const bool = input => {
+        if (input == null || input === false || input === 0 || input === 'false' || input === '0') return false
+        try { if (typeof input.boolValue === 'function') return !!input.boolValue() } catch (_) {}
+        try { if (input.boolValue !== undefined) return !!input.boolValue } catch (_) {}
+        return !!input
+      }
+      if (typeof snapshot === 'string') snapshot = JSON.parse(snapshot)
+      let config = value(snapshot, 'config')
+      if (typeof config === 'string') config = JSON.parse(config)
+      const scene = String(value(config, 'scene') || '').trim()
+      return bool(value(snapshot, 'allowed')) && ['research', 'broad', 'intensive', 'literature'].includes(scene) ? scene : ''
+    } catch (_) { return '' }
+  }
+
+  static shouldAutoAddToReview() {
+    const scene = this.getReadingScene()
+    if (scene) return scene === 'intensive'
+    return !(typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig.config && KnowledgeBaseConfig.config.readingFollowMode)
+  }
+
   static getConfiguredReference(section, key) {
     const config = typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig
       ? KnowledgeBaseConfig.config || {} : {}
     const references = config.referenceNoteIds || {}
-    const value = key === undefined ? references[section] : (references[section] || {})[key]
+    const saved = key === undefined ? references : references[section] || {}
+    const bundled = key === undefined ? kbBundledReferenceNoteIds : kbBundledReferenceNoteIds[section] || {}
+    const name = key === undefined ? section : key
+    const value = Object.prototype.hasOwnProperty.call(saved, name) ? saved[name] : bundled[name]
     return typeof value === 'string' ? value.trim() : ''
   }
 
@@ -1506,6 +1589,15 @@ class KnowledgeBaseTemplate {
       throw new Error(message)
     }
     return id
+  }
+
+  static getConfiguredReferenceList(section, key) {
+    const config = typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig
+      ? KnowledgeBaseConfig.config || {} : {}
+    const saved = (config.referenceNoteIds || {})[section] || {}
+    const bundled = kbBundledReferenceNoteIds[section] || {}
+    const value = Object.prototype.hasOwnProperty.call(saved, key) ? saved[key] : bundled[key]
+    return Array.isArray(value) ? value.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim()) : []
   }
 
   /**
@@ -1583,6 +1675,25 @@ class KnowledgeBaseTemplate {
   }
 
   static _logMakeCardPerf(payload, detail = {}) {
+    // Keep actionable timings visible in MNLog even when verbose diagnostics are disabled.
+    try {
+      const message = payload && payload.message || "";
+      if (typeof MNUtil !== "undefined" && typeof MNUtil.log === "function" &&
+        (message.startsWith("制卡开始:") || message.startsWith("制卡完成:") || detail.slow === true)) {
+        const raw = payload.detail || {}, data = {};
+        for (const key of ["traceId", "parentTraceId", "action", "step", "status", "reason", "mode"]) {
+          const item = String(raw[key] || "");
+          if (/^[A-Za-z0-9_.:-]{1,160}$/.test(item)) data[key] = item;
+        }
+        for (const key of ["durationMs", "sinceStartMs", "totalDurationMs"]) {
+          if (Number.isFinite(raw[key])) data[key] = Math.max(0, Math.round(raw[key]));
+        }
+        for (const key of ["slow", "addToReview", "reviewExplicit"]) {
+          if (typeof raw[key] === "boolean") data[key] = raw[key];
+        }
+        MNUtil.log({ source: "MN KnowledgeBase:cardMaking", level: raw.status === "failed" ? "ERROR" : raw.slow ? "WARN" : "INFO", message, detail: data });
+      }
+    } catch (_) {}
     if (!this._shouldLogMakeCardPerf(detail)) return;
 
     try {
@@ -2783,94 +2894,16 @@ class KnowledgeBaseTemplate {
   }
 
   /**
-   * 获取快速阅读下的制卡策略。
-   *
-   * 直接父卡是归类卡，或直接父卡链接最近归类祖先时恢复正常制卡。
-   * 仅存在更远的归类祖先不足以触发完整制卡。
+   * 显式制卡使用完整流程；泛读按摘录颜色锁定已知类型。
    * @param {MNNote} note
    * @returns {{mode: string, noteType: string|null, colorIndex: number|null, directParentIsClassification: boolean, linkParentTargetFound: boolean}}
    */
   static getQuickReadingMakeCardPolicy(note) {
-    const quickReadingEnabled = !!(
-      typeof KnowledgeBaseConfig !== "undefined" &&
-      KnowledgeBaseConfig &&
-      KnowledgeBaseConfig.config &&
-      KnowledgeBaseConfig.config.readingFollowMode
-    )
-    const rawColorIndex = note && note.colorIndex
-    const numericColorIndex = Number(rawColorIndex)
-    const colorIndex = rawColorIndex === null ||
-      typeof rawColorIndex === "undefined" ||
-      !Number.isFinite(numericColorIndex)
-      ? null
-      : numericColorIndex
-
-    if (!note) {
-      return {
-        mode: "normal",
-        noteType: null,
-        colorIndex,
-        directParentIsClassification: false,
-        linkParentTargetFound: false,
-      }
-    }
-
-    const currentNoteType = this.getNoteTypeByColor(colorIndex)
-    const readingClassificationParent = this.getReadingClassificationParentNote(note)
-    const readingRoughTypes = ["定义", "命题", "反例", "例子", "思想方法"]
-    if (readingClassificationParent && readingRoughTypes.includes(currentNoteType)) {
-      return {
-        mode: "rough",
-        noteType: currentNoteType,
-        colorIndex,
-        directParentIsClassification: true,
-        linkParentTargetFound: true,
-        readingClassificationParent: true,
-      }
-    }
-
-    if (!quickReadingEnabled) {
-      return {
-        mode: "normal",
-        noteType: null,
-        colorIndex,
-        directParentIsClassification: false,
-        linkParentTargetFound: false,
-      }
-    }
-
-    const supportedTypes = ["归类", "定义", "命题", "反例", "例子"]
-    if (!currentNoteType || !supportedTypes.includes(currentNoteType)) {
-      return {
-        mode: "unsupported",
-        noteType: null,
-        colorIndex,
-        directParentIsClassification: false,
-        linkParentTargetFound: false,
-      }
-    }
-
-    const directParentIsClassification = !!this.getDirectClassificationParentNote(note)
-    const linkedClassificationAncestor = directParentIsClassification
-      ? null
-      : this.getQuickReadingLinkedClassificationAncestor(note)
-    if (directParentIsClassification || linkedClassificationAncestor) {
-      return {
-        mode: "normal",
-        noteType: currentNoteType,
-        colorIndex,
-        directParentIsClassification,
-        linkParentTargetFound: true,
-      }
-    }
-
-    return {
-      mode: "rough",
-      noteType: currentNoteType,
-      colorIndex,
-      directParentIsClassification: false,
-      linkParentTargetFound: false,
-    }
+    // Explicit card commands always use the complete pipeline, regardless of ancestry.
+    const raw = note && note.colorIndex
+    const colorIndex = raw == null || !Number.isFinite(Number(raw)) ? null : Number(raw)
+    const broad = this.getReadingScene() === 'broad' || (typeof KnowledgeBaseConfig !== 'undefined' && KnowledgeBaseConfig.config && KnowledgeBaseConfig.config.readingFollowMode)
+    return { mode: 'normal', noteType: broad && note ? this.getNoteTypeByColor(colorIndex) : null, colorIndex, directParentIsClassification: false, linkParentTargetFound: false }
   }
 
   static showQuickReadingUnsupportedColorHUD(policy) {
@@ -3012,6 +3045,7 @@ class KnowledgeBaseTemplate {
    * 制卡事务完成后，从最终卡片状态重建唯一权威索引条目。
    */
   static syncFinalMakeCardIndex(note, options = {}) {
+    if (this.isRequiredPropositionsClassification(note)) return this.excludeWorkflowClassificationFromIndex(note);
     if (!note || !note.noteId) {
       return { success: false, error: "缺少制卡结果或卡片 ID" }
     }
@@ -3113,12 +3147,18 @@ class KnowledgeBaseTemplate {
         }
       }
 
+      if (removalResults.some(result => !result || result.success !== true)) {
+        return { success: false, error: "旧索引条目移除失败", indexSource, requestedIndexSource, staleIds, removalResults };
+      }
       if (options.publishPatch !== false) {
         this.publishFinalMakeCardIndexPatch(indexResult, {
           indexSource,
           staleIds,
           mode: indexResult.mode || options.mode,
         })
+      }
+      if (this.pendingIntermediateCompletionIds && this.pendingIntermediateCompletionIds.has(String(note.noteId))) {
+        this.completeIntermediateKnowledge(note);
       }
       return {
         ...indexResult,
@@ -3182,7 +3222,10 @@ class KnowledgeBaseTemplate {
    */
   static requireMakeCardTemplate(templateId, noteType = "") {
     let template = null
-    try { template = templateId ? MNUtil.getNoteById(templateId) : null } catch (_) {}
+    try {
+      const noteId = this.extractNoteIdFromLinkUrl(templateId) || templateId
+      template = noteId ? MNUtil.getNoteById(noteId) : null
+    } catch (_) {}
     if (!template) {
       const error = new Error(`缺少${noteType || "制卡"}模板，未执行制卡；请先导入并配置模板`)
       error.code = "KB_TEMPLATE_MISSING"
@@ -3217,7 +3260,88 @@ class KnowledgeBaseTemplate {
     return true
   }
 
+  static pendingIntermediateCompletionIds = new Set();
+
+  static queueIntermediateKnowledgeCompletion(note, force = false) {
+    if (note && (force || this.isIntermediateKnowledge(note))) this.pendingIntermediateCompletionIds.add(String(note.noteId));
+  }
+
+  static isIntermediateKnowledge(note) {
+    if (!note || this.isRequiredPropositionsClassification(note)) return false;
+    if (this.pendingIntermediateCompletionIds.has(String(note.noteId))) return true;
+    if (this.ifTemplateMerged(note)) return false;
+    const seen = new Set([String(note.noteId)]);
+    let parent = note.parentNote;
+    while (parent && !seen.has(String(parent.noteId))) {
+      if (this.isRequiredPropositionsClassification(parent)) return true;
+      seen.add(String(parent.noteId)); parent = parent.parentNote;
+    }
+    return false;
+  }
+
+  static isRequiredPropositionsClassification(note) {
+    if (!note) return false;
+    const title = String(note.noteTitle || note.title || '').trim();
+    return /^(?:【归类】\s*)?所需(?:命题|知识)$/.test(title) || /^[“「『]所需(?:命题|知识)[”」』]相关命题$/.test(title);
+  }
+
+  static excludeWorkflowClassificationFromIndex(note) {
+    const results = [];
+    if (typeof KnowledgeBaseIndexer !== "undefined") results.push(KnowledgeBaseIndexer.removeFromIncrementalIndex(note.noteId));
+    if (typeof IntermediateKnowledgeIndexer !== "undefined") {
+      this.getTransientKnowledgeIndexPrefixes().forEach(indexPrefix => {
+        results.push(IntermediateKnowledgeIndexer.removeFromIncrementalIndex(note.noteId, { indexPrefix }));
+      });
+    }
+    return {
+      success: results.every(result => result && result.success === true),
+      skipped: true, reason: "workflow-classification", removedIds: [String(note.noteId)],
+    };
+  }
+
+  static completeIntermediateKnowledge(note) {
+    if (note) this.pendingIntermediateCompletionIds.delete(String(note.noteId));
+    return note;
+  }
+
+  static createRequiredKnowledgeClassification(note) {
+    return this.createRequiredPropositionsClassification(note, { title: "所需知识", refresh: false });
+  }
+
+  static createRequiredPropositionsClassification(note, options = {}) {
+    if (!note || this.getNoteType(note, true) !== "命题") throw new Error("请先选中命题卡片");
+    const existing = Array.from(note.childNotes || []).find(child => this.isRequiredPropositionsClassification(child));
+    if (existing) return existing;
+    this.requireConfiguredReference(this.types["归类"].templateNoteId);
+    let created, callbackError, completed = false, active = true, started = false;
+    try {
+      MNUtil.undoGrouping(() => {
+        if (!active || started) return;
+        started = true;
+        try {
+          created = this.createClassificationNoteAsChildNote(note, options.title === "所需知识" ? "所需知识" : "所需命题", "命题", false);
+          if (!this.isRequiredPropositionsClassification(created)) throw new Error("所需知识归类标识保存失败");
+          this.linkParentNote(created);
+          completed = true;
+        } catch (error) { callbackError = error; }
+      });
+    } finally { active = false; }
+    if (callbackError) {
+      callbackError.requiresUndo = started;
+      throw callbackError;
+    }
+    if (!completed) throw new Error("所需知识归类创建未完成");
+    // Native grouping refreshes the view. The direct scene shortcut must not add
+    // empty-comment refresh writes after its undo group has closed.
+    if (options.refresh !== false) this.refreshTemplateCreationNotes(note, created);
+    return created;
+  }
+
   static makeCard(note, addToReview = true, reviewEverytime = true, options = {}) {
+    addToReview = !!addToReview && this.shouldAutoAddToReview()
+    if (typeof KnowledgeBaseDefinitionConcept !== 'undefined' &&
+        KnowledgeBaseDefinitionConcept.getRuntime().deferMakeCard(note, current =>
+          this.makeCard(current, addToReview, reviewEverytime, { ...options, silent: true }))) return note
     this.assertMakeCardTemplateAvailable(note, { ...options, directMakeCard: true })
     const perf = this._beginMakeCardPerf("makeCard", note, { addToReview, reviewEverytime });
     try {
@@ -3256,7 +3380,10 @@ class KnowledgeBaseTemplate {
         });
         return roughNote
       }
-      const lockedNoteType = options.noteType || quickReadingPolicy.noteType || null
+      const sourceWasIntermediate = this.isIntermediateKnowledge(note);
+      const lockedNoteType = options.noteType || quickReadingPolicy.noteType || this.getNoteType(note, true) || this.getNoteTypeByColor(note && note.colorIndex)
+      const sourceNoteId = String(note && note.noteId || "")
+      const wasLegacy = this.isOldTemplateCard(note) || note._kbNeedsLegacyTemplate === true
 
       let stepStart = this._makeCardPerfNow();
       this.sanitizeNoteCommentsForMake(note)
@@ -3268,7 +3395,8 @@ class KnowledgeBaseTemplate {
       // })
 
       stepStart = this._makeCardPerfNow();
-      this.renewNote(note, { syncIndex: false }) // 处理旧卡片
+      note = note._kbNeedsLegacyTemplate ? note : (this.renewNote(note, { syncIndex: false }) || note) // 转换可能返回新卡片
+      if (wasLegacy) this.ensureLegacyCardTemplate(note, lockedNoteType)
       this._recordMakeCardPerf(perf, "renewNote", stepStart);
       // KnowledgeBaseUtils.log("完成 renewNote", "makeCard", {
       //   step: "renewNote",
@@ -3284,7 +3412,7 @@ class KnowledgeBaseTemplate {
       // })
 
       stepStart = this._makeCardPerfNow();
-      this.templateMergedCardMake(note, lockedNoteType)
+      this.templateMergedCardMake(note, lockedNoteType, { preserveExistingFieldContent: wasLegacy })
       this._recordMakeCardPerf(perf, "templateMergedCardMake", stepStart);
       // KnowledgeBaseUtils.log("完成 templateMergedCardMake", "makeCard", {
       //   step: "templateMergedCardMake",
@@ -3302,19 +3430,24 @@ class KnowledgeBaseTemplate {
         // })
       }
 
+      this.queueIntermediateKnowledgeCompletion(note, sourceWasIntermediate);
       if (options.deferFinalIndexSync !== true) {
         stepStart = this._makeCardPerfNow();
-        this.syncFinalMakeCardIndex(note, {
+        const finalIndexResult = this.syncFinalMakeCardIndex(note, {
           indexSource: "main",
-          staleIds: options.staleIds,
+          staleIds: Array.from(new Set([...(options.staleIds || []), sourceNoteId])),
           showErrorHUD: !this.shouldSuppressQuickReadingDefinitionIndexHUD(note),
         })
+        if (this.isIntermediateKnowledge(note) && (!finalIndexResult || finalIndexResult.success !== true)) {
+          throw new Error("制卡索引保存失败，请重新执行制卡");
+        }
         this._recordMakeCardPerf(perf, "syncFinalMakeCardIndex", stepStart);
       }
 
       // KnowledgeBaseUtils.log("makeCard 执行完成", "makeCard", {
       //   noteId: note.noteId
       // })
+      if (options.deferFinalIndexSync !== true) this.completeIntermediateKnowledge(note);
       this._finishMakeCardPerf(perf, { status: "success" });
       return note
     } catch (error) {
@@ -3322,8 +3455,8 @@ class KnowledgeBaseTemplate {
         status: "error",
         errorMessage: error && error.message ? error.message : String(error),
       });
-      KnowledgeBaseUtils.addErrorLog(error, "makeCard")
-      if ((error && error.code === "KB_TEMPLATE_MISSING") || options.throwOnFailure === true) throw error
+      if (options.silent !== true) KnowledgeBaseUtils.addErrorLog(error, "makeCard")
+      if (options.silent === true || (error && error.code === "KB_TEMPLATE_MISSING") || options.throwOnFailure === true) throw error
     }
   }
 
@@ -3333,7 +3466,7 @@ class KnowledgeBaseTemplate {
    * 暂不在这处理复习
    * @param note
    */
-  static templateMergedCardMake(note, lockedNoteType = null) {
+  static templateMergedCardMake(note, lockedNoteType = null, options = {}) {
     const perf = this._beginMakeCardPerf("templateMergedCardMake", note);
     try {
     let stepStart = this._makeCardPerfNow();
@@ -3382,7 +3515,9 @@ class KnowledgeBaseTemplate {
     // })
 
     stepStart = this._makeCardPerfNow();
-    this.autoMoveNewContent(note, lockedNoteType) // 自动移动新内容到对应字段
+    // Legacy migration has already assigned every original comment to a field.
+    // Its application body must not be mistaken for newly appended proof content.
+    if (!options.preserveExistingFieldContent) this.autoMoveNewContent(note, lockedNoteType)
     this._recordMakeCardPerf(perf, "autoMoveNewContent", stepStart);
     // KnowledgeBaseUtils.log("完成 autoMoveNewContent", "templateMergedCardMake", {
     //   step: "autoMoveNewContent",
@@ -3522,9 +3657,14 @@ class KnowledgeBaseTemplate {
    * 一键制卡（支持摘录版本）
    */
   static makeNote(note, addToReview = true, reviewEverytime = true, focus = true, options = {}) {
+    addToReview = !!addToReview && this.shouldAutoAddToReview()
+    if (typeof KnowledgeBaseDefinitionConcept !== 'undefined' &&
+        KnowledgeBaseDefinitionConcept.getRuntime().deferMakeCard(note, current =>
+          this.makeNote(current, addToReview, reviewEverytime, false, { ...options, silent: true }))) return note
     this.assertMakeCardTemplateAvailable(note, options)
     const perf = this._beginMakeCardPerf("makeNote", note, { addToReview, reviewEverytime, focus });
     try {
+      const sourceWasIntermediate = this.isIntermediateKnowledge(note);
       const sourceNoteId = note && note.noteId ? String(note.noteId) : ""
       const runUndo = (fn) => {
         if (options.undoGrouping === false ||
@@ -3731,6 +3871,7 @@ class KnowledgeBaseTemplate {
         // })
 
         let processedNote = note
+        const wasLegacy = this.isOldTemplateCard(note) || note._kbNeedsLegacyTemplate === true
         runUndo(() => {
           // const processStartTime = Date.now();
           const deferFinalization = !!lockedNoteType
@@ -3776,6 +3917,7 @@ class KnowledgeBaseTemplate {
             this._recordMakeCardPerf(perf, "preProcess.changeNoteColor", stepStart);
           }
           stepStart = this._makeCardPerfNow();
+          if (wasLegacy) this.ensureLegacyCardTemplate(processedNote, lockedNoteType || this.getNoteType(processedNote, true))
           this.mergeTemplateAndAutoMoveNoteContent(processedNote, false, { noteType: lockedNoteType })
           this._recordMakeCardPerf(perf, "preProcess.mergeTemplateAndAutoMoveNoteContent", stepStart);
           stepStart = this._makeCardPerfNow();
@@ -3806,11 +3948,16 @@ class KnowledgeBaseTemplate {
 
         if (options.deferFinalIndexSync !== true) {
           stepStart = this._makeCardPerfNow();
-          this.syncFinalMakeCardIndex(processedNote, {
+          this.queueIntermediateKnowledgeCompletion(processedNote, sourceWasIntermediate);
+          const finalIndexResult = this.syncFinalMakeCardIndex(processedNote, {
             indexSource: "main",
             staleIds: sourceNoteId ? [sourceNoteId] : [],
             showErrorHUD: !this.shouldSuppressQuickReadingDefinitionIndexHUD(processedNote),
           })
+          if (this.isIntermediateKnowledge(processedNote) && (!finalIndexResult || finalIndexResult.success !== true)) {
+            throw new Error("制卡索引保存失败，请重新执行制卡");
+          }
+          this.completeIntermediateKnowledge(processedNote);
           this._recordMakeCardPerf(perf, "preProcess.syncFinalMakeCardIndex", stepStart);
         }
 
@@ -3818,6 +3965,7 @@ class KnowledgeBaseTemplate {
         //   noteId: note.noteId,
         //   totalDurationMs: Date.now() - startTime
         // })
+        if (options.deferFinalIndexSync === true) this.queueIntermediateKnowledgeCompletion(processedNote, sourceWasIntermediate);
         this._finishMakeCardPerf(perf, { status: "success", mode: "preProcess" });
         return processedNote
       }
@@ -3847,12 +3995,14 @@ class KnowledgeBaseTemplate {
         // const makeCardStartTime = Date.now();
         stepStart = this._makeCardPerfNow();
         const madeNote = this.makeCard(processedNote, addToReview, reviewEverytime, {
+          silent: options.silent,
           throwOnFailure: options.throwOnFailure === true,
           noteType: lockedNoteType,
           deferFinalIndexSync: options.deferFinalIndexSync,
           staleIds: sourceNoteId ? [sourceNoteId] : [],
         })
         if (options.throwOnFailure === true && !madeNote) throw new Error("制卡未返回完成卡片")
+        processedNote = madeNote || processedNote
         this._recordMakeCardPerf(perf, "normal.makeCard", stepStart, { addToReview, reviewEverytime });
         // KnowledgeBaseUtils.log("正常模式：完成 makeCard", "makeNote", {
         //   noteId: processedNote.noteId,
@@ -3886,9 +4036,9 @@ class KnowledgeBaseTemplate {
         status: "error",
         errorMessage: error && error.message ? error.message : String(error),
       });
-      MNUtil.showHUD(`❌ 制卡失败：${error.message}`);
-      KnowledgeBaseUtils.addErrorLog(error, "makeNote")
-      if ((error && error.code === "KB_TEMPLATE_MISSING") || options.throwOnFailure === true) throw error
+      if (options.silent !== true) MNUtil.showHUD(`❌ 制卡失败：${error.message}`);
+      if (options.silent !== true) KnowledgeBaseUtils.addErrorLog(error, "makeNote")
+      if (options.silent === true || (error && error.code === "KB_TEMPLATE_MISSING") || options.throwOnFailure === true) throw error
     }
   }
 
@@ -4634,6 +4784,26 @@ class KnowledgeBaseTemplate {
     let includingTypes = ["定义", "命题", "例子", "反例", "思想方法", "问题", "思路"];
     if (!includingTypes.includes(this.getNoteType(note))) return
     if (!reviewEverytime && MNUtil.isNoteInReview(note.noteId)) return
+    if (this.getReadingScene() === 'intensive') {
+      try {
+        // A converted card may no longer be selected; address the processed native card directly.
+        const controller = Application.sharedInstance().studyController(MNUtil.currentWindow)
+        const nativeNote = Database.sharedInstance().getNoteById(note.noteId)
+        if (!controller || !controller.notebookController || !nativeNote || String(nativeNote.noteId) !== String(note.noteId)) {
+          throw new Error('目标卡片或学习集不可用')
+        }
+        const notebookId = String(controller.notebookController.notebookId || '')
+        if (!notebookId || String(nativeNote.notebookId || note.notebookId || '') !== notebookId) {
+          throw new Error('卡片不属于当前学习集')
+        }
+        if (!reviewEverytime && controller.isNoteInReview(nativeNote.noteId)) return
+        NSNotificationCenter.defaultCenter().postNotificationNameObjectUserInfo('AddToReview', controller, { note: nativeNote })
+      } catch (error) {
+        KnowledgeBaseUtils.log('AddToReview targeted notification failed', 'addToReview', null, 'ERROR')
+        MNUtil.showHUD('加入复习失败：' + error.message)
+      }
+      return
+    }
     if (typeof MNCommand === "undefined" || !MNCommand || typeof MNCommand.executeBuiltInCommand !== "function") {
       MNUtil.showHUD("请更新 MNUtils / Please update MNUtils")
       return
@@ -4655,7 +4825,7 @@ class KnowledgeBaseTemplate {
     let parentNote = inputParentNote || note.parentNote
     const allowTextExcerpt = !!(options && options.allowTextExcerpt)
     const createChildUndoGrouping = !(options && options.createChildUndoGrouping === false)
-    if (parentNote) {
+    if (parentNote || (options && options.allowTopLevel)) {
       let excerptType = note.excerptType
       if (!excerptType) {
         const excerptPic = note.excerptPic
@@ -4672,6 +4842,7 @@ class KnowledgeBaseTemplate {
 
       const hasTextExcerpt = !!String(note.excerptText || "").trim()
       const shouldConvert = excerptType === "image" || (allowTextExcerpt && excerptType === "text" && hasTextExcerpt)
+        || (!!options.allowMediaExcerpt && !!note.excerptPic)
       if (shouldConvert) {
         const oldNoteId = note.noteId
         const parentNoteId = String(parentNote && parentNote.noteId || "")
@@ -4705,8 +4876,17 @@ class KnowledgeBaseTemplate {
           markdown: true,
           color: note.colorIndex,
         }
-        // 创建新兄弟卡片，标题为旧卡片的标题
-        let newNote = parentNote.createChildNote(config, createChildUndoGrouping)
+        // Root excerpts need an explicit notebook and document identity.
+        if (!parentNote) {
+          config.notebookId = note.notebookId
+          if (requestedDocId && Number.isFinite(requestedPageNumber)) {
+            config.docId = requestedDocId
+            config.pageNumber = requestedPageNumber
+          }
+        }
+        let newNote = parentNote
+          ? parentNote.createChildNote(config, createChildUndoGrouping)
+          : MNNote.new(config)
         if (!newNote || !String(newNote.noteId || "").trim()) {
           logConversionDiagnostic("转非摘录建卡未返回稳定 noteId", "ERROR", {
             traceId: conversionTraceId,
@@ -4717,6 +4897,7 @@ class KnowledgeBaseTemplate {
             creationApi: "parentNote.createChildNote",
             returnedType: typeof newNote
           }, "ERROR")
+          throw new Error("non-excerpt-create-failed")
         }
         
         note.noteTitle = ""
@@ -4764,7 +4945,7 @@ class KnowledgeBaseTemplate {
           }, "ERROR")
         }
 
-        newNote.moveTo(index)
+        if (parentNote) newNote.moveTo(index)
         newNote.kbSourceExcerptNoteId = oldNoteId
         this.cleanupConvertedExcerptSourceLinks(oldClassificationParents, oldNoteId, newNote)
 
@@ -7200,21 +7381,19 @@ class KnowledgeBaseTemplate {
 
   /**
    * 判断是否为旧模板卡片
-   * 判断标准：存在 "Remark" 的 HtmlComment
+   * 根据旧字段标记和历史字段布局识别，不检查普通正文或 HtmlMarkdown 备注。
    * 
    * @param {MNNote} note - 要判断的卡片
    * @returns {boolean} 是否为旧模板卡片
    */
   static isOldTemplateCard(note) {
     let commentsObj = this.parseNoteComments(note);
-    let htmlCommentsObjArr = commentsObj.htmlCommentsObjArr || [];
     let htmlCommentsTextArr = commentsObj.htmlCommentsTextArr || [];
 
-    const normalizeFieldText = (text) => String(text || "").replace(/[：:\s]/g, "");
-    const normalizedFieldTexts = htmlCommentsTextArr.map(normalizeFieldText);
+    const normalizedFieldTexts = htmlCommentsTextArr.map(text => this.legacyFieldName({ type: "HtmlComment", text })).filter(Boolean);
     
-    // 检查是否有 "Remark" 字段
-    if (normalizedFieldTexts.some(text => text.includes("Remark"))) {
+    // 明确的旧字段优先于新字段，兼容曾经混入新模板字段的旧卡片。
+    if (normalizedFieldTexts.some(text => text === "remark" || text === "归纳总结")) {
       return true;
     }
 
@@ -7237,277 +7416,180 @@ class KnowledgeBaseTemplate {
     }
 
     
-    // 检查"应用"字段是否存在且不在最后
-    for (let i = 0; i < htmlCommentsObjArr.length; i++) {
-      let fieldObj = htmlCommentsObjArr[i];
-      const fieldText = normalizeFieldText(fieldObj && fieldObj.text);
-      if (fieldText.includes("应用")) {
-        // 如果找到"应用"字段且不是最后一个字段，则认为是旧卡片
-        if (i < htmlCommentsObjArr.length - 1) {
-          return true;
-        }
-        break;
-      }
-    }
-    
+    // Only recognized field headers establish ordering; arbitrary HTML inside
+    // application content must not repeatedly classify a migrated card as old.
+    const applicationIndex = normalizedFieldTexts.indexOf("应用");
+    if (applicationIndex >= 0 && applicationIndex < normalizedFieldTexts.length - 1) return true;
+
     return false;
   }
 
   /**
    * 处理旧模板卡片
-   * - 使用 clone 技巧提取手写和图片
-   * - 每张图片单独一张卡
-   * - 手写内容单独一张卡
-   * - 应用字段内容单独一张卡
-   * - 其余内容一张卡
+   * - 核心字段保留完整评论、媒体及链接。
+   * - 历史字段按原名称转存为子卡片，完成校验后移除原字段。
    * 
    * @param {MNNote} oldNote - 要处理的旧模板卡片
    */
-  static processOldTemplateCard(oldNote) {
-    let note = this.toNoExcerptVersion(oldNote) // 先转为非摘录模式
-    this.removeUnnecessaryComments(note)
-    note.convertLinksToNewVersion()
-    note.cleanupBrokenLinks()
-    note.fixMergeProblematicLinks()
-    // 使用 MNComments 获取更精准的类型
-    let MNComments = note.MNComments;
-    let excerptBlockIndexArr = this.getExcerptBlockIndexArr(note)
-    let startIndex = 0
-    if (excerptBlockIndexArr && excerptBlockIndexArr.length > 0) {
-      startIndex = excerptBlockIndexArr[excerptBlockIndexArr.length-1]!==-1?excerptBlockIndexArr[excerptBlockIndexArr.length-1] + 1:0;
-    }
-    
-    // 分类收集不同类型内容的索引
-    let handwritingIndices = [];  // 手写内容索引
-    let imageIndices = [];  // 图片索引（每个元素代表一张图片）
-    let applicationFieldIndices = [];  // 应用字段相关内容索引
-    let otherContentIndices = [];  // 其他文本内容索引
-    let htmlFieldIndices = [];  // HTML字段标记索引
-    
-    // 字段内容映射
-    let fieldContents = {};  // { fieldName: { indices: [], texts: [], links: [] } }
-    let currentField = null;
-    
-    // 遍历所有评论进行分类
-    for (let i = startIndex; i < MNComments.length; i++) {
-      let mnComment = MNComments[i];
-      
-      // 检查是否是 HtmlComment（字段标记）
-      if (mnComment.type === "HtmlComment") {
-        currentField = mnComment.text.trim();
-        htmlFieldIndices.push(i);
-        if (!fieldContents[currentField]) {
-          fieldContents[currentField] = { indices: [], texts: [], links: [] };
-        }
-        continue;
-      }
-      
-      // 分类处理不同类型的评论
-      if (mnComment.type === "drawingComment" || 
-          mnComment.type === "imageCommentWithDrawing" || 
-          mnComment.type === "mergedImageCommentWithDrawing") {
-        // 手写内容
-        handwritingIndices.push(i);
-      } else if (mnComment.type === "imageComment" || 
-                 mnComment.type === "mergedImageComment") {
-        // 纯图片内容（每张图片单独记录）
-        imageIndices.push(i);
-      } else if (currentField && currentField.includes("应用")) {
-        // 应用字段的内容
-        applicationFieldIndices.push(i);
-        fieldContents[currentField].indices.push(i);
-        
-        // 记录内容
-        if (mnComment.type === "linkComment" || mnComment.type === "summaryComment") {
-          fieldContents[currentField].links.push(mnComment.text);
-        } else if (mnComment.type === "textComment" || 
-                   mnComment.type === "markdownComment" || 
-                   mnComment.type === "mergedTextComment" ||
-                   mnComment.type === "tagComment") {
-          fieldContents[currentField].texts.push(mnComment.text);
-        }
-      } else if (currentField) {
-        // 其他字段的内容
-        otherContentIndices.push(i);
-        fieldContents[currentField].indices.push(i);
-        
-        // 记录内容
-        if (mnComment.type === "linkComment" || mnComment.type === "summaryComment") {
-          fieldContents[currentField].links.push(mnComment.text);
-        } else if (mnComment.type === "textComment" || 
-                   mnComment.type === "markdownComment" || 
-                   mnComment.type === "mergedTextComment" ||
-                   mnComment.type === "tagComment") {
-          fieldContents[currentField].texts.push(mnComment.text);
-        }
-      }
-    }
-    
-    // 创建的所有子卡片
-    let createdChildNotes = [];
-    
-    MNUtil.undoGrouping(() => {
-      // 1. 为手写内容创建独立卡片
-      if (handwritingIndices.length > 0) {
-        try {
-          let clonedNote = note.clone();
-          clonedNote.title = "";
-          
-          // 删除克隆卡片的所有子卡片
-          if (clonedNote.childNotes && clonedNote.childNotes.length > 0) {
-            for (let i = clonedNote.childNotes.length - 1; i >= 0; i--) {
-              clonedNote.childNotes[i].removeFromParent();
-            }
-          }
-          
-          // 计算需要删除的索引（保留手写内容）
-          let allIndices = Array.from({length: clonedNote.comments.length}, (_, i) => i);
-          let indicesToDelete = allIndices.filter(i => !handwritingIndices.includes(i));
-          indicesToDelete.sort((a, b) => b - a);
-          
-          // 删除非手写内容
-          clonedNote.removeCommentsByIndexArr(indicesToDelete);
-          
-          // 添加为子卡片
-          note.addChild(clonedNote);
-          createdChildNotes.push(clonedNote);
-          clonedNote.refresh();
-        } catch (error) {
-          MNUtil.showHUD("创建手写卡片失败：" + error.message);
-        }
-      }
-      
-      // 2. 为每张图片创建独立卡片
-      imageIndices.forEach((imageIndex, idx) => {
-        try {
-          let clonedNote = note.clone();
-          clonedNote.title = "";
-          
-          // 删除克隆卡片的所有子卡片
-          if (clonedNote.childNotes && clonedNote.childNotes.length > 0) {
-            for (let i = clonedNote.childNotes.length - 1; i >= 0; i--) {
-              clonedNote.childNotes[i].removeFromParent();
-            }
-          }
-          
-          // 计算需要删除的索引（只保留当前图片）
-          let allIndices = Array.from({length: clonedNote.comments.length}, (_, i) => i);
-          let indicesToDelete = allIndices.filter(i => i !== imageIndex);
-          indicesToDelete.sort((a, b) => b - a);
-          
-          // 删除其他内容
-          clonedNote.removeCommentsByIndexArr(indicesToDelete);
-          
-          // 添加为子卡片
-          note.addChild(clonedNote);
-          createdChildNotes.push(clonedNote);
-          clonedNote.refresh();
-        } catch (error) {
-          MNUtil.showHUD(`创建图片卡片 ${idx + 1} 失败：` + error.message);
-        }
-      });
-      
-      // 3. 为应用字段内容创建独立卡片
-      if (applicationFieldIndices.length > 0) {
-        try {
-          let clonedNote = note.clone();
-          clonedNote.title = "";
-          
-          // 删除克隆卡片的所有子卡片
-          if (clonedNote.childNotes && clonedNote.childNotes.length > 0) {
-            for (let i = clonedNote.childNotes.length - 1; i >= 0; i--) {
-              clonedNote.childNotes[i].removeFromParent();
-            }
-          }
-          
-          // 计算需要删除的索引（保留应用字段内容）
-          let allIndices = Array.from({length: clonedNote.comments.length}, (_, i) => i);
-          let indicesToDelete = allIndices.filter(i => !applicationFieldIndices.includes(i));
-          indicesToDelete.sort((a, b) => b - a);
-          
-          // 删除其他内容
-          clonedNote.removeCommentsByIndexArr(indicesToDelete);
-          
-          // 添加为子卡片
-          note.addChild(clonedNote);
-          createdChildNotes.push(clonedNote);
-          clonedNote.refresh();
-        } catch (error) {
-          MNUtil.showHUD("创建应用字段卡片失败：" + error.message);
-        }
-      }
-      
-      // 4. 为其他文本内容创建卡片
-      if (otherContentIndices.length > 0) {
-        // 检查是否有实际内容（不只是HTML字段标记）
-        let hasActualContent = Object.keys(fieldContents).some(fieldName => {
-          if (fieldName && fieldName.includes("应用")) return false;  // 跳过应用字段
-          let field = fieldContents[fieldName];
-          return field.texts.length > 0 || field.links.length > 0;
-        });
-        
-        if (hasActualContent) {
-          let config = {
-            title: "",
-            content: "",
-            markdown: true,
-            color: note.colorIndex
-          };
-          let textCard = note.createChildNote(config);
-          
-          // 按字段添加内容
-          Object.keys(fieldContents).forEach(fieldName => {
-            if (fieldName && fieldName.includes("应用")) return;  // 跳过应用字段
-            
-            let field = fieldContents[fieldName];
-            if (field.texts.length > 0 || field.links.length > 0) {
-              // 添加字段标题
-              textCard.appendMarkdownComment(`- ${fieldName}`);
-              
-              // 添加文本
-              field.texts.forEach(text => {
-                textCard.appendMarkdownComment(text);
-              });
-              
-              // 添加链接
-              field.links.forEach(link => {
-                textCard.appendTextComment(link);
-              });
-            }
-          });
-          
-          createdChildNotes.push(textCard);
-          textCard.refresh();
-        }
-      }
-      
-      // 5. 清理原卡片：删除所有已处理的评论
-      let allProcessedIndices = [
-        ...handwritingIndices,
-        ...imageIndices,
-        ...applicationFieldIndices,
-        ...otherContentIndices,
-        ...htmlFieldIndices
-      ];
-      
-      // 去重并排序
-      allProcessedIndices = [...new Set(allProcessedIndices)].sort((a, b) => b - a);
-      
-      // 删除已处理的评论
-      if (allProcessedIndices.length > 0) {
-        note.removeCommentsByIndexArr(allProcessedIndices);
-      }
-      
-      // 刷新原卡片
-      note.refresh();
-    });
-    
-    // // 显示处理结果
-    // if (createdChildNotes.length > 0) {
-    //   MNUtil.showHUD(`✅ 成功处理旧模板卡片，创建了 ${createdChildNotes.length} 张子卡片`);
-    // }
+  // Only exact, normalized labels are field markers. Unknown HTML remains content.
+  static legacyFieldName(comment) {
+    if (!comment || this.getSafeCommentType(comment) !== "HtmlComment") return "";
+    const label = String(this.getSafeCommentText(comment) || "").trim()
+      .replace(/^<!--\s*|\s*-->$/g, "").replace(/^[^A-Za-z\u4e00-\u9fff]+/, "")
+      .replace(/[：:\s]+/g, "");
+    const fields = ["摘录", "摘录区", "证明", "原理", "反例", "应用", "所需知识", "所需命题",
+      "所需知识命题", "所需结论", "相关思考", "相关链接", "所属", "包含", "关键词",
+      "归纳总结", "remark", "相关定义", "相关命题", "相关概念"];
+    return fields.find(name => name.toLowerCase() === label.toLowerCase()) || "";
+  }
 
-    return note
+  static previewOldTemplateCard(note) {
+    const comments = this.getSafeComments(note, true);
+    const retained = new Set(["摘录", "摘录区", "证明", "原理", "反例", "应用", "所需知识", "所需命题",
+      "所需知识命题", "所需结论", "相关思考", "相关链接", "所属", "包含", "关键词"]);
+    const blocks = [];
+    let block = { field: "摘录", indices: [], keep: true };
+    comments.forEach((comment, index) => {
+      const field = this.legacyFieldName(comment);
+      if (field) {
+        if (block.indices.length) blocks.push(block);
+        block = { field, indices: [], keep: retained.has(field) };
+      }
+      // No text conversion: comments, media and unknown HTML are copied intact.
+      block.indices.push(index);
+    });
+    if (block.indices.length) blocks.push(block);
+    return { blocks, keepFields: blocks.filter(item => item.keep).map(item => item.field),
+      childFields: blocks.filter(item => !item.keep).map(item => item.field) };
+  }
+
+  // Native clone/merge of the selected source can leave later UI writes outside
+  // its undo group. Move only the selection to a retained card before writing.
+  static async prepareCardMigrationSelection(sourceNotes, fallbackNote = null) {
+    const sources = Array.from(sourceNotes || []).filter(Boolean);
+    if (!sources.length) return false;
+    const notebookId = String(MNUtil.currentNotebookId || "");
+    const fresh = id => {
+      const native = MNUtil.getNoteById(String(id), false);
+      if (!native) throw new Error("待整理卡片已变化，请重新操作");
+      return new MNNote(native, "MbBookNote");
+    };
+    const protectedNotes = new Map();
+    const visit = n => {
+      const id = String(n.noteId || "");
+      if (!id || protectedNotes.has(id)) return;
+      if (protectedNotes.size >= 5000) throw new Error("整理范围过大，请先选择较小子树");
+      protectedNotes.set(id, n);
+      Array.from(n.childNotes || []).forEach(visit);
+    };
+    sources.forEach(visit);
+    const selected = Array.from(MNNote.getFocusNotes() || []);
+    const focus = MNNote.getFocusNote();
+    if (focus) selected.push(focus);
+    if (!selected.some(n => protectedNotes.has(String(n.noteId || "")))) return false;
+    const candidates = sources.map(n => n.parentNote).concat([fallbackNote]);
+    const retained = candidates.find(n => n && n.noteId && !protectedNotes.has(String(n.noteId)) && String(n.notebookId || notebookId) === notebookId);
+    if (!retained) throw new Error("当前选中来源缺少可保留的父卡片，未开始整理");
+    const fingerprint = n => JSON.stringify([n.title || n.noteTitle, n.colorIndex, n.excerptText, n.excerptPic,
+      n.parentNote && n.parentNote.noteId, n.groupNoteId, this.getSafeComments(n, false),
+      Array.from(n.childNotes || []).map(child => String(child.noteId))]);
+    const before = new Map(Array.from(protectedNotes, ([id]) => [id, fingerprint(fresh(id))]));
+    const assertUnchanged = () => {
+      if (String(MNUtil.currentNotebookId || "") !== notebookId) throw new Error("学习集已切换，未开始整理");
+      before.forEach((value, id) => { if (fingerprint(fresh(id)) !== value) throw new Error("待整理卡片已变化，未开始整理"); });
+    };
+    const retainedId = String(retained.noteId);
+    assertUnchanged();
+    await MNUtil.selectNotesInMindmap([retainedId], false);
+    assertUnchanged();
+    await fresh(retainedId).focusInMindMap(0, false);
+    for (let attempt = 0; attempt < 40; attempt++) {
+      assertUnchanged();
+      const current = Array.from(MNNote.getFocusNotes() || []), focused = MNNote.getFocusNote();
+      if (current.length === 1 && String(current[0].noteId) === retainedId && focused && String(focused.noteId) === retainedId) return true;
+      await MNUtil.delay(0.05);
+    }
+    throw new Error("无法确认整理前的安全选区，未开始整理");
+  }
+
+  static processOldTemplateCard(oldNote, options = {}) {
+    const note = this.toNoExcerptVersion(oldNote, oldNote.parentNote, {
+      allowTextExcerpt: true, allowMediaExcerpt: true, allowTopLevel: true, createChildUndoGrouping: false,
+    });
+    const plan = this.previewOldTemplateCard(note);
+    const removed = [];
+    // Copy all archives successfully before removing any source comment.
+    plan.blocks.filter(block => !block.keep).forEach(block => {
+      const rawIndices = this.getRawCommentIndicesForManagerIndices(note, block.indices);
+      if (rawIndices.length !== block.indices.length) throw new Error("旧卡评论位置无法唯一确认，未移除原内容");
+      const child = note.clone(false);
+      child.title = "历史内容：" + block.field;
+      const retainedIndices = this.resolveClonedCommentIndicesBySourceIndices(note, rawIndices, child);
+      if (retainedIndices.some(index => index < 0)) throw new Error("旧卡评论副本不完整，未移除原内容");
+      const keep = new Set(retainedIndices);
+      child.removeCommentsByIndexArr(Array.from({ length: child.comments.length }, (_, i) => i)
+        .filter(index => !keep.has(index)).reverse());
+      if (child.comments.length !== block.indices.length) throw new Error("旧卡内容转存校验失败，请撤销本次操作");
+      note.addChild(child);
+      if (options.refresh !== false) child.refresh();
+      removed.push(...rawIndices);
+    });
+    if (removed.length) note.removeCommentsByIndexArr(removed.sort((a, b) => b - a));
+    note._kbNeedsLegacyTemplate = true;
+    if (options.refresh !== false) note.refresh();
+    return note;
+  }
+
+  // Legacy cards already contain HTML fields; mergeTemplate's any-HTML guard is
+  // deliberately unchanged for ordinary cards. Fill only missing template headers.
+  static ensureLegacyCardTemplate(note, noteType) {
+    const type = this.types[noteType];
+    if (!type) throw new Error("无法确定旧卡片类型，未执行制卡");
+    const template = this.requireMakeCardTemplate(type.templateNoteId, noteType);
+    const present = new Set(this.parseNoteComments(note).htmlCommentsTextArr.map(text => this.normalizeFieldName(text)));
+    const missing = this.parseNoteComments(template).htmlCommentsObjArr
+      .filter(field => !present.has(this.normalizeFieldName(field.text))).map(field => field.index);
+    if (missing.length) {
+      const rawIndices = this.getRawCommentIndicesForManagerIndices(template, missing);
+      if (rawIndices.length !== missing.length) throw new Error("模板字段位置无法唯一确认");
+      const copy = template.clone(false);
+      const retained = this.resolveClonedCommentIndicesBySourceIndices(template, rawIndices, copy);
+      if (retained.some(index => index < 0)) throw new Error("模板字段副本不完整");
+      copy.removeCommentsByIndexArr(Array.from({ length: copy.comments.length }, (_, i) => i)
+        .filter(i => !retained.includes(i)).reverse());
+      copy.title = "";
+      copy.mergeInto(note);
+    }
+    const application = this.previewOldTemplateCard(note).blocks.find(block => block.field === "应用");
+    if (application && typeof note.moveCommentsByIndexArr === "function") {
+      const indices = this.getRawCommentIndicesForManagerIndices(note, application.indices);
+      if (indices.length !== application.indices.length) throw new Error("旧卡应用字段位置无法唯一确认");
+      note.moveCommentsByIndexArr(indices, note.comments.length);
+    }
+    note._kbNeedsLegacyTemplate = false;
+    return note;
+  }
+
+  static makeLegacyCard(note, options = {}) {
+    const sourceWasIntermediate = this.isIntermediateKnowledge(note);
+    const sourceId = String(note && note.noteId || "");
+    const noteType = options.noteType || this.getNoteType(note, true) || this.getNoteTypeByColor(note && note.colorIndex);
+    if (!noteType || !this.types[noteType]) throw new Error("无法确定旧卡片类型，请先选择卡片类型");
+    this.requireMakeCardTemplate(this.types[noteType].templateNoteId, noteType);
+    let result;
+    const run = () => {
+      result = this.processOldTemplateCard(note, { refresh: false });
+      this.ensureLegacyCardTemplate(result, noteType);
+      this.templateMergedCardMake(result, noteType, { preserveExistingFieldContent: true });
+    };
+    if (options.undoGrouping === false) run(); else MNUtil.undoGrouping(run);
+    this.queueIntermediateKnowledgeCompletion(result, sourceWasIntermediate);
+    const finalIndexResult = this.syncFinalMakeCardIndex(result, { staleIds: [sourceId], showErrorHUD: false });
+    if (this.isIntermediateKnowledge(result) && (!finalIndexResult || finalIndexResult.success !== true)) {
+      throw new Error("制卡索引保存失败，请重新执行制卡");
+    }
+    this.completeIntermediateKnowledge(result);
+    return result;
   }
 
   static renewLinks(note) {
@@ -8033,6 +8115,45 @@ class KnowledgeBaseTemplate {
         hasRawFocusInMindMap: false,
       }
     }
+  }
+
+  static async presentOCRResult(note, options = {}) {
+    const started = Date.now(), notebookId = String(options.notebookId || (note && note.notebookId) || '')
+    const window = options.window === undefined ? MNUtil.currentWindow : options.window
+    const current = () => String(MNUtil.currentNotebookId || '') === notebookId && MNUtil.currentWindow === window &&
+      (!options.valid || options.valid())
+    const log = (stage, detail = {}) => {
+      try { MNUtil.log({ source: 'MN KnowledgeBase:ocrPresentation', level: stage === 'presentation.failed' ? 'ERROR' : 'INFO', message: stage,
+        detail: { stage: options.stage || 'ocr', ...detail, durationMs: Date.now() - started } }) } catch (_) {}
+      if (stage === 'presentation.finished' || stage === 'presentation.failed') {
+        try { if (typeof KnowledgeBaseResearchCore !== 'undefined') KnowledgeBaseResearchCore.trace('presentation.checked', { ok: stage !== 'presentation.failed', reason: detail.reason || 'complete', durationMs: Date.now() - started }) } catch (_) {}
+      }
+    }
+    try {
+      if (!note || !current()) { log('presentation.skipped', { reason: 'context-changed' }); return false }
+      this.refreshNoteLocally(note, false, { stage: options.stage || 'ocr' })
+      if (typeof MNUtil.xdyyRefreshAfterDBChangedNow === 'function') MNUtil.xdyyRefreshAfterDBChangedNow(notebookId)
+      else if (MNUtil.app && typeof MNUtil.app.refreshAfterDBChanged === 'function') MNUtil.app.refreshAfterDBChanged(notebookId)
+      else throw new Error('refresh-unavailable')
+      log('view.refreshed')
+      if (options.focus !== false) {
+        // Wait for the refreshed mind map before selecting the converted card, never the excerpt it replaced.
+        await MNUtil.delay(0.4)
+        if (!current()) { log('presentation.skipped', { reason: 'context-changed' }); return false }
+        if (typeof note.canFocusInMindMap === 'function' && !note.canFocusInMindMap().canFocus) throw new Error('focus-unavailable')
+        // MNNote.focusInMindMap can use URL selection only; completion here must also scroll the native map.
+        const controller = MNUtil.app.studyController(window)
+        if (!controller || typeof controller.focusNoteInMindMapById !== 'function') throw new Error('focus-unavailable')
+        controller.focusNoteInMindMapById(note.noteId)
+        log('focus.requested')
+        await MNUtil.delay(0.15)
+        if (!current()) { log('presentation.skipped', { reason: 'context-changed' }); return false }
+        if (!note.focusedInMindmap) { log('presentation.failed', { reason: 'focus-not-confirmed' }); return false }
+        log('card.focused')
+      }
+      log('presentation.finished', { focused: options.focus !== false })
+      return true
+    } catch (error) { log('presentation.failed', { reason: ['focus-unavailable', 'refresh-unavailable'].includes(error && error.message) ? error.message : 'native-exception' }); return false }
   }
 
   static refreshNoteLocally(note, useRefreshAll = true, options = {}) {
@@ -9217,7 +9338,7 @@ class KnowledgeBaseTemplate {
    * @param {string} targetNoteURL - 目标卡片的 URL（替换后的 URL）
    * @returns {number} 更新的链接数量
    */
-  static updateAllIncomingLinks(sourceNoteURL, targetNoteURL) {
+  static updateAllIncomingLinks(sourceNoteURL, targetNoteURL, options = {}) {
     let updateCount = 0;
     const sourceNoteId = String(this.extractNoteIdFromLinkUrl(sourceNoteURL) || sourceNoteURL.toNoteId() || "").toUpperCase();
 
@@ -9229,6 +9350,8 @@ class KnowledgeBaseTemplate {
 
       // 收集需要检查的卡片
       const notesToCheck = new Set();
+      const targetNoteId = this.extractNoteIdFromLinkUrl(targetNoteURL);
+      if (targetNoteId) notesToCheck.add(String(targetNoteId).toUpperCase());
 
       // 添加源卡片链接到的卡片（通过 linkComment）
       sourceNote.MNComments.forEach(comment => {
@@ -9292,13 +9415,14 @@ class KnowledgeBaseTemplate {
 
         // 如果有更新，刷新笔记
         if (hasUpdates) {
-          note.refresh();
+          if (options.refresh !== false) note.refresh();
+          if (typeof options.onUpdated === "function") options.onUpdated(note);
         }
       });
 
     } catch (error) {
-      // 静默处理错误
-      MNUtil.copyJSON(error);
+      KnowledgeBaseUtils.addErrorLog(error, "updateAllIncomingLinks", {}, false);
+      throw error;
     }
 
     return updateCount;
@@ -9340,6 +9464,14 @@ class KnowledgeBaseTemplate {
    * @param {MNNote} sourceNote - 源卡片 (B)，将被合并的卡片
    */
   static renewKnowledgeNotesInTransaction(targetNote, sourceNote, options = {}) {
+    if (typeof KnowledgeBaseMergeTransaction !== "undefined") {
+      return KnowledgeBaseMergeTransaction.run(this, targetNote, sourceNote, options,
+        (target, source, legacyOptions) => this.renewKnowledgeNotesLegacyInTransaction(target, source, legacyOptions));
+    }
+    return this.renewKnowledgeNotesLegacyInTransaction(targetNote, sourceNote, options);
+  }
+
+  static renewKnowledgeNotesLegacyInTransaction(targetNote, sourceNote, options = {}) {
     if (!targetNote || !sourceNote) {
       throw new Error("合并失败：缺少来源卡片或目标卡片");
     }
@@ -9351,7 +9483,6 @@ class KnowledgeBaseTemplate {
     const removeTitle = options.removeTitle === true;
     const keepOnlyExcerpt = options.keepOnlyExcerpt === true;
     const focusAfterMerge = options.focusAfterMerge !== false;
-    const showHUD = options.showHUD !== false;
     const refreshTarget = options.refreshTarget !== false;
     const skippedFields = new Set(
       (Array.isArray(options.skipFields) ? options.skipFields : [])
@@ -9360,6 +9491,21 @@ class KnowledgeBaseTemplate {
     );
     if (options.mergeRelatedLinks !== true) {
       skippedFields.add("相关链接");
+    }
+    const targetType = this.getNoteType(targetNote);
+    const sourceType = this.getNoteType(sourceNote);
+    const fieldMapping = this.buildFieldMapping(sourceType, targetType);
+    if (!keepOnlyExcerpt) {
+      const targetFields = new Set(this.parseNoteComments(targetNote).htmlCommentsObjArr
+        .map(field => this.normalizeFieldName(field.text)));
+      this.parseNoteComments(sourceNote).htmlCommentsObjArr.forEach(field => {
+        const fieldName = this.normalizeFieldName(field.text);
+        if (skippedFields.has(fieldName) || field.excludingFieldBlockIndexArr.length === 0) return;
+        const targetFieldName = this.normalizeFieldName(this.resolveFieldName(fieldMapping[fieldName] || fieldName, targetType));
+        if (!["摘录", "摘录区"].includes(targetFieldName) && !targetFields.has(targetFieldName)) {
+          throw new Error(`合并失败：目标卡片缺少字段“${targetFieldName}”，请补齐字段后重试`);
+        }
+      });
     }
 
     sourceNote.convertLinksToNewVersion();
@@ -9372,20 +9518,16 @@ class KnowledgeBaseTemplate {
       this.mergeTitleLinkWords(targetNote, sourceNote);
     }
 
-    const targetType = this.getNoteType(targetNote);
-    const sourceType = this.getNoteType(sourceNote);
-    const fieldMapping = this.buildFieldMapping(sourceType, targetType);
     KnowledgeBaseUtils.log("开始执行", "renewKnowledgeNotesInTransaction");
     this.updateAllIncomingLinks(sourceNote.noteURL, targetNote.noteURL);
 
-    const finishMerge = (hudMessage = "✅ 知识卡片合并完成") => {
+    const finishMerge = () => {
       if (refreshTarget && typeof targetNote.refresh === "function") {
         targetNote.refresh();
       }
       if (focusAfterMerge && typeof targetNote.focusInMindMap === "function") {
         targetNote.focusInMindMap(0.4);
       }
-      if (showHUD) MNUtil.showHUD(hudMessage);
       return {
         success: true,
         sourceNoteId: String(sourceNote.noteId || ""),
@@ -9395,7 +9537,9 @@ class KnowledgeBaseTemplate {
 
     if (keepOnlyExcerpt) {
       KnowledgeBaseUtils.log("仅保留摘录模式", "renewKnowledgeNotesInTransaction");
-      this.retainFieldContentByName(sourceNote, "摘录区", true);
+      const excerptIndices = this.getExcerptBlockIndexArr(sourceNote, true);
+      if (excerptIndices.length === 0) throw new Error("合并失败：来源卡片没有摘录区内容");
+      sourceNote.removeCommentsByIndexArr(this.getInverseCommentsIndexArr(sourceNote, excerptIndices));
       sourceNote.title = "";
       sourceNote.mergeInto(targetNote);
       this.autoMoveNewContentToField(targetNote, "摘录", toBottom, false);
@@ -9409,7 +9553,7 @@ class KnowledgeBaseTemplate {
       sourceNote.noteTitle = "";
       sourceNote.mergeInto(targetNote);
       this.autoMoveNewContentToField(targetNote, "摘录", toBottom, false);
-      return finishMerge("✅ 合并完成（内容已移至摘录区）");
+      return finishMerge();
     }
 
     const sourceFieldOrder = sourceHtmlComments
@@ -9430,9 +9574,12 @@ class KnowledgeBaseTemplate {
       }
 
       const targetFieldName = fieldMapping[fieldName] || fieldName;
-      if (currentFieldObj.excludingFieldBlockIndexArr.length === 0) return;
+      if (currentFieldObj.excludingFieldBlockIndexArr.length === 0) {
+        sourceNote.removeCommentsByIndexArr(currentFieldObj.includingFieldBlockIndexArr);
+        return;
+      }
 
-      this.extractComments(sourceNote, currentFieldObj.excludingFieldBlockIndexArr).mergeInto(targetNote);
+      this.extractComments(sourceNote, currentFieldObj.excludingFieldBlockIndexArr, { createChildUndoGrouping: false }).mergeInto(targetNote);
       this.cleanupExtractedContentLinks(sourceNote, currentFieldObj.excludingFieldBlockIndexArr);
       sourceNote.removeCommentsByIndexArr(currentFieldObj.includingFieldBlockIndexArr);
       this.autoMoveNewContentToField(targetNote, targetFieldName, toBottom, false);
@@ -9440,10 +9587,10 @@ class KnowledgeBaseTemplate {
     });
 
     if (sourceNote.comments.length > 0) {
-      const excerptIndices = this.getExcerptBlockIndexArr(sourceNote);
+      const excerptIndices = this.getExcerptBlockIndexArr(sourceNote, true);
       if (excerptIndices.length > 0) {
         KnowledgeBaseUtils.log("合并摘录区", "renewKnowledgeNotesInTransaction");
-        this.retainFieldContentByName(sourceNote, "摘录");
+        sourceNote.removeCommentsByIndexArr(this.getInverseCommentsIndexArr(sourceNote, excerptIndices));
         sourceNote.title = "";
         sourceNote.mergeInto(targetNote);
         this.autoMoveNewContentToField(targetNote, "摘录", toBottom, false);
@@ -9459,14 +9606,31 @@ class KnowledgeBaseTemplate {
     return finishMerge();
   }
 
+  static async finalizeKnowledgeMergeResult(result) {
+    if (!result || !result.pendingVerification) return result;
+    for (let attempt = 0; attempt < 10 && result.pendingVerification; attempt++) {
+      await MNUtil.delay(0.05);
+      KnowledgeBaseMergeTransaction.finalizeSourceRemoval(result);
+    }
+    return result;
+  }
+
   static renewKnowledgeNotes(targetNote, sourceNote, options = {}) {
     try {
-      let result = null;
+      let mergeOptions = options;
+      if (typeof KnowledgeBaseMergeTransaction !== "undefined" && typeof KnowledgeBaseMergeTransaction.prepareBeforeUndoGroup === "function") {
+        mergeOptions = { ...options, _preparedMerge: KnowledgeBaseMergeTransaction.prepareBeforeUndoGroup(this, targetNote, sourceNote, options) };
+      }
+      let result = null, failure = null, completed = false;
       const execute = () => {
-        result = this.renewKnowledgeNotesInTransaction(targetNote, sourceNote, options);
+        try { result = this.renewKnowledgeNotesInTransaction(targetNote, sourceNote, mergeOptions); completed = true; }
+        catch (error) { failure = error; }
       };
       if (options.undoGrouping === false) execute();
       else MNUtil.undoGrouping(execute);
+      if (failure) throw failure;
+      if (!completed) throw new Error("原生合并回调未完成，不能确认合并结果");
+      if (result && result.pendingVerification) result.verification = this.finalizeKnowledgeMergeResult(result);
       return result;
     } catch (error) {
       MNUtil.copyJSON(error);
@@ -9998,6 +10162,7 @@ class KnowledgeBaseTemplate {
    * @returns {string|undefined} 卡片类型
    */
   static getNoteType(note, directly = false, bycolor = true) {
+    if (this.isRequiredPropositionsClassification(note)) return "归类";
     // 防御性检查
     if (!note) {
       KnowledgeBaseUtils.log(`返回 undefined 原因：无卡片`, "getNoteType");
@@ -10108,6 +10273,7 @@ class KnowledgeBaseTemplate {
    * @returns {boolean} 如果卡片标题本身就是归类格式返回 true，否则返回 false
    */
   static isClassificationNote(note) {
+    if (this.isRequiredPropositionsClassification(note)) return true;
     const title = note.noteTitle || note.title || "";
     // 检查是否有归类卡片的标题格式："xxx"相关 或 "xxx"："xxx"相关
     return /^“[^“]*”：“[^“]*”\s*相关.*$/.test(title) || 
@@ -10794,18 +10960,29 @@ class KnowledgeBaseTemplate {
     }
 
     // 2. 显示评论选择弹窗
+    const hasHtmlMDComments = allConvertibleComments.some(c => c.isHtmlMD);
+    const popupOptions = hasHtmlMDComments
+      ? ["🔄 刷新本卡全部 HtmlMD 为最新样式", ...allConvertibleComments.map(c => c.displayText)]
+      : allConvertibleComments.map(c => c.displayText);
+
     UIAlertView.showWithTitleMessageStyleCancelButtonTitleOtherButtonTitlesTapBlock(
       "选择要转换的评论",
-      "可以修改 HtmlMarkdown 评论类型或将文本评论转换为 HtmlMarkdown",
+      "可以修改 HtmlMarkdown 评论类型、刷新样式，或将文本评论转换为 HtmlMarkdown",
       0,
       "取消",
-      allConvertibleComments.map(c => c.displayText),
+      popupOptions,
       (alert, buttonIndex) => {
         if (buttonIndex === 0) {
           return; // 取消
         }
 
-        let selectedComment = allConvertibleComments[buttonIndex - 1];
+        if (hasHtmlMDComments && buttonIndex === 1) {
+          HtmlMarkdownUtils.refreshAllHtmlMDStyles(note);
+          return;
+        }
+
+        const commentIdx = hasHtmlMDComments ? buttonIndex - 2 : buttonIndex - 1;
+        let selectedComment = allConvertibleComments[commentIdx];
 
         // 获取所有可用的类型选项
         let availableTypes = Object.keys(HtmlMarkdownUtils.icons);
@@ -10813,7 +10990,7 @@ class KnowledgeBaseTemplate {
 
         // 3. 显示类型选择弹窗
         let promptMessage = selectedComment.isHtmlMD
-          ? `当前类型：${HtmlMarkdownUtils.icons[selectedComment.type]} ${selectedComment.type}\n\n请选择要转换成的类型：`
+          ? `当前类型：${HtmlMarkdownUtils.icons[selectedComment.type]} ${selectedComment.type}\n\n请选择要转换成的类型（选择当前类型将刷新为最新预设样式）：`
           : "这是一个文本评论，请选择要转换成的类型：";
 
         UIAlertView.showWithTitleMessageStyleCancelButtonTitleOtherButtonTitlesTapBlock(
@@ -10829,9 +11006,14 @@ class KnowledgeBaseTemplate {
 
             let targetType = availableTypes[typeButtonIndex - 1];
 
-            // 检查是否与当前类型相同（仅对 HtmlMarkdown 评论）
+            // 若选择与当前相同的类型，则刷新该条 HtmlMD 的样式为最新预设
             if (selectedComment.isHtmlMD && targetType === selectedComment.type) {
-              MNUtil.showHUD("目标类型与当前类型相同，无需修改");
+              MNUtil.undoGrouping(() => {
+                let targetComment = note.MNComments[selectedComment.index];
+                if (targetComment && HtmlMarkdownUtils.refreshHtmlMDCommentStyle(targetComment)) {
+                  note.refresh();
+                }
+              });
               return;
             }
 
@@ -13351,7 +13533,7 @@ class KnowledgeBaseTemplate {
     }
   }
 
-  static extractComments(note, extractCommentIndexArr) {
+  static extractComments(note, extractCommentIndexArr, options = {}) {
     let clonedNote = null;
     let addedAsChild = false;
     try {
@@ -13374,7 +13556,7 @@ class KnowledgeBaseTemplate {
         throw new Error("提取评论索引无效");
       }
 
-      clonedNote = note.clone();
+      clonedNote = note.clone(options.cloneChildren === false ? false : undefined);
       const clonedHadExcerpt = this.noteHasExtractableExcerpt(clonedNote);
 
       // 删除克隆卡片的所有子卡片
@@ -13389,7 +13571,10 @@ class KnowledgeBaseTemplate {
       // 直接清空摘录字段会留下顶部空白，也会绕过 mergeInto 的链接迁移。
       note.addChild(clonedNote);
       addedAsChild = true;
-      clonedNote = this.toNoExcerptVersion(clonedNote, note, { allowTextExcerpt: true });
+      clonedNote = this.toNoExcerptVersion(clonedNote, note, {
+        allowTextExcerpt: true,
+        createChildUndoGrouping: options.createChildUndoGrouping !== false,
+      });
       this.removeConvertedSourceExcerptComment(clonedNote, clonedHadExcerpt);
       this.clearTitleForCommentExtraction(clonedNote);
 
@@ -13422,7 +13607,7 @@ class KnowledgeBaseTemplate {
       clonedNote.removeCommentsByIndexArr(indicesToDelete);
       
       // 处理链接关系继承
-      this.handleExtractedNoteLinks(note, clonedNote, rawExtractCommentIndexArr);
+      if (options.inheritLinks !== false) this.handleExtractedNoteLinks(note, clonedNote, rawExtractCommentIndexArr);
 
       addedAsChild = false;
       return clonedNote;
@@ -14696,6 +14881,51 @@ class KnowledgeBaseTemplate {
       .join("｜")
   }
 
+  static async confirmSingleDefinitionTemplateCreation(note, title, type, diagnosticSession) {
+    const expectedTitle = this.normalizeTitleSpaces(`“${title}”相关${type}`)
+    const notebookId = String(note.notebookId || "")
+    const isCurrentDefinition = () => this.getNoteType(note) === "定义" &&
+      (!notebookId || String(MNUtil.currentNotebookId || "") === notebookId)
+    const matches = () => Array.from(note.childNotes || []).filter(child =>
+      child && this.getNoteType(child) === "归类" &&
+      this.normalizeTitleSpaces(child.noteTitle || child.title || "") === expectedTitle &&
+      this.parseNoteTitle(child).type === type &&
+      (!notebookId || String(child.notebookId || "") === notebookId) &&
+      child.parentNote && String(child.parentNote.noteId) === String(note.noteId)
+    )
+    if (!isCurrentDefinition()) throw new Error("学习集或定义卡已变化，请重新操作")
+    const candidates = matches()
+    if (!candidates.length) return true
+    const action = await MNUtil.userSelect("已存在相同归类", expectedTitle, ["查看已有归类", "仍然新建"])
+    if (!isCurrentDefinition()) throw new Error("学习集或定义卡已变化，请重新操作")
+    if (action === 2) return true
+    if (action === 1) {
+      let selected = candidates[0]
+      if (candidates.length > 1) {
+        const labels = candidates.map((candidate, index) => {
+          const children = Array.from(candidate.childNotes || [])
+          const firstTitle = children.length ? String(children[0].noteTitle || children[0].title || "").slice(0, 60) : "空归类"
+          return `${index + 1} · ${children.length} 张子卡片 · ${firstTitle}`
+        })
+        const selectedIndex = await MNUtil.userSelect("选择已有归类", expectedTitle, labels)
+        if (!isCurrentDefinition()) throw new Error("学习集或定义卡已变化，请重新操作")
+        selected = candidates[selectedIndex - 1]
+        if (!selected) {
+          KnowledgeBaseUtils.finishPersistentDiagnosticSession(diagnosticSession, "cancelled", { reason: "duplicate_candidate_cancelled" })
+          return false
+        }
+      }
+      const current = matches().find(candidate => String(candidate.noteId) === String(selected.noteId))
+      if (!current) throw new Error("原归类已变化，请重新操作")
+      current.focusInMindMap(0.3)
+    }
+    // Viewing an existing card is not a creation result: callers must not bind or move into it.
+    KnowledgeBaseUtils.finishPersistentDiagnosticSession(diagnosticSession, "cancelled", {
+      reason: action === 1 ? "duplicate_classification_viewed" : "duplicate_template_cancelled",
+    })
+    return false
+  }
+
 	  static async addTemplate(note, focusLastNote = true) {
     const diagnosticSession = KnowledgeBaseUtils.beginPersistentDiagnosticSession(
       'addTemplate',
@@ -14778,9 +15008,9 @@ class KnowledgeBaseTemplate {
         [
           "取消",
           "连续向下「顺序」增加模板",  // 1
-          "连续向下「倒序」增加模板",  // 2
-          "增加兄弟层级模板",  // 3
-          "向上层增加模板",  // 4
+          "增加兄弟层级模板",  // 2
+          "向上层增加模板",  // 3
+          "连续向下「倒序」增加模板",  // 4
         ],
         { default: contentInTitle }
       )
@@ -14788,13 +15018,31 @@ class KnowledgeBaseTemplate {
         button: userInputRes ? userInputRes.button : '',
         inputLength: userInputRes && userInputRes.input ? String(userInputRes.input).length : 0,
       })
+      if (!userInputRes || userInputRes.button === 0) {
+        KnowledgeBaseUtils.finishPersistentDiagnosticSession(diagnosticSession, 'cancelled', { reason: 'user_cancelled_template_input' })
+        return
+      }
       let userInputTitle = userInputRes.input
       // 分割输入，支持通过//创建多个兄弟卡片链
       let titlePartsArray = userInputTitle.split("//")
       let previousTitle = titlePartsArray[0]  // 记录上一个标题
       let changedTitlePart = titlePartsArray[titlePartsArray.length-1]
+      // ponytail: first pilot covers one interactive downward card; template chains keep their existing behavior.
+      let singleDefinitionType = ""
+      if (userInputRes.button === 1 && titlePartsArray.length === 1 && this.getNoteType(note) === "定义") {
+        singleDefinitionType = this.getTypeFromInputText(userInputTitle)
+        if (!singleDefinitionType) {
+          const typeChoice = await MNUtil.userSelect("增加归类卡片", "选择类型", typeArr)
+          singleDefinitionType = typeArr[typeChoice - 1]
+          if (!singleDefinitionType) {
+            KnowledgeBaseUtils.finishPersistentDiagnosticSession(diagnosticSession, 'cancelled', { reason: 'user_cancelled_type_select', branch: 'case1' })
+            return
+          }
+        }
+        if (!(await this.confirmSingleDefinitionTemplateCreation(note, titlePartsArray[0], singleDefinitionType, diagnosticSession))) return
+      }
       switch (userInputRes.button) {
-        case 4:
+        case 3:
           try {
             KnowledgeBaseUtils.persistentDiagnosticStage(diagnosticSession, 'case4.up.beforeSetup', {
               userInputTitle,
@@ -14895,7 +15143,7 @@ class KnowledgeBaseTemplate {
             MNUtil.showHUD(`向上增加模板失败：${error.message || error}`);
           }
           break;
-        case 3:
+        case 2:
           // 增加兄弟层级模板
           type = this.parseNoteTitle(note).type
           if (type) {
@@ -14967,7 +15215,7 @@ class KnowledgeBaseTemplate {
             })
           }
           break
-        case 2: // 连续向下「倒序」增加模板
+        case 4: // 连续向下「倒序」增加模板
           /**
            * 通过//来分割标题，增加一连串的归类卡片
            * 比如：赋范空间上的//有界//线性//算子
@@ -15100,7 +15348,7 @@ class KnowledgeBaseTemplate {
                 break;
               default:
                 // 智能识别类型
-                intelligentType = this.getTypeFromInputText(userInputTitle);
+                intelligentType = singleDefinitionType || this.getTypeFromInputText(userInputTitle);
                 if (intelligentType) {
                   type = intelligentType;
                   this.runUndoGroupingWithoutGlobalDBRefresh(() => {
@@ -17284,9 +17532,19 @@ class KnowledgeBaseTemplate {
    */
   static loadSearchConfig() {
     try {
+      const parseSaved = (raw, storeName) => {
+        if (!raw) return null;
+        try {
+          const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (value && typeof value === 'object' && !Array.isArray(value) &&
+            value.roots && typeof value.roots === 'object' && !Array.isArray(value.roots)) return value;
+        } catch (_) {}
+        KnowledgeBaseUtils.emitRuntimeLog('ERROR', `无法解析${storeName}搜索根目录配置，保留原始存储并尝试其他副本`);
+        return null;
+      };
       // 先尝试从本地加载
       const localConfig = NSUserDefaults.standardUserDefaults().objectForKey("KnowledgeBaseTemplate_SearchConfig");
-      let config = localConfig ? JSON.parse(localConfig) : null;
+      let config = parseSaved(localConfig, '本地');
       
       // 如果开启了 iCloud 同步，尝试从 iCloud 加载
       if (typeof toolbarConfig !== 'undefined' && toolbarConfig.iCloudSync) {
@@ -17294,9 +17552,9 @@ class KnowledgeBaseTemplate {
         if (cloudStore) {
           const cloudConfig = cloudStore.objectForKey("KnowledgeBaseTemplate_SearchConfig");
           if (cloudConfig) {
-            const cloudData = JSON.parse(cloudConfig);
+            const cloudData = parseSaved(cloudConfig, '云端');
             // 比较时间戳，使用较新的配置
-            if (!config || (cloudData.lastModified > config.lastModified)) {
+            if (cloudData && (!config || (cloudData.lastModified > config.lastModified))) {
               config = cloudData;
             }
           }
@@ -17306,9 +17564,7 @@ class KnowledgeBaseTemplate {
       // 如果没有配置，使用默认配置
       if (!config) {
         config = {
-          roots: {},
-          rootsOrder: [],
-          lastUsedRoot: "",
+          ...this.getDefaultSearchRootSelection(),
           includeClassification: true,  // 默认包含归类卡片
           ignorePrefix: false,  // 默认搜索完整标题
           searchInKeywords: false,  // 默认不搜索关键词字段
@@ -17317,6 +17573,10 @@ class KnowledgeBaseTemplate {
           enableRegexSearch: false,  // 默认不启用正则表达式搜索
           lastModified: Date.now()
         };
+      }
+
+      if (Object.keys(config.roots).length === 0 && !config.personalReferenceDefaultsVersion) {
+        Object.assign(config, this.getDefaultSearchRootSelection());
       }
       
       // 确保旧配置有这些字段（向后兼容）
@@ -17366,9 +17626,7 @@ class KnowledgeBaseTemplate {
       KnowledgeBaseUtils.emitRuntimeLog('ERROR', "加载搜索配置失败: " + error.toString());
       // 返回默认配置
       return {
-        roots: {},
-        rootsOrder: [],
-        lastUsedRoot: "",
+        ...this.getDefaultSearchRootSelection(),
         includeClassification: true,  // 默认包含归类卡片
         ignorePrefix: false,  // 默认搜索完整标题
         searchInKeywords: false,  // 默认不搜索关键词字段
@@ -17378,6 +17636,16 @@ class KnowledgeBaseTemplate {
         lastModified: Date.now()
       };
     }
+  }
+
+  static getDefaultSearchRootSelection() {
+    const reference = this.getConfiguredReference('roots', 'defaultKnowledgeBase');
+    if (!reference) return { roots: {}, rootsOrder: [], lastUsedRoot: '' };
+    const id = this.extractNoteIdFromLinkUrl(reference) || reference;
+    return {
+      roots: { default: { id, name: '数学知识库', isDefault: true, skipEmptyTitleByDefault: false } },
+      rootsOrder: ['default'], lastUsedRoot: 'default', personalReferenceDefaultsVersion: 1,
+    };
   }
   
   /**
@@ -22474,37 +22742,6 @@ class KnowledgeBaseTemplate {
     }
   }
 
-  static checkProofInReview(note) {
-    let proofAreaIndexArr = this.getHtmlCommentExcludingFieldBlockIndexArr(note, "证明");
-    let unreviewNotesArr = []
-    if (proofAreaIndexArr.length > 0) {
-      note.MNComments.forEach(
-        (comment, index) => {
-          if (comment.type === "linkComment" && proofAreaIndexArr.includes(index)) {
-            let linkedNote = MNNote.new(comment.text)
-            if (linkedNote && !MNUtil.isNoteInReview(linkedNote.noteId)) {
-              unreviewNotesArr.push(linkedNote)
-            }
-          }
-        }
-      )
-    }
-    if (unreviewNotesArr.length > 0) {
-      let config = {
-        title: "证明相关卡片中未加入复习卡片的",
-        content: "",
-        markdown: true,
-        color: note.colorIndex
-      }
-      let newNote = note.createChildNote(config)
-      unreviewNotesArr.forEach(
-        note => {
-          
-          note.appendNoteLink(newNote, "From")
-        }
-      )
-    }
-  }
 
   /**
    * 把归类卡片转为定义卡片
@@ -23252,8 +23489,13 @@ class KnowledgeBaseIndexer {
    * @param {string} mode - 索引模式: "light" (轻量) 或 "full" (全量，含同义词扩展)
    */
   static buildIndexEntry(note, mode = "light", options = {}) {
+    if (KnowledgeBaseTemplate.isRequiredPropositionsClassification && KnowledgeBaseTemplate.isRequiredPropositionsClassification(note)) {
+      if (options.diagnostic) options.diagnostic.reason = "workflow-classification";
+      return null;
+    }
     // 基本防御性检查
     if (!note || !note.noteId) {
+      if (options.diagnostic) options.diagnostic.reason = 'invalid-note';
       KnowledgeBaseUtils.log(`防御性检查没通过`, "buildIndexEntry");
       return null;
     }
@@ -23274,9 +23516,14 @@ class KnowledgeBaseIndexer {
       // 获取卡片类型
       const noteType = KnowledgeBaseTemplate.getNoteType(note);
       entry.type = noteType;
+      if (options.diagnostic) {
+        options.diagnostic.hasType = !!noteType;
+        options.diagnostic.classification = noteType === '归类';
+      }
 
       // ✅ 过滤掉 noteType 为 undefined 的卡片
       if (!noteType) {
+        if (options.diagnostic) options.diagnostic.reason = 'missing-type';
         // KnowledgeBaseUtils.log(`跳过无类型卡片: ${note.noteId}`, "buildIndexEntry");
         return null;
       }
@@ -23337,6 +23584,7 @@ class KnowledgeBaseIndexer {
       // 移除类型名后，如果没有实质性内容，则过滤掉
       const searchTextWithoutType = entry.searchText.replace(new RegExp(`^${noteType}\\s*`, 'i'), '').trim();
       if (!searchTextWithoutType) {
+        if (options.diagnostic) options.diagnostic.reason = 'empty-search';
         // KnowledgeBaseUtils.log('移除类型名后，如果没有实质性内容', "KnowledgeBaseIndexer: buildIndexEntry");
         return null;
       }
@@ -23376,7 +23624,12 @@ class KnowledgeBaseIndexer {
 
     } catch (error) {
       // 静默失败，返回 null（不索引出错的卡片）
-      KnowledgeBaseUtils.addErrorLog(error, "KnowledgeBaseIndexer: buildIndexEntry");
+      if (options.diagnostic) {
+        options.diagnostic.reason = 'build-exception';
+        options.diagnostic.errorName = error && error.name || 'Error';
+      } else {
+        KnowledgeBaseUtils.addErrorLog(error, "KnowledgeBaseIndexer: buildIndexEntry");
+      }
       return null;
     }
   }
@@ -24024,7 +24277,7 @@ class KnowledgeBaseIndexer {
       return true;
     } catch (error) {
       MNUtil.showHUD("保存增量索引失败：" + error.message);
-      MNLog.error(error, "KnowledgeBaseIndexer: saveIncrementalIndex");
+      this.logIncrementalIndexFailure('main', 'save-failed', { errorName: error && error.name || 'Error' });
       return false;
     }
   }
@@ -24035,10 +24288,28 @@ class KnowledgeBaseIndexer {
    * @param {MNNote} note - 要添加的卡片
    * @returns {{success:boolean, entry?:Object, error?:string, removedCount?:number, removedIds?:string[], cardCount?:number, mode?:string}}
    */
+  static logIncrementalIndexFailure(indexer, reason, details = {}) {
+    const reasons = ['invalid-note', 'missing-type', 'empty-entry', 'build-exception', 'save-failed', 'save-exception', 'upsert-exception'];
+    const metadata = {
+      indexer: indexer === 'intermediate' ? 'intermediate' : 'main',
+      reason: reasons.includes(reason) ? reason : 'empty-entry',
+    };
+    ['hasTitle', 'hasRawTitle', 'hasType', 'classification', 'hasTextComment'].forEach(key => {
+      if (typeof details[key] === 'boolean') metadata[key] = details[key];
+    });
+    if (['light', 'full'].includes(details.mode)) metadata.mode = details.mode;
+    if (['Error', 'TypeError', 'RangeError', 'ReferenceError', 'SyntaxError'].includes(details.errorName)) metadata.errorName = details.errorName;
+    return KnowledgeBaseUtils.emitRuntimeLog('ERROR', 'Incremental index update failed', 'index.incremental', metadata);
+  }
+
   static upsertIncrementalIndexEntry(note, mode = undefined, options = {}) {
+    if (KnowledgeBaseTemplate.isRequiredPropositionsClassification && KnowledgeBaseTemplate.isRequiredPropositionsClassification(note)) {
+      return KnowledgeBaseTemplate.excludeWorkflowClassificationFromIndex(note);
+    }
     const perf = typeof KnowledgeBaseTemplate !== "undefined" && KnowledgeBaseTemplate
       ? KnowledgeBaseTemplate._beginMakeCardPerf("incrementalIndex", note, { indexer: "KnowledgeBaseIndexer", mode })
       : null;
+    let indexStage = 'prepare';
     try {
       if (typeof SynonymManager !== 'undefined' && SynonymManager && typeof SynonymManager.reloadLibrary === 'function') {
         SynonymManager.reloadLibrary();
@@ -24057,6 +24328,7 @@ class KnowledgeBaseIndexer {
       // 1. 加载现有增量索引
       stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
       let incrementalIndex = this.loadIncrementalIndex();
+      if (incrementalIndex) incrementalIndex = { ...incrementalIndex, metadata: { ...(incrementalIndex.metadata || {}) }, cards: Array.isArray(incrementalIndex.cards) ? incrementalIndex.cards.slice() : [] };
       KnowledgeBaseTemplate._recordMakeCardPerf(perf, "loadIncrementalIndex", stepStart, {
         existingCardCount: incrementalIndex && Array.isArray(incrementalIndex.cards)
           ? incrementalIndex.cards.length
@@ -24094,7 +24366,7 @@ class KnowledgeBaseIndexer {
         : '';
       KnowledgeBaseTemplate._recordMakeCardPerf(perf, "ensureMetadata", stepStart);
       
-      // 3. 先清理同 id 及转换前摘录 id 的旧条目
+      // 3. 读取旧条目的使用权重，构建成功前不提交修改
       stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
       const noteId = String(note.noteId);
       const staleIds = this.getStaleIndexIdsForNote(note, options.staleIds);
@@ -24104,11 +24376,47 @@ class KnowledgeBaseIndexer {
         if (String(card?.id || '') !== noteId) return maxScore;
         return Math.max(maxScore, this.normalizeUsageScore(card?.usageScore));
       }, this.normalizeUsageScore(options.usageScore));
+      // 4. 构建新的索引条目
+      stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
+      const buildDiagnostic = {};
+      indexStage = 'build';
+      const entry = this.buildIndexEntry(note, resolvedMode, {
+        usageScore: previousUsageScore,
+        diagnostic: buildDiagnostic,
+      });
+      KnowledgeBaseTemplate._recordMakeCardPerf(perf, "buildIndexEntry", stepStart, {
+        resolvedMode,
+        hasEntry: !!entry,
+      });
+      if (!entry) {
+        const reason = buildDiagnostic.reason || 'empty-entry';
+        const skipped = reason === 'empty-search';
+        if (!skipped) {
+          this.logIncrementalIndexFailure('main', reason, {
+            ...buildDiagnostic, mode: resolvedMode,
+            hasTitle: !!String(note.title || '').trim(),
+            hasRawTitle: !!String(note.noteTitle || '').trim(),
+          });
+          if (showErrorHUD) MNUtil.showHUD("无法为该卡片构建索引条目");
+        }
+        KnowledgeBaseTemplate._finishMakeCardPerf(perf, {
+          status: skipped ? 'skipped' : 'failed', reason,
+          cardCount: currentCards.length, mode: resolvedMode,
+        });
+        return {
+          success: false, skipped, reason,
+          ...(skipped ? {} : { error: '无法为该卡片构建索引条目' }),
+          removedCount: 0, removedIds: [], cardCount: currentCards.length,
+          mode: resolvedMode,
+        };
+      }
+
+      indexStage = 'commit';
       const beforeCount = currentCards.length;
       incrementalIndex.cards = currentCards.filter(card => !idsToRemove.has(String(card?.id)));
       const removedCount = beforeCount - incrementalIndex.cards.length;
       if (removedCount > 0) {
-        KnowledgeBaseUtils.emitRuntimeLog('INFO', `增量索引：移除卡片旧条目 x${removedCount} (${Array.from(idsToRemove).join(', ')})`);
+        KnowledgeBaseUtils.emitRuntimeLog('INFO', 'Incremental index entries replaced', 'index.incremental', { indexer: 'main', removedCount });
       }
       this.updateIncrementalRemovedIds(incrementalIndex, staleIds, noteId);
       KnowledgeBaseTemplate._recordMakeCardPerf(perf, "removeOldEntries", stepStart, {
@@ -24117,42 +24425,6 @@ class KnowledgeBaseIndexer {
         removedCount,
         staleIdCount: staleIds.length,
       });
-      
-      // 4. 构建新的索引条目
-      stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
-      const entry = this.buildIndexEntry(note, resolvedMode, {
-        usageScore: previousUsageScore,
-      });
-      KnowledgeBaseTemplate._recordMakeCardPerf(perf, "buildIndexEntry", stepStart, {
-        resolvedMode,
-        hasEntry: !!entry,
-      });
-      if (!entry) {
-        stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
-        incrementalIndex.metadata.lastUpdated = new Date().toISOString();
-        incrementalIndex.metadata.cardCount = incrementalIndex.cards.length;
-        this.saveIncrementalIndex(incrementalIndex);
-        KnowledgeBaseTemplate._recordMakeCardPerf(perf, "saveIncrementalIndex.emptyEntry", stepStart, {
-          cardCount: incrementalIndex.cards.length,
-        });
-        if (showErrorHUD) {
-          MNUtil.showHUD("无法为该卡片构建索引条目");
-        }
-        KnowledgeBaseTemplate._finishMakeCardPerf(perf, {
-          status: "failed",
-          reason: "emptyEntry",
-          cardCount: incrementalIndex.cards.length,
-          mode: resolvedMode,
-        });
-        return {
-          success: false,
-          error: '无法为该卡片构建索引条目',
-          removedCount,
-          removedIds: staleIds,
-          cardCount: incrementalIndex.cards.length,
-          mode: resolvedMode,
-        };
-      }
       
       // 5. 添加新条目
       incrementalIndex.cards.push(entry);
@@ -24187,6 +24459,7 @@ class KnowledgeBaseIndexer {
       
       // 8. 保存增量索引
       stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
+      indexStage = 'save';
       const saved = this.saveIncrementalIndex(incrementalIndex);
       KnowledgeBaseTemplate._recordMakeCardPerf(perf, "saveIncrementalIndex", stepStart, {
         saved,
@@ -24209,6 +24482,7 @@ class KnowledgeBaseIndexer {
           mode: resolvedMode,
         };
       } else {
+        this.logIncrementalIndexFailure('main', 'save-failed', { mode: resolvedMode });
         KnowledgeBaseTemplate._finishMakeCardPerf(perf, {
           status: "failed",
           reason: "saveFailed",
@@ -24219,6 +24493,7 @@ class KnowledgeBaseIndexer {
         return {
           success: false,
           error: '保存增量索引失败',
+          reason: 'save-failed',
           removedCount,
           removedIds: staleIds,
           cardCount: incrementalIndex.metadata.cardCount,
@@ -24227,14 +24502,13 @@ class KnowledgeBaseIndexer {
       }
       
     } catch (error) {
-      KnowledgeBaseTemplate._finishMakeCardPerf(perf, {
-        status: "error",
-        errorMessage: error && error.message ? error.message : String(error),
-      });
-      MNUtil.showHUD("添加到增量索引失败：" + error.message);
-      MNLog.error(error, "KnowledgeBaseIndexer: addToIncrementalIndex");
+      const reason = indexStage === 'build' ? 'build-exception' : indexStage === 'save' ? 'save-exception' : 'upsert-exception';
+      KnowledgeBaseTemplate._finishMakeCardPerf(perf, { status: 'error', reason, errorName: error && error.name || 'Error' });
+      this.logIncrementalIndexFailure('main', reason, { mode: mode || 'light', errorName: error && error.name || 'Error' });
+      if (options.showErrorHUD !== false) MNUtil.showHUD("添加到增量索引失败");
       return {
         success: false,
+        reason,
         error: error && error.message ? error.message : String(error),
       };
     }
@@ -24254,14 +24528,24 @@ class KnowledgeBaseIndexer {
       )
       const showErrorHUD = options.showErrorHUD !== false
       const yieldEvery = Math.max(1, Number(options.yieldEvery) || 50)
+      const excludedIds = []
       const notesById = new Map()
       ;(Array.isArray(notes) ? notes : []).forEach(note => {
         const noteId = note && note.noteId ? String(note.noteId).trim() : ''
         if (!noteId) return
+        if (typeof KnowledgeBaseTemplate !== "undefined" && KnowledgeBaseTemplate.isRequiredPropositionsClassification && KnowledgeBaseTemplate.isRequiredPropositionsClassification(note)) {
+          const excluded = KnowledgeBaseTemplate.excludeWorkflowClassificationFromIndex(note);
+          if (!excluded.success) throw new Error("所需命题归类索引移除失败");
+          excludedIds.push(noteId);
+          return;
+        }
         if (notesById.has(noteId)) notesById.delete(noteId)
         notesById.set(noteId, note)
       })
 
+      if (notesById.size === 0 && excludedIds.length) {
+        return { success: true, skipped: true, entries: [], failedIds: [], removedIds: excludedIds, mode: resolvedMode };
+      }
       if (notesById.size === 0) {
         return { success: false, error: '没有可写入的卡片', entries: [], failedIds: [], mode: resolvedMode }
       }
@@ -27271,6 +27555,10 @@ class IntermediateKnowledgeIndexer {
    * 与知识库不同，这里不判断卡片类型，统一处理所有卡片
    */
   static buildIndexEntry(note, mode = "light", options = {}) {
+    if (KnowledgeBaseTemplate.isRequiredPropositionsClassification && KnowledgeBaseTemplate.isRequiredPropositionsClassification(note)) {
+      if (options.diagnostic) options.diagnostic.reason = "workflow-classification";
+      return null;
+    }
     // KnowledgeBaseTemplate.renewLinks(note);
     const skipRenewLinks = options && options.skipRenewLinks === true;
     const skipTemplatedBuild = options && options.skipTemplatedBuild === true;
@@ -27444,6 +27732,7 @@ class IntermediateKnowledgeIndexer {
 
     // 跳过无文本内容的卡片
     if (!hasTitle && !hasTextComment) {
+      if (diagnostic) diagnostic.reason = 'empty-content';
       return null;
     }
 
@@ -27886,7 +28175,7 @@ class IntermediateKnowledgeIndexer {
       return true;
     } catch (error) {
       MNUtil.showHUD("保存中间知识库增量索引失败：" + error.message);
-      MNLog.error(error, "IntermediateKnowledgeIndexer: saveIncrementalIndex");
+      KnowledgeBaseIndexer.logIncrementalIndexFailure('intermediate', 'save-failed', { errorName: error && error.name || 'Error' });
       return false;
     }
   }
@@ -27899,16 +28188,26 @@ class IntermediateKnowledgeIndexer {
    * @returns {{success:boolean, entry?:Object, error?:string, removedCount?:number, removedIds?:string[], cardCount?:number, mode?:string, indexPrefix?:string}}
    */
   static upsertIncrementalIndexEntry(note, options = {}) {
+    if (KnowledgeBaseTemplate.isRequiredPropositionsClassification && KnowledgeBaseTemplate.isRequiredPropositionsClassification(note)) {
+      return KnowledgeBaseTemplate.excludeWorkflowClassificationFromIndex(note);
+    }
     const perf = typeof KnowledgeBaseTemplate !== "undefined" && KnowledgeBaseTemplate
       ? KnowledgeBaseTemplate._beginMakeCardPerf("intermediateIncrementalIndex", note, { indexer: "IntermediateKnowledgeIndexer" })
       : null;
+    let indexStage = 'prepare';
     try {
+      // A picture without text is not searchable until OCR supplies a title.
+      if (note && note.noteId && !String(note.title || '').trim() && !this.hasTextComment(note)) {
+        KnowledgeBaseTemplate._finishMakeCardPerf(perf, { status: 'skipped', reason: 'empty-content' });
+        return { success: false, skipped: true, reason: 'empty-content', removedCount: 0, removedIds: [], mode: options.mode || 'light', indexPrefix: options.indexPrefix || 'intermediate-kb-index' };
+      }
       // 1. 加载现有增量索引
       let stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
       const indexPrefix = options.indexPrefix || "intermediate-kb-index";
       const resolvedMode = options.mode || "light";
       const showErrorHUD = options.showErrorHUD !== false;
       let incrementalIndex = this.loadIncrementalIndex(indexPrefix);
+      if (incrementalIndex) incrementalIndex = { ...incrementalIndex, metadata: { ...(incrementalIndex.metadata || {}) }, cards: Array.isArray(incrementalIndex.cards) ? incrementalIndex.cards.slice() : [] };
       KnowledgeBaseTemplate._recordMakeCardPerf(perf, "loadIncrementalIndex", stepStart, {
         existingCardCount: incrementalIndex && Array.isArray(incrementalIndex.cards)
           ? incrementalIndex.cards.length
@@ -27943,7 +28242,7 @@ class IntermediateKnowledgeIndexer {
       }
       KnowledgeBaseTemplate._recordMakeCardPerf(perf, "ensureMetadata", stepStart);
 
-      // 3. 先清理同 id 及转换前摘录 id 的旧条目
+      // 3. 读取旧条目的使用权重，构建成功前不提交修改
       stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
       const noteId = String(note.noteId);
       const staleIds = KnowledgeBaseIndexer.getStaleIndexIdsForNote(note, options.staleIds);
@@ -27953,11 +28252,50 @@ class IntermediateKnowledgeIndexer {
         if (String(card?.id || '') !== noteId) return maxScore;
         return Math.max(maxScore, KnowledgeBaseIndexer.normalizeUsageScore(card?.usageScore));
       }, KnowledgeBaseIndexer.normalizeUsageScore(options.usageScore));
+      // 4. 构建新的索引条目
+      stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
+      const buildDiagnostic = options.buildOptions && options.buildOptions.diagnostic || {};
+      if (!Array.isArray(buildDiagnostic.steps)) buildDiagnostic.steps = [];
+      if (!Array.isArray(buildDiagnostic.reasons)) buildDiagnostic.reasons = [];
+      delete buildDiagnostic.reason;
+      indexStage = 'build';
+      const entry = this.buildIndexEntry(note, resolvedMode, Object.assign({}, options.buildOptions || {}, {
+        usageScore: previousUsageScore,
+        diagnostic: buildDiagnostic,
+      }));
+      KnowledgeBaseTemplate._recordMakeCardPerf(perf, "buildIndexEntry", stepStart, {
+        hasEntry: !!entry,
+      });
+      if (!entry) {
+        const reason = buildDiagnostic.reason || 'empty-entry';
+        const skipped = reason === 'empty-content';
+        if (!skipped) {
+          KnowledgeBaseIndexer.logIncrementalIndexFailure('intermediate', reason, {
+            ...buildDiagnostic, mode: resolvedMode,
+            hasTitle: !!String(note.title || '').trim(),
+            hasRawTitle: !!String(note.noteTitle || '').trim(),
+          });
+          if (showErrorHUD) MNUtil.showHUD("无法为该卡片构建索引条目");
+        }
+        KnowledgeBaseTemplate._finishMakeCardPerf(perf, {
+          status: skipped ? 'skipped' : 'failed', reason,
+          cardCount: currentCards.length, mode: resolvedMode,
+        });
+        return {
+          success: false, skipped, reason,
+          ...(skipped ? {} : { error: '无法为该卡片构建索引条目' }),
+          removedCount: 0, removedIds: [], cardCount: currentCards.length,
+          mode: resolvedMode,
+          indexPrefix,
+        };
+      }
+
+      indexStage = 'commit';
       const beforeCount = currentCards.length;
       incrementalIndex.cards = currentCards.filter(card => !idsToRemove.has(String(card?.id)));
       const removedCount = beforeCount - incrementalIndex.cards.length;
       if (removedCount > 0) {
-        KnowledgeBaseUtils.emitRuntimeLog('INFO', `中间知识库增量索引：移除卡片旧条目 x${removedCount} (${Array.from(idsToRemove).join(', ')})`);
+        KnowledgeBaseUtils.emitRuntimeLog('INFO', 'Incremental index entries replaced', 'index.incremental', { indexer: 'intermediate', removedCount });
       }
       KnowledgeBaseIndexer.updateIncrementalRemovedIds(incrementalIndex, staleIds, noteId);
       KnowledgeBaseTemplate._recordMakeCardPerf(perf, "removeOldEntries", stepStart, {
@@ -27966,42 +28304,6 @@ class IntermediateKnowledgeIndexer {
         removedCount,
         staleIdCount: staleIds.length,
       });
-
-      // 4. 构建新的索引条目
-      stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
-      const entry = this.buildIndexEntry(note, resolvedMode, Object.assign({}, options.buildOptions || {}, {
-        usageScore: previousUsageScore,
-      }));
-      KnowledgeBaseTemplate._recordMakeCardPerf(perf, "buildIndexEntry", stepStart, {
-        hasEntry: !!entry,
-      });
-      if (!entry) {
-        stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
-        incrementalIndex.metadata.lastUpdated = new Date().toISOString();
-        incrementalIndex.metadata.cardCount = incrementalIndex.cards.length;
-        this.saveIncrementalIndex(incrementalIndex, indexPrefix);
-        KnowledgeBaseTemplate._recordMakeCardPerf(perf, "saveIncrementalIndex.emptyEntry", stepStart, {
-          cardCount: incrementalIndex.cards.length,
-        });
-        if (showErrorHUD) {
-          MNUtil.showHUD("无法为该卡片构建索引条目");
-        }
-        KnowledgeBaseTemplate._finishMakeCardPerf(perf, {
-          status: "failed",
-          reason: "emptyEntry",
-          cardCount: incrementalIndex.cards.length,
-          mode: resolvedMode,
-        });
-        return {
-          success: false,
-          error: '无法为该卡片构建索引条目',
-          removedCount,
-          removedIds: staleIds,
-          cardCount: incrementalIndex.cards.length,
-          mode: resolvedMode,
-          indexPrefix,
-        };
-      }
 
       // 5. 添加新条目
       incrementalIndex.cards.push(entry);
@@ -28035,6 +28337,7 @@ class IntermediateKnowledgeIndexer {
 
       // 8. 保存增量索引
       stepStart = KnowledgeBaseTemplate._makeCardPerfNow();
+      indexStage = 'save';
       const saved = this.saveIncrementalIndex(incrementalIndex, indexPrefix);
       KnowledgeBaseTemplate._recordMakeCardPerf(perf, "saveIncrementalIndex", stepStart, {
         saved,
@@ -28059,6 +28362,7 @@ class IntermediateKnowledgeIndexer {
           indexPrefix,
         };
       } else {
+        KnowledgeBaseIndexer.logIncrementalIndexFailure('intermediate', 'save-failed', { mode: resolvedMode });
         KnowledgeBaseTemplate._finishMakeCardPerf(perf, {
           status: "failed",
           reason: "saveFailed",
@@ -28069,6 +28373,7 @@ class IntermediateKnowledgeIndexer {
         return {
           success: false,
           error: '保存中间知识库增量索引失败',
+          reason: 'save-failed',
           removedCount,
           removedIds: staleIds,
           cardCount: incrementalIndex.metadata.cardCount,
@@ -28078,14 +28383,12 @@ class IntermediateKnowledgeIndexer {
       }
 
     } catch (error) {
-      KnowledgeBaseTemplate._finishMakeCardPerf(perf, {
-        status: "error",
-        errorMessage: error && error.message ? error.message : String(error),
-      });
-      // MNUtil.showHUD("添加到中间知识库增量索引失败: " + error.message);
-      MNLog.error(error, "IntermediateKnowledgeIndexer: upsertIncrementalIndexEntry");
+      const reason = indexStage === 'build' ? 'build-exception' : indexStage === 'save' ? 'save-exception' : 'upsert-exception';
+      KnowledgeBaseTemplate._finishMakeCardPerf(perf, { status: 'error', reason, errorName: error && error.name || 'Error' });
+      KnowledgeBaseIndexer.logIncrementalIndexFailure('intermediate', reason, { mode: options.mode || 'light', errorName: error && error.name || 'Error' });
       return {
         success: false,
+        reason,
         error: error && error.message ? error.message : String(error),
         mode: options.mode || "light",
         indexPrefix: options.indexPrefix || "intermediate-kb-index",
@@ -28398,7 +28701,13 @@ class KnowledgeBaseUtils {
       return null
     }
     if (typeof MNNotification === 'undefined' || !MNNotification) return null
-    if (typeof MNNotification.createNotificationWidget !== 'function') return null
+    if (typeof subscriptionUtils !== 'undefined' && subscriptionUtils && [false, 0, '0'].includes(subscriptionUtils.addonConnected)) return null
+    if (typeof MNNotification.createNotificationWidget !== 'function' && typeof MNNotification.progress !== 'function') return null
+    if (typeof notificationUtils !== 'undefined') {
+      if (!notificationUtils) return null
+      const controller = notificationUtils.notifyController
+      if (!notificationUtils.config || !controller || !controller.webviewResponse || Number(controller.isWebViewDidFinishLoad) !== 1) return null
+    }
     return MNNotification
   }
 
@@ -28410,6 +28719,9 @@ class KnowledgeBaseUtils {
 
   static _safeJSONStringify(value, fallback = '') {
     try {
+      if (typeof MNUtil !== 'undefined' && MNUtil && typeof MNUtil.stringifyWithCircularRef === 'function') {
+        return MNUtil.stringifyWithCircularRef(value)
+      }
       const seen = []
       return JSON.stringify(value, (key, item) => {
         if (item && typeof item === 'object') {
@@ -28798,11 +29110,25 @@ class KnowledgeBaseUtils {
     try {
       const api = this._getMNNotificationAPI()
       if (!api) {
-        if (fallbackMessage) {
+        if (fallbackMessage && option.type === 'error') {
           MNUtil.showHUD(fallbackMessage, 2)
         }
         return { success: false, fallback: true }
       }
+      const controller = typeof notificationUtils !== 'undefined' ? notificationUtils.notifyController : null
+      const webview = controller && controller.webviewResponse
+      const current = () => this._getMNNotificationAPI() === api
+        && (typeof notificationUtils === 'undefined' || (notificationUtils.notifyController === controller
+          && (!controller || controller.webviewResponse === webview)))
+      option = Object.assign({}, option)
+      for (const key of ['onManualClose', 'onAutoClose']) {
+        const callback = option[key]
+        if (typeof callback === 'function') option[key] = (...args) => { if (current()) return callback(...args) }
+      }
+      if (Array.isArray(option.actions)) option.actions = option.actions.map(action => {
+        if (!action || typeof action.onClicked !== 'function') return action
+        return Object.assign({}, action, { onClicked: (...args) => { if (current()) return action.onClicked(...args) } })
+      })
       if (option && option.id && typeof api.updateNotification === 'function') {
         try {
           const status = typeof api.getNotificationStatus === 'function'
@@ -28815,10 +29141,14 @@ class KnowledgeBaseUtils {
           }
         } catch (_) {}
       }
+      if (option.type === 'progress' && typeof api.progress === 'function') {
+        return await api.progress(option.title, option.desc, option.progress || 0, option)
+      }
+      if (typeof api.createNotificationWidget !== 'function') return { success: false, error: 'notification-type-unavailable' }
       return await api.createNotificationWidget(option)
     } catch (error) {
       this.addErrorLog(error, 'createNotification', { option }, false)
-      if (fallbackMessage) {
+      if (fallbackMessage && option.type === 'error') {
         MNUtil.showHUD(fallbackMessage, 2)
       }
       return { success: false, error: error?.message || String(error) }
@@ -28877,7 +29207,7 @@ class KnowledgeBaseUtils {
       } else if (sameNotification) {
         return false
       } else {
-        await api.createNotificationWidget({
+        const receipt = await this.createNotification({
           id: notificationId,
           title: message,
           desc,
@@ -28886,6 +29216,7 @@ class KnowledgeBaseUtils {
           source,
           autoCloseSeconds: 0,
         })
+        if (!receipt || receipt.success === false || receipt.reason === 'CreateFailed') return false
         this.indexProgressNotificationState[notificationId] = {
           notificationId,
           progressKey: progressKey || source,
@@ -28909,7 +29240,6 @@ class KnowledgeBaseUtils {
     try {
       const api = this._getMNNotificationAPI()
       if (!api || typeof api.setProgress !== 'function') {
-        MNUtil.showHUD(title, 2)
         return
       }
       const notificationId = `mnkb-progress-${this._safeNotificationId(progressKey || source)}`
@@ -28924,7 +29254,6 @@ class KnowledgeBaseUtils {
       }
     } catch (error) {
       this.addErrorLog(error, 'finishProgressNotification', { progressKey, title }, false)
-      MNUtil.showHUD(title, 2)
     }
   }
 
@@ -29398,6 +29727,30 @@ class KnowledgeBaseUtils {
 }
 
 class KnowledgeBaseNetwork {
+  static async sendSharedRequest(request, preferResponse = false) {
+    if ((!preferResponse || typeof MNConnection.sendRequestDev !== "function") && typeof MNConnection.sendRequest === "function") return await MNConnection.sendRequest(request)
+    const response = await MNConnection.sendRequestDev(request)
+    if (!response) throw new Error("MNUtils network response missing")
+    const statusCode = Number(response.status || response.statusCode || 0)
+    const failed = response.ok === false || response.error || statusCode >= 400
+    let data
+    try {
+      data = typeof response.json === "function" ? await response.json() : response
+      // Native MNUtils may return a SyntaxError value instead of throwing.
+      if (data instanceof Error) throw data
+    } catch (error) {
+      // An HTML/proxy error body must not hide the HTTP failure status.
+      if (!failed) throw error
+      return { statusCode, error: response.error || ("HTTP " + statusCode) }
+    }
+    if (failed) {
+      // An HTTP failure must not expose a success-shaped choices payload.
+      return { data, statusCode, error: (data && data.error) || response.error || ("HTTP " + statusCode) }
+    }
+    return data
+  }
+
+
   static AI_SEARCH_QUERY_MODEL_PREFERENCES = [
     { source: "Subscription", model: "gemini-3-flash-minimal" },
     { source: "Subscription", model: "doubao-seed-2-0-mini-nothinking" },
@@ -29661,16 +30014,33 @@ class KnowledgeBaseNetwork {
   static OCRCorrectionRules = `
 ## 常见 OCR 识别错误纠正规则
 
+只纠正能够依据原图确认的识别错误，不按识别稿的字符组合、常见公式或已知定义猜测或补全。
+
+原图中的普通数学减号统一输出键盘短横线 -（ASCII U+002D），不要输出汉字一或异常横线；只有数学上下文能够确认减号时才修正一，中文正文的一和数字 1 保持。上下标能完整表达时优先保留 Unicode，包括 x⁻¹、aₙ₋₁；不得为统一普通减号而改写上下标或改变指标范围。
+
 ### 下标问题
-- X1, Y2, Z3 等 → X₁, Y₂, Z₃（使用 Unicode 下标字符）
-- a_i, x_n, y_k → aᵢ, xₙ, yₖ
+- 下标位置、附着对象和作用范围必须依据原图确认。X1、Y2、Z3 等识别稿不能单独作为下标证据；原图是行内字符时保持行内字符。
+- 原图确认是下标时，可优先把 a_i、x_n、y_k 等写成准确的 Unicode 下标；复杂指标保留原有层级，不凭识别稿中的 _ 重新猜测原图。
 - Unicode 下标字符集：₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓₔᵦᵧᵨᵩᵪ
 
 ### 上标问题
-- x2, y3, z4 → x², y³, z⁴（使用 Unicode 上标字符）
-- xn, an → xⁿ, aⁿ
+- 上标同样依据原图位置与作用范围确认。x2、y3、z4、xn、an 可能是行内字符、乘积、下标或上标，不得仅凭识别稿字串自动转换。
+- 原图确认是上标时优先使用准确 Unicode；必要时允许保留 ^ 和清晰分组。原图中的 alpha 位于上标时允许使用 ᵅ。
 - Unicode 上标字符集：⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁᵂ
-- 积分或者求和的上限不需要 ^, 比如 Σₙ₌₁∞ 就行，不要写成  Σₙ₌₁^∞
+
+### 求和、求积与积分上下限
+- 区分求和符号 ∑ 与希腊大写字母 Σ；求和、求积和积分各自的上下限、变量及范围均以原图为准。
+- 下限和上限分别附着于原运算符，例如 ∑_{n=1}^{∞} 中 n=1 是下限、∞ 是上限；不能把上限落到正文基线或并入下限。
+- 积分的上下限、积分域、微分变量及被积表达式必须各自保留；没有出现的上下限不得补造。Unicode 无法准确表达时，允许保留必要的 _、^ 和分组。
+
+### 导数、伴随与逆幂的作用范围
+- 保留导数括号、prime 的数量及其附着对象；区分 f′(x)、(f(x))′ 与 (fg)′，不得把整体导数擅自改成局部导数或按恒等式展开。
+- 区分伴随符号、共轭符号、乘号与普通星号；保留 (AB)*、A*B 及 T^{*k} 等各自的括号、指数和作用范围，不根据常见算子公式重写。
+- 逆幂与负幂的位置以原图为准，保留 T^{-1}、(AB)^{-1} 等整体或局部范围，不能把逆号或负号移到其他因子。
+
+### 正文编号与公式指标
+- 正文条目号、定理号和式号按当前模式处理；公式内部的上下标、求和范围、幂次、prime 及条件不是正文编号，不能因为去编号而删除。
+- 不得将正文编号当作变量脚标，也不得把公式指标当作条目序号转换。
 
 ### 希腊字母识别
 - α alpha, β beta, γ gamma, δ delta, ε epsilon
@@ -29681,7 +30051,7 @@ class KnowledgeBaseNetwork {
 - Γ Gamma, Δ Delta, Θ Theta, Λ Lambda, Ξ Xi
 - Π Pi, Σ Sigma, Φ Phi, Ψ Psi, Ω Omega
 
-尤其是 ϕ，要注意优先使用 ϕ 而不是 φ
+原图中的 φ、ϕ、Φ 必须分别保留，不能因字体偏好合并成同一个字符。
 
 ### 数学运算符
 - × 乘号（不是字母 x）, · 点乘, ÷ 除号
@@ -29695,7 +30065,7 @@ class KnowledgeBaseNetwork {
 - → 右箭头, ← 左箭头, ↔ 双向箭头
 - ⇒ 推出, ⇐ 推自, ⇔ 等价
 - ↦ 映射到
-- 等价、当且仅当、iff、if and only if、equivalent 对应双向等价箭头 ⇔，禁止识别成 ⇨、⇒ 或 →
+- 箭头方向以原图为准；不能仅凭等价、当且仅当、iff、if and only if、equivalent 等文字把原文改写成箭头。
 - 若原图箭头有左右两个箭头头，必须输出 ⇔；只有单向箭头头时才输出 ⇒、→ 或 ⇨
 
 ### 集合符号
@@ -29727,6 +30097,7 @@ class KnowledgeBaseNetwork {
   static OCRHyphenHandlingRules = `
 **横线处理规则**：
 - ✅ 减号、连字符、英文复合词连接符统一使用键盘短横线 \`-\`（ASCII hyphen-minus, U+002D）
+- 原图中的普通数学减号统一输出键盘短横线 -（ASCII U+002D），不要输出汉字一或异常横线；只有数学上下文能够确认减号时才修正一，中文正文的一和数字 1 保持。上下标能完整表达时优先保留 Unicode，包括 x⁻¹、aₙ₋₁；不得为统一普通减号而改写上下标或改变指标范围。
 - ✅ 示例：\`Hilbert-Schmidt\`、\`C^*-algebra\`、\`x-y\`
 - ❌ 禁止输出 Unicode 横线或数学负号，例如 U+2010、U+2011、U+2012、U+2013、U+2014、U+2015、U+2212、U+FE63、U+FF0D
 - ❌ 不要用很细的数学负号代替键盘短横线 \`-\`
@@ -29739,11 +30110,12 @@ class KnowledgeBaseNetwork {
   static OCRNumberingRules = `
 ## 序号统一转换规则
 
-**核心原则**：只将真正的分项序号转换为带圈数字，保持输出格式一致性。
+**核心原则**：只将真正的分项序号转换为带圈数字。以下转换表仅用于同层分项，真正的嵌套列表必须保留隶属层级。
 
 **禁止误改章节或陈述编号**：
 - 定理、引理、推论、命题、定义、例子等数学陈述编号不是分项序号，绝不能转换为带圈数字。
 - 章节号、公式号、文献号和小数也不是分项序号，必须保持其整体结构。
+- 数学下标 (i)、导数阶数 (n) 和公式编号不能按分项转换，必须依据原图确认所属对象。
 - 例如 \`引理 1.2.3\`、\`引理 1.23\`、\`Theorem 2.4\` 不得变成 \`引理 ① ② ③\` 或其它带圈数字；应按下文“标记移除规则”整体删除标记词和编号。
 
 ### 转换规则
@@ -29799,7 +30171,7 @@ class KnowledgeBaseNetwork {
 
 ### 注意事项
 - 保持序号的顺序对应关系
-- 如果原文使用不同层级的序号（如 1. (a) (i)），统一转换为带圈数字
+- 如果原文使用不同层级的序号（如 1. (a) (i)），必须保留分层及隶属关系，不能全部压为同层带圈数字
 - 序号后的内容保持不变
 - 如果序号超过 50，继续使用阿拉伯数字格式（如 51. 52.）
 - 转换前必须确认它是分项；紧跟在定理类标记后的数字串一律不是分项
@@ -29811,13 +30183,16 @@ class KnowledgeBaseNetwork {
   static OCRPiecewiseRules = `
 ## 分段公式/分类条件的纯文本规则
 
-当图片出现左大括号、cases、array、aligned 等二维分段布局时，必须改写为单行带圈数字分支：
+只有原图实际按不同条件给出对应结果，构成真正的条件分支时，才将分段公式改写为单行带圈数字分支。
+左大括号、cases、matrix、array、aligned 等布局标记本身不能作为分段依据。矩阵、行列式、向量、多行对齐等式或方程组保留原有结构，不得仅凭布局改成条件分支。
+- 以下单行化规则只适用于已经确认的真实分段公式。
 - 保留等号左侧以及各分支原有顺序。
 - 统一格式为：\`x = ① 1，如果 [条件] ② 0，否则\`。
 - 每个分支使用“带圈数字 + 空格 + 结果 + ，如果 + 条件”；“否则”分支使用“带圈数字 + 空格 + 结果 + ，否则”。
 - 下一个带圈数字前只用一个空格分隔，禁止添加分号、逗号或换行。
-- 禁止输出左/右大花括号、\`\\begin{cases}\`、\`\\begin{array}\`、表格或数组布局标记。
+- 对上述真实分段公式的单行化结果，不输出左/右大花括号、\`\\begin{cases}\`、\`\\begin{array}\`、表格或数组布局标记；该要求不适用于矩阵或普通对齐公式。
 - 条件和结果必须完整保留，不得因为改写为单行而省略、合并或调换分支。
+- 原图没有给出的条件或“否则”分支不得补造。
 - Markdown 模式只在整条公式外加一对行内公式分隔符 \`$...$\`，不要在公式内部使用 \`cases\` 或其它多行环境。
 `
 
@@ -29862,32 +30237,32 @@ class KnowledgeBaseNetwork {
    * 非 Markdown OCR 模式的上下标回退规范
    */
   static OCRScriptFallbackRules = `
-**规则 C：上下标的 Unicode 优先、整体降级与嵌套层级**
+**规则 C：上下标的 Unicode 优先、必要回退与嵌套层级**
 ---
 **下标规则（优先级从高到低）**：
 1. 单层下标能逐字符完整转换时，优先全部使用 Unicode 下标。
    常用可用字符：₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓₔᵦᵧᵨᵩᵪ。
-2. 只要该下标中有一个字符没有对应的 Unicode 下标，整个下标必须统一降级为 LaTeX 风格的 \`_{...}\`；禁止部分 Unicode、部分普通字符或下划线的混搭。
-3. 两重及以上的嵌套下标必须保留层级，统一使用带花括号的 LaTeX 形式。若 A 的下标是 B，而 B 的下标是 C，必须写成 \`A_{B_C}\`，禁止写成有歧义的 \`A_B_C\`，也禁止压平成连续 Unicode 下标。
+2. Unicode 无法准确表达下标时，允许保留必要的 _ 和原有公式结构，尽量用清晰的 \`_{...}\` 分组表达作用范围；不为排版强制重写或删除语义有效的内容，也不通过混搭改变下标范围。
+3. 两重及以上的嵌套下标必须保留层级与作用范围，可使用带花括号的 LaTeX 或其他同样明确的表达。若 A 的下标是 B，而 B 的下标是 C，可写成 \`A_{B_C}\`；不得用有歧义的 \`A_B_C\` 改变层级，也不得压平成连续 Unicode 下标。
 
 **下标示例**：
 - ✅ \`Xₙ₌₀\`（下标 \`n=0\` 的每个字符都有 Unicode 下标）
-- ✅ \`X_{n≠0}\` ｜ ❌ \`Xₙ≠₀\`、\`Xₙ_{≠0}\`（\`≠\` 没有 Unicode 下标，因此 \`n≠0\` 整体降级）
+- ✅ \`X_{n≠0}\`（保留 \`n≠0\` 的下标作用范围，避免 \`Xₙ≠₀\`、\`Xₙ_{≠0}\` 改变原意）
 - ✅ \`lim_{a→∞}\` ｜ ❌ \`limₐ→∞\`（箭头无法写成 Unicode 下标）
-- ✅ \`A_{B_C}\` ｜ ❌ \`A_B_C\`（嵌套下标必须用花括号保留层级）
+- ✅ \`A_{B_C}\`（嵌套下标必须保留层级与作用范围，不能改成有歧义的 \`A_B_C\`）
 
 **上标规则**：
-- 能逐字符完整转换时，整个上标使用 Unicode。
+- 能逐字符完整、准确转换时，优先使用 Unicode 上标。
   常用可用字符：⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁᵂ。
-- 只要有一个字符无法转换，整个上标统一写成 \`^{...}\`，禁止混搭。
-- ✅ \`aₙ⁽ᵐ⁾\` ｜ ❌ \`aₙ^(m)\`
+- 必要时允许保留 ^ 和原有公式结构，尽量用清晰的 \`^{...}\` 分组表达作用范围；不为转换 Unicode 猜测、压平或截断指标。原图中的 alpha 位于上标时，允许使用 ᵅ。
+- 优先 \`aₙ⁽ᵐ⁾\`；必要时也可保留 \`aₙ^(m)\` 等准确表达。
 
 **bar、hat、tilde 组合标记规则**：
 - 单个数学符号上方的 bar、hat、tilde 优先使用“基础字符 + Unicode 组合标记”：bar 用 U+0304（◌̄），hat 用 U+0302（◌̂），tilde 用 U+0303（◌̃）。
 - 组合标记可用于拉丁字母、希腊字母、数字、运算符和数学字母数字字符，并保留基础字符原有字形。例如：\`x̄\`、\`α̂\`、\`∇̃\`、\`𝒜̂\`、\`ℝ̄\`。
-- 若横线覆盖整个多字符标识符，对每个基础字符附加组合标记，例如 \`span\` 写成 \`s̄p̄ān̄\`；禁止只给最后一个字符加标记。
+- 多字符整组或嵌套重音必须保留整体作用范围，不能强制逐字添加组合标记；例如 \`\\bar{ab}\` 与 \`āb̄\` 可能有不同含义，不得互相擅自改写。
 - 禁止用后置 ASCII \`-\`、\`^\`、\`~\` 冒充组合标记。
-- 只有组合字符无法可靠表达作用范围时（例如复合表达式、分组或嵌套重音），才降级为带花括号的 \`\\bar{...}\`、\`\\hat{...}\`、\`\\tilde{...}\` 或 \`\\overline{...}\`。
+- 组合字符无法可靠表达作用范围时（例如多字符整组、复合表达式或嵌套重音），允许保留明确分组的 \`\\bar{...}\`、\`\\hat{...}\`、\`\\tilde{...}\` 或 \`\\overline{...}\`。
 ---
 `
 
@@ -30186,6 +30561,7 @@ class KnowledgeBaseNetwork {
     if (!ocrResult) return ocrResult
 
     let result = ocrResult
+    const fixedMath = typeof KnowledgeBaseOCRPostprocess !== 'undefined' && KnowledgeBaseOCRPostprocess.enabled()
 
     const normalizeTitlePunctuation = options && options.normalizeTitlePunctuation === true
     if (normalizeTitlePunctuation) {
@@ -30195,21 +30571,56 @@ class KnowledgeBaseNetwork {
     }
 
     const disableTheoremHeadingCleanup = options && options.disableTheoremHeadingCleanup === true
-    const rules = disableTheoremHeadingCleanup
+    let rules = disableTheoremHeadingCleanup
       ? this.OCRPostProcessingRules.filter(rule => !this.isTheoremHeadingCleanupRule(rule))
       : this.OCRPostProcessingRules
+    if (fixedMath) rules = rules.filter(rule => !rule.requiresImage)
 
     // 依次应用所有替换规则
     rules.forEach(rule => {
       result = result.replace(rule.pattern, rule.replacement)
     })
 
+    // Normalize baseline minus glyphs before the existing Unicode script formatter.
+    result = String(result).replace(/[−‐‑‒–—―﹘﹣－➖˗]/g, '-')
+    // A Chinese numeral in prose or a TeX text command is not a minus sign.
+    const textRanges = []
+    const textCommands = /\\(?:text|textrm|textnormal|textsf|texttt|textbf|textit|mathrm|mbox|operatorname)\s*\{/g
+    let textMatch
+    while ((textMatch = textCommands.exec(result))) {
+      let end = textCommands.lastIndex, depth = 1
+      while (end < result.length && depth) {
+        if (result[end] === '\\') { end += 2; continue }
+        if (result[end] === '{') depth++
+        if (result[end] === '}') depth--
+        end++
+      }
+      textRanges.push([textMatch.index, end])
+      textCommands.lastIndex = end
+    }
+    const operandStart = /^[A-Za-z0-9\u0370-\u03ff\u2100-\u214f\u{1d400}-\u{1d7ff}(\[{\\|‖√∑∏∫∂∇∞]$/u
+    const operandEnd = /^[A-Za-z0-9\u0370-\u03ff\u2100-\u214f\u{1d400}-\u{1d7ff})\]}′″*|‖∞¹²³\u2070-\u209f\u1d2c-\u1d6a]$/u
+    const operatorLeft = /^[=<>≤≥≠≈≡:+*/×÷·(\[{$-]$/u
+    result = result.replace(/[一─━⎯]/g, (glyph, index, whole) => {
+      if (textRanges.some(([start, end]) => index >= start && index < end)) return glyph
+      let before = index - 1, after = index + 1
+      while (before >= 0 && /\s/.test(whole[before])) before--
+      while (after < whole.length && /\s/.test(whole[after])) after++
+      const left = before < 0 ? '' : /[\udc00-\udfff]/.test(whole[before])
+        ? whole.slice(before - 1, before + 1) : whole[before]
+      const right = after >= whole.length ? '' : String.fromCodePoint(whole.codePointAt(after))
+      return operandStart.test(right) && (!left || operandEnd.test(left) || operatorLeft.test(left)) ? '-' : glyph
+    })
+
     if (options && options.normalizeMarkdownTitle === true) {
       result = this.normalizeOCRTitleMarkdownResult(result)
     }
 
-    if (options && options.quickReadingPlainText === true) {
+    if (options && options.quickReadingPlainText === true && !fixedMath) {
       result = this.normalizeQuickReadingPlainOCRResult(result)
+    }
+    if (fixedMath) {
+      result = KnowledgeBaseOCRPostprocess.normalizeScripts(result, this.normalizeQuickReadingScript.bind(this))
     }
 
     if (normalizeTitlePunctuation) {
@@ -30368,7 +30779,7 @@ ${this.OCRCorrectionRules}
 ${this.OCRNumberingRules}
 
 ## 最终检查清单
-1. 所有下标、上标是否做到了“能完整 Unicode 就 Unicode，否则整段统一用 ^{...} / _{...}”
+1. 所有下标、上标是否做到了“优先使用准确 Unicode，必要时保留 _ 和 ^，并保持指标层级与作用范围”
 2. 数学符号是否准确（特别注意乘号、属于符号等）
 3. 希腊字母是否正确识别
 4. 数字和字母是否混淆（0/O, 1/l/I 等）
@@ -30795,7 +31206,7 @@ ${this.OCRCorrectionRules}
 ${this.OCRNumberingRules}
 
 ## 最终检查清单
-1. 所有下标、上标是否做到了“能完整 Unicode 就 Unicode，否则整段统一用 ^{...} / _{...}”
+1. 所有下标、上标是否做到了“优先使用准确 Unicode，必要时保留 _ 和 ^，并保持指标层级与作用范围”
 2. 数学符号是否准确（特别注意乘号、属于符号等）
 3. 希腊字母是否正确识别
 4. 数字和字母是否混淆（0/O, 1/l/I 等）
@@ -31182,7 +31593,7 @@ ${this.OCRNumberingRules}
 2. 冗余信息是否已删除
 3. 人名是否保持原文
 4. 逻辑连接是否流畅
-5. 上下标是否做到了“能完整 Unicode 就 Unicode，否则整段统一用 ^{...} / _{...}”
+5. 上下标是否做到了“优先使用准确 Unicode，必要时保留 _ 和 ^，并保持指标层级与作用范围”
 `
 
   static OCRSummarizeNoTransPrompt = `
@@ -31276,7 +31687,7 @@ ${this.OCRNumberingRules}
 2. 冗余信息是否已删除
 3. 人名是否保持原文
 4. 逻辑连接是否流畅
-5. 上下标是否做到了“能完整 Unicode 就 Unicode，否则整段统一用 ^{...} / _{...}”
+5. 上下标是否做到了“优先使用准确 Unicode，必要时保留 _ 和 ^，并保持指标层级与作用范围”
 `
 
   static usesManualOCRInputPolicy(options = {}) {
@@ -31324,8 +31735,8 @@ ${this.OCRNumberingRules}
     if (!text) return ''
     if (mode === 1) {
       if (/\$|\\\[|\\\]|\\\(|\\\)/.test(text) ||
-        /\\(?:frac|sum|bigoplus|oplus|otimes|mathbb|mathcal|operatorname|overline|left|right|infty|subset|leq|geq|neq|to)\b/.test(text)) {
-        return '直接 OCR 只允许 Unicode 直出，检测到 Markdown/LaTeX 公式'
+        /\\(?:frac|sum|bigoplus|oplus|otimes|mathbb|mathcal|operatorname|left|right|infty|subset|leq|geq|neq|to)(?![A-Za-z])/.test(text)) {
+        return '直接 OCR 检测到不支持的 Markdown/LaTeX 公式格式'
       }
       return ''
     }
@@ -31467,6 +31878,10 @@ ${this.OCRNumberingRules}
     try {
       result = await this.OCR(compressedImageData, ocrModel, prompt, {
         timeoutSeconds: requestTimeoutSeconds,
+        researchScene: this.usesResearchOCR(options),
+        ocrModelOverride: options.ocrModelOverride,
+        originalImageData: imageInput.data,
+        mode,
       })
     } finally {
       await MNUtil.stopHUD()
@@ -31507,10 +31922,45 @@ ${this.OCRNumberingRules}
     return finalText
   }
 
+  static isDefinitionConceptNote(note) {
+    const type = KnowledgeBaseTemplate.types && KnowledgeBaseTemplate.types['定义']
+    return !!(note && type && Number(note.colorIndex) === Number(type.colorIndex))
+  }
+
+  static queueDefinitionConcept(note) {
+    return this.isDefinitionConceptNote(note) && typeof KnowledgeBaseDefinitionConcept !== 'undefined'
+      ? KnowledgeBaseDefinitionConcept.getRuntime().enqueue(note) : false
+  }
+
+  static usesResearchOCR(options = {}) {
+    if (typeof options.researchScene === 'boolean') return options.researchScene
+    try {
+      if (typeof Application === 'undefined' || typeof KnowledgeBaseResearchCore === 'undefined') return false
+      const app = typeof Application.sharedInstance === 'function' ? Application.sharedInstance() : null
+      const snapshot = typeof Application.immersiveTemplateForAddon === 'function'
+        ? Application.immersiveTemplateForAddon('marginnote.extension.mnresearchscene')
+        : app && typeof app.immersiveTemplateForAddon === 'function'
+          ? app.immersiveTemplateForAddon('marginnote.extension.mnresearchscene') : null
+      return KnowledgeBaseResearchCore.sceneSnapshot(snapshot)
+    } catch (_) { return false }
+  }
+
+  static researchOCRAvailable() {
+    try {
+      const model = KnowledgeBaseConfig.getResearchOCRModel()
+      return typeof ocrConfig !== 'undefined' && !!(ocrConfig.modelSource(model) || {}).model
+    } catch (_) { return false }
+  }
+
   static async OCRToTitle(note, mode = 1, needTranslation = undefined, place = "all", options = {}) {
-    const ignoreDefinitionSkip = !!(options && options.ignoreDefinitionSkip)
+    const researchOCR = this.usesResearchOCR(options)
+    const quickReadingPlainText = !!(options && options.quickReadingPlainText) || (researchOCR && mode === 1)
+    const guardedOCR = researchOCR || quickReadingPlainText || (typeof KnowledgeBaseOCRPostprocess !== 'undefined' && KnowledgeBaseOCRPostprocess.enabled())
+    const originalSnapshot = guardedOCR ? KnowledgeBaseDefinitionConcept.snapshot(note) : ''
+    const originalNotebook = guardedOCR ? String(MNUtil.currentNotebookId || '') : ''
+    const originalWindow = guardedOCR ? MNUtil.currentWindow : null
+    const ignoreDefinitionSkip = researchOCR || !!(options && options.ignoreDefinitionSkip)
     const useManualInputPolicy = this.usesManualOCRInputPolicy(options)
-    const quickReadingPlainText = !!(options && options.quickReadingPlainText)
     const ocrModelOverride = options && options.ocrModelOverride !== undefined
       ? String(options.ocrModelOverride || '').trim()
       : ''
@@ -31528,7 +31978,7 @@ ${this.OCRNumberingRules}
       if (useManualInputPolicy) {
         MNUtil.showHUD('当前卡片没有可 OCR 的摘录图片或第一条图片/手写评论', 1)
       }
-      // MNUtil.showHUD("No image found")
+      this.logOCRStage('ocr.skipped', { reason: 'missing-image' })
       return
     }
     const compressedImageData = this.prepareOCRImageData(imageInput)
@@ -31618,6 +32068,7 @@ ${this.OCRNumberingRules}
 	    if (ocrModelOverride) {
 	      ocrModel = ocrModelOverride
 	    }
+      if (researchOCR) ocrModel = KnowledgeBaseConfig.getResearchOCRModel(ocrModelOverride)
 
 	    let fallbackModel = quickReadingPlainText
 	      ? String(KnowledgeBaseConfig.getConfig('quickReadingOCRFallbackModel') || '').trim()
@@ -31628,17 +32079,36 @@ ${this.OCRNumberingRules}
         'gemini-3-flash-minimal',
       ].find(source => source !== ocrModel) || ''
 	    }
+      if (researchOCR) fallbackModel = ocrModel === KnowledgeBaseConfig.RESEARCH_OCR_FALLBACK ? '' : KnowledgeBaseConfig.RESEARCH_OCR_FALLBACK
 	    const timeoutSeconds = quickReadingPlainText
 	      ? Math.max(1, Number(KnowledgeBaseConfig.getConfig('quickReadingOCRTimeoutSeconds')) || 12)
 	      : (mode === 1 ? Math.max(0, Number(options && options.timeoutSeconds) || 0) : 0)
 
+      const ocrDiagnostic = options && options.ocrDiagnosticTarget || {}
+      this.logOCRStage('ocr.started', { provider: ocrModel, timeoutSeconds })
 	    let result = await this.OCR(compressedImageData, ocrModel, prompt, {
 	      timeoutSeconds,
+        researchScene: researchOCR,
+        researchOCRModel: researchOCR ? ocrModel : undefined,
+        originalImageData: imageInput.data,
+        mode,
 	      fallbackSource: fallbackModel,
-	      ocrDiagnosticTarget: options && options.ocrDiagnosticTarget,
+	      ocrDiagnosticTarget: ocrDiagnostic,
 	    })
+      this.logOCRStage('ocr.finished', { provider: ocrDiagnostic.finalModel || ocrModel, success: !!result, correctionFallback: !!ocrDiagnostic.correctionFallback })
+      // A failed optional correction keeps the recognized draft and uses the existing formatter.
+      if (ocrDiagnostic.correctionFallback && result) {
+        result = this.postProcessOCRResult(result, {
+          ...this.buildOCRPostProcessOptions(note, { forceTheoremHeadingCleanup: quickReadingPlainText }),
+          normalizeMarkdownTitle: mode === 2,
+          quickReadingPlainText,
+          normalizeTitlePunctuation: true,
+          preserveTitleLinkSeparator: place === 'firstTitleLinkWord' || place === 'lastTitleLinkWord',
+        })
+      }
       const formatViolation = this.getOCRResultFormatViolation(result, mode)
       if (formatViolation) {
+        this.logOCRStage('title.rejected', { reason: 'format-rejected', provider: ocrModel })
         KnowledgeBaseUtils.log('OCR result format rejected', 'OCRToTitle', {
           mode,
           model: ocrModel,
@@ -31659,9 +32129,25 @@ ${this.OCRNumberingRules}
       }
       postProcessOptions.normalizeTitlePunctuation = true
       postProcessOptions.preserveTitleLinkSeparator = place === 'firstTitleLinkWord' || place === 'lastTitleLinkWord'
-      result = this.postProcessOCRResult(result, postProcessOptions)
+      if (!ocrDiagnostic.correctionFallback) result = this.postProcessOCRResult(result, postProcessOptions)
+      // Adjacent double braces in an OCR title are interpreted as native template syntax.
+      const titleBeforeTemplateProtection = String(result || '')
+      if (result) result = titleBeforeTemplateProtection.replace(/\{{2,}[\s\S]*?\}{2,}/g, segment => segment.replace(/\{{2,}|\}{2,}/g, braces => braces.split('').join(' ')))
+      this.logOCRStage('title.template-protected', {
+        matchesBefore: (titleBeforeTemplateProtection.match(/\{{2,}[\s\S]*?\}{2,}/g) || []).length,
+        matchesAfter: (String(result || '').match(/\{{2,}[\s\S]*?\}{2,}/g) || []).length,
+        changed: titleBeforeTemplateProtection !== String(result || ''),
+      })
 	    if (result) {
+        let titleApplied = false
+        this.logOCRStage('title.started')
         const applyTitle = () => {
+        if (options.valid && !options.valid()) return false
+        if (guardedOCR && (String(MNUtil.currentNotebookId || '') !== originalNotebook || MNUtil.currentWindow !== originalWindow ||
+          KnowledgeBaseDefinitionConcept.snapshot(note) !== originalSnapshot)) {
+          this.logOCRStage('title.rejected', { reason: 'source-changed' })
+          return false
+        }
 	        let titleParts = KnowledgeBaseTemplate.parseNoteTitle(note)
 	        switch (place) {
 	          case "all":
@@ -31694,6 +32180,7 @@ ${this.OCRNumberingRules}
         } else if (note && typeof note.refresh === "function") {
           note.refresh()
         }
+        titleApplied = true
         return true
         }
         if (typeof KnowledgeBaseTemplate.runUndoGroupingWithoutGlobalDBRefreshAsync === "function") {
@@ -31715,15 +32202,68 @@ ${this.OCRNumberingRules}
         } else {
           MNUtil.undoGrouping(applyTitle)
         }
-      return true
+      this.logOCRStage('title.finished', { success: titleApplied })
+      if (titleApplied && researchOCR && !options.deferPresentation) {
+        await KnowledgeBaseTemplate.presentOCRResult(note, { notebookId: originalNotebook, window: originalWindow, stage: 'research.manualOCR' })
+      }
+      return titleApplied
     } else {
       return false
     }
   }
+  static logOCRStage(stage, details = {}) {
+    try {
+      if (typeof MNUtil === 'undefined' || typeof MNUtil.log !== 'function') return
+      const data = {}
+      for (const key of ['provider', 'reason']) {
+        const item = String(details[key] || '')
+        if (/^[A-Za-z0-9_.-]{1,100}$/.test(item)) data[key] = item
+      }
+      for (const key of ['durationMs', 'timeoutSeconds', 'matchesBefore', 'matchesAfter']) {
+        if (Number.isFinite(details[key])) data[key] = Math.max(0, details[key])
+      }
+      for (const key of ['success', 'timedOut', 'correctionFallback', 'changed']) {
+        if (typeof details[key] === 'boolean') data[key] = details[key]
+      }
+      MNUtil.log({ source: 'researchOCR', level: data.reason || data.timedOut ? 'WARN' : 'INFO', message: stage, detail: data })
+    } catch (_) {}
+  }
+
+  static async waitForOCRNetwork(send, timeoutSeconds, provider) {
+    const started = Date.now(), seconds = Math.max(0, Number(timeoutSeconds) || 0)
+    this.logOCRStage('network.started', { provider, timeoutSeconds: seconds })
+    try {
+      const pending = Promise.resolve().then(send)
+      // Bound only the transport: a late result cannot reach title mutation or conversion.
+      const result = seconds > 0 ? await Promise.race([
+        pending,
+        MNUtil.delay(seconds).then(() => { throw new Error('timeout') }),
+      ]) : await pending
+      this.logOCRStage('network.finished', { provider, durationMs: Date.now() - started, success: !!result })
+      return result
+    } catch (error) {
+      this.logOCRStage('network.failed', { provider, durationMs: Date.now() - started, timedOut: !!(error && error.message === 'timeout'), reason: error && error.message === 'timeout' ? 'timeout' : 'transport-error' })
+      throw error
+    }
+  }
+
   static async OCR(imageData, source = "doubao-seed-1-6-nothinking", prompt, options = {}){
+    const researchOCR = this.usesResearchOCR(options)
+    if (researchOCR) {
+      source = KnowledgeBaseConfig.getResearchOCRModel(options.researchOCRModel || options.ocrModelOverride)
+      prompt = KnowledgeBaseOCRPostprocess.recognitionPrompt(prompt, options.mode)
+    }
+    const fixedMath = !researchOCR && typeof KnowledgeBaseOCRPostprocess !== 'undefined' && KnowledgeBaseOCRPostprocess.enabled()
     const diagnosticTarget = options && options.ocrDiagnosticTarget
     const timeoutSeconds = Math.max(0, Number(options && options.timeoutSeconds) || 0)
-    const fallbackSource = String(options && options.fallbackSource || '').trim()
+    const fallbackSource = researchOCR
+      ? (source === KnowledgeBaseConfig.RESEARCH_OCR_FALLBACK ? '' : KnowledgeBaseConfig.RESEARCH_OCR_FALLBACK)
+      : String(options && options.fallbackSource || '').trim()
+    const rankedSources = researchOCR ? KnowledgeBaseConfig.RESEARCH_OCR_SOURCES
+      : typeof KnowledgeBaseConfig.getAvailableOCRSources === 'function'
+        ? KnowledgeBaseConfig.getAvailableOCRSources(options.mode || 1) : []
+    const fallbackSources = [...new Set([fallbackSource].concat(rankedSources || []))]
+      .filter(candidate => candidate && candidate !== source)
     const diagnostic = {
       primaryModel: String(source || ''),
       finalModel: String(source || ''),
@@ -31757,16 +32297,23 @@ ${this.OCRNumberingRules}
       const requestVision = async requestedSource => {
         const requestStartedAt = Date.now()
         const attemptDiagnostic = {}
-        const result = await this.ChatGPTVision(
-          imageBase64,
-          requestedSource,
-          prompt,
-          showProgressHUD,
-          {
-            requestTimeoutSeconds: timeoutSeconds,
-            attemptDiagnosticTarget: attemptDiagnostic,
-          },
-        )
+        let result
+        try {
+          result = await this.ChatGPTVision(
+            imageBase64,
+            requestedSource,
+            fixedMath ? KnowledgeBaseOCRPostprocess.visionPrompt : prompt,
+            showProgressHUD,
+            {
+              requestTimeoutSeconds: timeoutSeconds,
+              attemptDiagnosticTarget: attemptDiagnostic,
+            },
+          )
+        } catch (error) {
+          const timedOut = !!(error && error.message === 'timeout')
+          Object.assign(attemptDiagnostic, { timedOut, errorCategory: timedOut ? 'timeout' : 'exception' })
+        }
+        if (typeof result !== 'string' || !result.trim()) result = undefined
         diagnostic.attempts.push({
           model: String(requestedSource || ''),
           providerModel: String(attemptDiagnostic.providerModel || ''),
@@ -31774,16 +32321,29 @@ ${this.OCRNumberingRules}
           timeoutSeconds,
           success: !!result,
           timedOut: !!attemptDiagnostic.timedOut,
-          errorCategory: String(attemptDiagnostic.errorCategory || ''),
+          errorCategory: String(attemptDiagnostic.errorCategory || (result ? '' : 'empty-result')),
         })
         return result
+      }
+      const requestLegacy = async (send, requestedSource = ocrSource) => {
+        const started = Date.now()
+        try {
+          let result = await this.waitForOCRNetwork(send, timeoutSeconds, requestedSource)
+          if (typeof result !== 'string' || !result.trim()) result = undefined
+          diagnostic.attempts.push({ model: requestedSource, durationMs: Date.now() - started, timeoutSeconds, success: !!result, timedOut: false, errorCategory: result ? '' : 'empty-result' })
+          return result
+        } catch (error) {
+          const timedOut = !!(error && error.message === 'timeout')
+          diagnostic.attempts.push({ model: requestedSource, durationMs: Date.now() - started, timeoutSeconds, success: false, timedOut, errorCategory: timedOut ? 'timeout' : 'provider-error' })
+          return undefined
+        }
       }
       switch (ocrSource) {
         case "Doc2X":
         case "doc2x":
         case "Doc2XPDF":
         case "doc2xpdf":
-          res = await ocrNetwork.doc2xImgOCR(imageData)
+          res = await requestLegacy(() => ocrNetwork.doc2xImgOCR(imageData))
           if (res) {
             ocrNetwork.OCRBuffer[MD5] = res
             KnowledgeBaseUtils.emitRuntimeLog('INFO', {
@@ -31795,7 +32355,7 @@ ${this.OCRNumberingRules}
           break;
         case "SimpleTex":
         case "simpleTex":
-          res = await ocrNetwork.simpleTexOCR(imageData)
+          res = await requestLegacy(() => ocrNetwork.simpleTexOCR(imageData))
           if (res) {
             ocrNetwork.OCRBuffer[MD5] = res
             KnowledgeBaseUtils.emitRuntimeLog('INFO', {
@@ -31879,6 +32439,7 @@ ${this.OCRNumberingRules}
         case "kimi-latest":
         case "kimi-k2.6":
         case "deepseek-ocr":
+        case "deepseek-flash":
           let beginTime = Date.now()
           res = await requestVision(ocrSource)
           let endTime = Date.now()
@@ -31908,23 +32469,42 @@ ${this.OCRNumberingRules}
             }
             break
           }
-          MNUtil.showHUD("不支持的 OCR 模型来源：" + ocrSource)
-          diagnostic.errorCategory = 'unsupported-source'
-          diagnostic.durationMs = Math.max(0, Date.now() - ocrStartedAt)
-          syncDiagnostic()
-          return undefined
+          diagnostic.attempts.push({ model: ocrSource, success: false, timedOut: false, errorCategory: 'unsupported-source' })
       }
-      const primaryAttempt = diagnostic.attempts[diagnostic.attempts.length - 1]
-      if (!res && fallbackSource && fallbackSource !== ocrSource && primaryAttempt && primaryAttempt.timedOut) {
+      for (const candidate of fallbackSources) {
+        if (res) break
         diagnostic.fallbackUsed = true
-        resultSource = fallbackSource
-        res = await requestVision(fallbackSource)
+        resultSource = candidate
+        const previousAttempt = diagnostic.attempts[diagnostic.attempts.length - 1]
+        this.logOCRStage('ocr.fallback', { provider: candidate, reason: previousAttempt && previousAttempt.errorCategory || 'empty-result' })
+        if (['Doc2X', 'doc2x', 'Doc2XPDF', 'doc2xpdf'].includes(candidate)) {
+          res = await requestLegacy(() => ocrNetwork.doc2xImgOCR(imageData), candidate)
+        } else if (['SimpleTex', 'simpleTex'].includes(candidate)) {
+          res = await requestLegacy(() => ocrNetwork.simpleTexOCR(imageData), candidate)
+        } else {
+          res = await requestVision(candidate)
+        }
         if (res) {
           ocrNetwork.OCRBuffer[MD5] = res
         }
       }
       if (showProgressHUD) {
         MNUtil.stopHUD()
+      }
+      res = ocrUtils.action(resultSource, res)
+      if (res && fixedMath) {
+        const correctionStartedAt = Date.now()
+        const draft = res
+        const corrected = await KnowledgeBaseOCRPostprocess.correct(options.originalImageData || imageData, draft, prompt, {
+          mode: options.mode,
+          remainingMs: timeoutSeconds > 0 ? timeoutSeconds * 1000 - (Date.now() - ocrStartedAt) : 8000,
+        })
+        res = corrected || draft
+        diagnostic.correctionModel = 'deepseek-flash'
+        diagnostic.correctionMs = Date.now() - correctionStartedAt
+        diagnostic.correctionFallback = !corrected
+        this.logOCRStage('correction.result', { success: !!corrected, correctionFallback: !corrected, durationMs: diagnostic.correctionMs })
+        ocrNetwork.OCRBuffer[MD5] = res
       }
       const rawSucceeded = !!res
       diagnostic.finalModel = String(resultSource || '')
@@ -31935,7 +32515,6 @@ ${this.OCRNumberingRules}
         diagnostic.errorCategory = String(finalAttempt && finalAttempt.errorCategory || 'empty-result')
       }
       syncDiagnostic()
-      res = ocrUtils.action(resultSource, res)
       try {
         console.log("[MNKB OCR Performance] " + JSON.stringify({
           source: ocrSource,
@@ -31968,7 +32547,48 @@ ${this.OCRNumberingRules}
       if (!attemptDiagnostic || typeof attemptDiagnostic !== 'object') return
       Object.assign(attemptDiagnostic, detail)
     }
+    const convertVisionText = value => value
+      .replace(/\$\$\n?/g, '$$$\n')
+      .replace(/(\\\[\s*\n?)|(\s*\\\]\n?)/g, '$$$\n')
+      .replace(/(\\\(\s*)|(\s*\\\))/g, '$')
+      .replace(/```/g,'')
+      .replace(/<\|begin_of_box\|>/g,'')
+      .replace(/<\|end_of_box\|>/g,'')
     try {
+      if (source === 'deepseek-flash') {
+        const requestTimeoutSeconds = Math.max(0, Number(options && options.requestTimeoutSeconds) || 0) || 60
+        const requestStartedAt = Date.now()
+        updateAttemptDiagnostic({ providerModel: source })
+        try {
+          const base64 = typeof imageData === 'string' ? imageData : imageData.base64Encoding()
+          const body = {
+            model: source, stream: false, temperature: 0,
+            thinking: { type: 'disabled' }, max_tokens: 4096,
+            messages: [
+              { role: 'system', content: prompt },
+              { role: 'user', content: [{ type: 'image_url', image_url: {
+                url: /^data:image\//.test(base64) ? base64 : 'data:image/jpeg;base64,' + base64,
+              } }] },
+            ],
+          }
+          if (showProgressHUD) MNUtil.waitHUD('OCR By ' + source)
+          const result = await this.waitForOCRNetwork(
+            () => KnowledgeBaseDefinitionConcept.requestOfficial(body, requestTimeoutSeconds * 1000),
+            requestTimeoutSeconds, source,
+          )
+          if (typeof result !== 'string' || !result.trim()) throw new Error('empty-result')
+          updateAttemptDiagnostic({ success: true, timedOut: false, errorCategory: '', requestDurationMs: Date.now() - requestStartedAt })
+          return convertVisionText(result)
+        } catch (error) {
+          const requestDurationMs = Math.max(0, Date.now() - requestStartedAt)
+          const errorCode = String(error && error.message || '')
+          const timedOut = /timeout/i.test(errorCode) || requestDurationMs >= Math.max(0, requestTimeoutSeconds * 1000 - 250)
+          updateAttemptDiagnostic({ success: false, timedOut, requestDurationMs,
+            errorCategory: timedOut ? 'timeout' : errorCode === 'missing-config' ? 'missing-api-key' : 'provider-error',
+          })
+          return undefined
+        }
+      }
       const modelConfig = ocrConfig.modelSource(source) || {}
       const subscription = typeof subscriptionConfig !== 'undefined' && subscriptionConfig
         ? subscriptionConfig.config || {} : {}
@@ -31981,6 +32601,7 @@ ${this.OCRNumberingRules}
         (endpoint && endpoint === subscriptionEndpoint ? subscription.apikey || '' : '')).trim()
       if (!endpoint || !key) {
         updateAttemptDiagnostic({ success: false, timedOut: false, errorCategory: 'missing-api-key' })
+        this.logOCRStage('network.skipped', { reason: 'missing-api-key', provider: source })
         MNUtil.showHUD("请为当前 OCR 模型配置匹配服务地址的 API Key")
         return
       }
@@ -32022,12 +32643,15 @@ ${this.OCRNumberingRules}
       const isDoubao18 = (source || "").toString().toLowerCase().startsWith("doubao-seed-1-8")
       // 对 doubao 1.8：若账号未开通视觉能力，会 403；先静默请求，必要时回退到可用的视觉模型
       const requestStartedAt = Date.now()
-      const useSilentTimedRequest = requestTimeoutSeconds > 0 &&
+      const useSharedRequest = (requestTimeoutSeconds > 0 || typeof ocrNetwork.sendRequest !== 'function') &&
         typeof MNConnection !== 'undefined' && MNConnection &&
-        typeof MNConnection.sendRequest === 'function'
-      let res = useSilentTimedRequest
-        ? await MNConnection.sendRequest(request)
-        : await ocrNetwork.sendRequest(request,"ChatGPTVision",false,!isDoubao18)
+        (typeof MNConnection.sendRequestDev === 'function' || typeof MNConnection.sendRequest === 'function')
+      let res = await this.waitForOCRNetwork(
+        () => useSharedRequest
+          ? this.sendSharedRequest(request)
+          : ocrNetwork.sendRequest(request,"ChatGPTVision",false,!isDoubao18),
+        requestTimeoutSeconds, source,
+      )
       const requestDurationMs = Math.max(0, Date.now() - requestStartedAt)
       let ocrResult
       if (res && res.choices && res.choices.length) {
@@ -32071,18 +32695,13 @@ ${this.OCRNumberingRules}
         return undefined
       }
 
-      let convertedText = ocrResult
-        .replace(/\$\$\n?/g, '$$$\n')
-        .replace(/(\\\[\s*\n?)|(\s*\\\]\n?)/g, '$$$\n')
-        .replace(/(\\\(\s*)|(\s*\\\))/g, '$')
-        .replace(/```/g,'')
-        .replace(/<\|begin_of_box\|>/g,'')
-        .replace(/<\|end_of_box\|>/g,'')
+      let convertedText = convertVisionText(ocrResult)
       updateAttemptDiagnostic({ success: true, timedOut: false, errorCategory: '' })
       return convertedText
     } catch (error) {
-      updateAttemptDiagnostic({ success: false, timedOut: false, errorCategory: 'exception' })
-      KnowledgeBaseUtils.addErrorLog(error, "ChatGPTVision")
+      const timedOut = !!(error && error.message === 'timeout')
+      updateAttemptDiagnostic({ success: false, timedOut, errorCategory: timedOut ? 'timeout' : 'exception' })
+      if (!timedOut) KnowledgeBaseUtils.addErrorLog(error, "ChatGPTVision")
       return undefined
     }
   }
@@ -32487,12 +33106,25 @@ ${this.OCRNumberingRules}
 }
 
 class KnowledgeBaseConfig {
+  static RESEARCH_OCR_SOURCES = [
+    'gemini-3.5-flash-minimal', 'qwen3.8-flash-nothinking', 'glm-5.3-flashx-low',
+    'glm-5.3-flash-nothinking', 'doubao-seed-2-1-lite-nothinking',
+  ]
+  static DEFAULT_RESEARCH_OCR_MODEL = 'gemini-3.5-flash-minimal'
+  static RESEARCH_OCR_FALLBACK = 'glm-5.3-flashx-low'
+  static getResearchOCRModel(override) {
+    const explicit = String(override || '').trim()
+    if (this.RESEARCH_OCR_SOURCES.includes(explicit)) return explicit
+    const saved = String(this.getConfig('researchOCRModel') || '').trim()
+    return this.RESEARCH_OCR_SOURCES.includes(saved) ? saved : this.DEFAULT_RESEARCH_OCR_MODEL
+  }
   static DIRECT_EXCERPT_OCR_SOURCES = [
     "gemini-3.5-flash-minimal",
     "qwen3.8-flash-nothinking",
     "glm-5.3-flashx-low",
     "glm-5.3-flash-nothinking",
     "doubao-seed-2-1-lite-nothinking",
+    "deepseek-flash",
   ]
   static MARKDOWN_EXCERPT_OCR_SOURCES = [
     "Doc2X",
@@ -32525,7 +33157,8 @@ class KnowledgeBaseConfig {
   }
 
   static getAvailableOCRSources(mode = 1) {
-    const rankedSources = mode === 2
+    const research = mode === 1 && typeof KnowledgeBaseNetwork !== 'undefined' && KnowledgeBaseNetwork.usesResearchOCR()
+    const rankedSources = research ? this.RESEARCH_OCR_SOURCES : mode === 2
       ? this.MARKDOWN_EXCERPT_OCR_SOURCES
       : mode === 3 ? this.READING_EXCERPT_OCR_SOURCES : this.DIRECT_EXCERPT_OCR_SOURCES
     try {
@@ -32537,18 +33170,23 @@ class KnowledgeBaseConfig {
           Array.isArray(activatedModels) ? activatedModels : [],
         ).map(model => String(model || "").trim()))
         const availableSources = rankedSources.filter(source =>
+          source === "deepseek-flash" ||
           (mode === 2 && (source === "Doc2X" || source === "SimpleTex")) ||
           remoteModels.has(source)
         )
-        if (availableSources.length) return availableSources
+        if (availableSources.some(source => source !== "deepseek-flash")) return availableSources
       }
     } catch (_) {}
     return rankedSources.slice()
   }
 	  static get defaultConfig() {
 	    return {
+      researchOCRModel: this.DEFAULT_RESEARCH_OCR_MODEL, // 仅科研场景；保留全局及其他模式的模型设置
 	      excerptOCRModel: this.DEFAULT_EXCERPT_OCR_MODEL, // 摘录 OCR 模型（通用默认）
 	      excerptOCRTranslateModel: "", // 翻译 OCR 模型（可选，未设置则跟随 excerptOCRModel/各模式专用模型）
+      definitionConceptBackgroundEnabled: true, // 定义摘录独立后台识别，不复用交互聊天
+      ocrFixedPostprocessEnabled: false, // 明确启用后，使用已保存的官方 DeepSeek 配置校对原图
+      definitionConceptTimeoutSeconds: 8,
 	      quickReadingOCRModel: "", // 快速阅读 OCR 模型（可选，未设置则沿用原有翻译模型回退链）
       quickReadingOCRFallbackModel: this.UNAVAILABLE_OCR_MODEL_FALLBACK,
 	      quickReadingOCRTimeoutSeconds: 12,
@@ -32582,8 +33220,8 @@ class KnowledgeBaseConfig {
       // 🆕 中间知识库索引调试
       intermediateIndexTrace: false,
       intermediateIndexTraceInterval: 1,
-      researchProcessRootIds: [],
-      literatureClassificationRootIds: [],
+      researchProcessRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'researchProcessRootIds'),
+      literatureClassificationRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'literatureClassificationRootIds'),
       intermediateIndexDebug: {
         safeTraversal: true,
         showNoteIdInHUD: true,
@@ -32619,7 +33257,7 @@ class KnowledgeBaseConfig {
       aiSearchModel: "deepseek-chat",
       aiSearchModelExplicitlySelected: false,
       referenceNoteIds: {},
-      circularScanRootIds: [],
+      circularScanRootIds: KnowledgeBaseTemplate.getConfiguredReferenceList('rootScopes', 'circularScanRootIds'),
     }
   }
   
@@ -32698,6 +33336,7 @@ class KnowledgeBaseConfig {
   static isLiveMNOCRSource(model) {
     const source = String(model || '').trim()
     if (!source) return false
+    if (source === 'deepseek-flash') return true
     try {
       if (typeof ocrConfig === 'undefined' || !ocrConfig || typeof ocrConfig.modelSource !== 'function') {
         return null
@@ -32737,12 +33376,17 @@ class KnowledgeBaseConfig {
         this.config = this.defaultConfig
       }
       let changed = false
-      if (!Array.isArray(this.config.researchProcessRootIds) || this.config.researchProcessRootIds.length === 0) {
-        this.config.researchProcessRootIds = this.defaultConfig.researchProcessRootIds.slice()
-        changed = true
+      const scopeKeys = ['researchProcessRootIds', 'literatureClassificationRootIds', 'circularScanRootIds']
+      const defaults = this.defaultConfig
+      const recoverEmptyScopes = !this.config.personalReferenceDefaultsVersion && scopeKeys.some(key => defaults[key].length > 0)
+      for (const key of scopeKeys) {
+        if (!Array.isArray(this.config[key]) || (recoverEmptyScopes && this.config[key].length === 0 && defaults[key].length > 0)) {
+          this.config[key] = defaults[key].slice()
+          changed = true
+        }
       }
-      if (!Array.isArray(this.config.literatureClassificationRootIds) || this.config.literatureClassificationRootIds.length === 0) {
-        this.config.literatureClassificationRootIds = this.defaultConfig.literatureClassificationRootIds.slice()
+      if (recoverEmptyScopes) {
+        this.config.personalReferenceDefaultsVersion = 1
         changed = true
       }
       const debugDefaults = this.defaultConfig.intermediateIndexDebug || {}
@@ -32936,7 +33580,395 @@ class KnowledgeBaseConfig {
   }
 }
 
+// A source index remains its identity even when several CHECKs or drawings are identical.
+class ProofMergeCheckFoldSession {
+  constructor(rootNote, sourceNotes, destinationNotes = [rootNote]) {
+    this.rootNote = rootNote;
+    this.destinationNotes = destinationNotes;
+    this.records = new Map();
+    this.restores = [];
+    this.mergedCount = 0;
+    this.foldedCount = 0;
+    const sources = new Set(sourceNotes.map(note => this.noteId(note)));
+    this.enabled = sourceNotes.some(note => this.comments(note).some(comment => this.isCheck(comment)));
+    [rootNote].concat(sourceNotes, destinationNotes).forEach(note => {
+      const id = this.noteId(note);
+      if (!id) throw new Error("证明合并缺少稳定的卡片标识，尚未合并");
+      if (this.records.has(id)) return;
+      const comments = this.comments(note);
+      const checks = comments.map((comment, index) => this.isCheck(comment) ? index : -1)
+        .filter(index => index >= 0);
+      if (sources.has(id) && checks.length > 1) {
+        throw new Error("同一张证明卡片存在多个 Check，请整理为一个后再合并，尚未合并");
+      }
+      const checkIndex = sources.has(id) && checks.length === 1 ? checks[0] : -1;
+      const ids = this.enabled ? this.commentIds(note, comments) : comments.map(comment => this.valueText(comment.commentId));
+      this.records.set(id, {
+        note,
+        busy: false,
+        excerptFold: checkIndex >= 0,
+        tokens: comments.map((_, index) => ({ originNoteId: id, originalIndex: index, fold: index <= checkIndex, commentId: ids[index] })),
+        keys: comments.map(comment => this.key(comment)),
+      });
+    });
+    this.enabled = Array.from(this.records.values()).some(record => record.excerptFold);
+    if (this.enabled) this.destinationNotes.forEach(note => this.readFoldState(note));
+  }
+
+  isNativeNull(value) {
+    return value === undefined || value === null ||
+      (typeof value === "object" && String(value) === "[object NSNull]");
+  }
+
+  valueText(value) { return this.isNativeNull(value) ? "" : String(value); }
+
+  noteId(note) { return this.valueText(note && (note.noteId || note.id)); }
+
+  comments(note) {
+    const comments = note && note.comments;
+    if (!comments || typeof comments.length !== "number") throw new Error("无法读取证明评论，已停止自动折叠");
+    return Array.from(comments);
+  }
+
+  isCheck(comment) {
+    return comment && (String(comment.type) === "TextNote" ? !this.isNativeNull(comment.markdown) && !!comment.markdown :
+      ["markdownComment", "mergedMarkdownComment"].includes(String(comment.type))) &&
+      /<span\b[^>]*\bid\s*=\s*["']check["'][^>]*>/i.test(String(comment.text || ""));
+  }
+
+  key(comment) {
+    const primitive = value => {
+      if (this.isNativeNull(value)) return "";
+      try {
+        return typeof value === "object" ? JSON.stringify(value, (_, item) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+          return Object.keys(item).sort().reduce((sorted, key) => { sorted[key] = item[key]; return sorted; }, {});
+        }) : String(value);
+      }
+      catch (_) { throw new Error("无法核对证明媒体内容，已停止自动折叠"); }
+    };
+    // mergeInto rewrites/removes note links in place, without changing their positions.
+    const normalizeLinks = value => this.valueText(value)
+      .replace(/\[[^\]]*\]\(marginnote[34]app:\/\/[^)]+\)/g, "")
+      .replace(/marginnote[34]app:\/\/[^\s)]+/g, "");
+    // Native merge writes the source noteid onto ordinary comments as provenance.
+    // Only LinkNote uses this field to identify linked content; original indices track other comments.
+    const linkedNoteId = String(comment.type) === "LinkNote" ? comment.noteid || comment.noteId : "";
+    return [comment.type, normalizeLinks(comment.text), comment.markdown, linkedNoteId,
+      comment.paint, comment.drawing, comment.audio, normalizeLinks(comment.q_htext), comment.q_hpic,
+      comment.q_hblank].map(primitive).join("\u001f");
+  }
+
+  commentIds(note, comments) {
+    const raw = note.note || note;
+    if (typeof raw.commentState === "function") {
+      const state = raw.commentState();
+      if (state && state.ok === true && Array.isArray(state.comments) && state.comments.length === comments.length &&
+          state.comments.every((comment, index) => comment.index === index + 1)) {
+        return state.comments.map(comment => this.valueText(comment.commentId));
+      }
+    }
+    return comments.map(comment => this.valueText(comment.commentId));
+  }
+
+  verifyIds(record, comments, tokens) {
+    const ids = this.commentIds(record.note, comments);
+    tokens.forEach((token, index) => {
+      if (token.commentId && token.commentId !== ids[index]) {
+        throw new Error("评论稳定标识与记录的位置不一致，已停止自动折叠");
+      }
+      if (ids[index]) token.commentId = ids[index];
+    });
+  }
+
+  requireUnambiguousMove(record, name, args) {
+    const length = record.tokens.length;
+    const order = Array.from({ length }, (_, index) => index);
+    if (name === "moveComment" && length) {
+      const clamp = value => Math.max(0, Math.min(length - 1, Number(value)));
+      order.splice(clamp(args[1]), 0, order.splice(clamp(args[0]), 1)[0]);
+    } else if (name === "sortCommentsByNewIndices" && Array.isArray(args[0])) {
+      args[0].forEach((destination, index) => { order[destination] = index; });
+    }
+    // A swallowed no-op cannot be detected by values when only identical comments swap.
+    if (order.every((source, index) => record.keys[source] === record.keys[index]) &&
+        order.some((source, index) => record.tokens[source].fold !== record.tokens[index].fold &&
+          (!record.tokens[source].commentId || !record.tokens[index].commentId))) {
+      throw new Error("重复评论缺少稳定标识，无法确认移动后的折叠范围，已停止处理");
+    }
+  }
+
+  check(record) {
+    if (this.failure) throw this.failure;
+    const comments = this.comments(record.note);
+    const keys = comments.map(comment => this.key(comment));
+    if (keys.length !== record.tokens.length || keys.some((key, index) => key !== record.keys[index])) {
+      throw new Error("证明评论出现未记录的插入、删除或重排，已停止自动折叠");
+    }
+    this.verifyIds(record, comments, record.tokens);
+    return comments;
+  }
+
+  commit(record, tokens, expectedKeys) {
+    const comments = this.comments(record.note);
+    const keys = comments.map(comment => this.key(comment));
+    if (tokens.length !== keys.length || expectedKeys.length !== keys.length ||
+        keys.some((key, index) => key !== expectedKeys[index])) {
+      throw new Error("证明合并后的评论位置无法确认，已停止自动折叠");
+    }
+    this.verifyIds(record, comments, tokens);
+    record.tokens = tokens;
+    record.keys = keys;
+  }
+
+  observe(record, name, original, args, receiver) {
+    if (record.busy) return original.apply(receiver, args);
+    const before = this.check(record);
+    if (name === "moveComment" || name === "sortCommentsByNewIndices") this.requireUnambiguousMove(record, name, args);
+    let tokens = record.tokens.slice();
+    let keys = record.keys.slice();
+    const length = tokens.length;
+    const clamp = value => Math.max(0, Math.min(length - 1, Number(value)));
+    const generated = () => ({ originNoteId: "", originalIndex: -1, fold: false });
+    let sourceRecord;
+    let sourceComments;
+    let legacyTargets;
+    if (name === "merge") {
+      sourceRecord = this.records.get(this.noteId(args[0]));
+      if (!sourceRecord || sourceRecord === record) throw new Error("证明合并来源不在已记录范围内，已停止合并");
+      sourceComments = this.check(sourceRecord);
+    }
+    if (name === "convertLinksToNewVersion") {
+      legacyTargets = before.map(comment => {
+        const match = String(comment.text || "").match(/^marginnote3app:\/\/note\/(.*)$/);
+        if (String(comment.type) !== "TextNote" || !match) return undefined;
+        const target = MNNote.new(match[1], false);
+        return target ? String(target.noteURL || "") : null;
+      });
+    }
+    record.busy = true;
+    let result;
+    try { result = original.apply(receiver, args); }
+    finally { record.busy = false; }
+    const after = this.comments(record.note);
+    const afterKeys = after.map(comment => this.key(comment));
+
+    if (name === "merge") {
+      this.mergedCount++;
+      const extra = after.length - before.length - sourceComments.length;
+      if (extra !== 0 && extra !== 1) throw new Error("合并摘录的实际评论数量异常，已停止自动折叠");
+      if (extra === 1) {
+        const excerpt = after[before.length];
+        if (!excerpt || String(excerpt.type) !== "LinkNote" ||
+            String(excerpt.noteid || excerpt.noteId || "").toUpperCase() !== this.noteId(sourceRecord.note).toUpperCase()) {
+          throw new Error("合并摘录的来源无法验证，已停止自动折叠");
+        }
+        tokens.push({ originNoteId: this.noteId(sourceRecord.note), originalIndex: "excerpt", fold: sourceRecord.excerptFold });
+        keys.push(afterKeys[before.length]);
+      } else if (sourceRecord.excerptFold && this.hasExcerpt(sourceRecord.note)) {
+        throw new Error("原卡片摘录没有出现在合并结果中，已停止自动折叠");
+      }
+      tokens = tokens.concat(sourceRecord.tokens);
+      keys = keys.concat(sourceRecord.keys);
+    } else if (name === "removeCommentByIndex") {
+      const index = Math.min(Number(args[0]), length - 1);
+      if (!Number.isInteger(index) || index < 0) throw new Error("删除评论的索引无效，已停止自动折叠");
+      tokens.splice(index, 1);
+      keys.splice(index, 1);
+    } else if (name === "removeCommentsByIndices") {
+      const indices = Array.from(new Set(args[0])).map(clamp).sort((a, b) => b - a);
+      indices.forEach(index => { tokens.splice(index, 1); keys.splice(index, 1); });
+    } else if (name === "moveComment") {
+      const from = clamp(args[0]);
+      const to = clamp(args[1]);
+      if (length) {
+        tokens.splice(to, 0, tokens.splice(from, 1)[0]);
+        keys.splice(to, 0, keys.splice(from, 1)[0]);
+      }
+    } else if (name === "sortCommentsByNewIndices") {
+      const order = args[0];
+      if (!Array.isArray(order) || order.length !== length || new Set(order).size !== length ||
+          order.some(index => !Number.isInteger(index) || index < 0 || index >= length)) {
+        throw new Error("评论重排的索引无效，已停止自动折叠");
+      }
+      const newTokens = [], newKeys = [];
+      order.forEach((destination, index) => { newTokens[destination] = tokens[index]; newKeys[destination] = keys[index]; });
+      tokens = newTokens;
+      keys = newKeys;
+    } else if (name === "convertLinksToNewVersion") {
+      const newTokens = [], newKeys = [];
+      legacyTargets.forEach((target, index) => {
+        if (target === null) return;
+        if (target === undefined) {
+          newTokens.push(tokens[index]); newKeys.push(keys[index]);
+        } else {
+          const destination = newTokens.length;
+          if (!target || !after[destination] || String(after[destination].text || "") !== target) {
+            throw new Error("旧版卡片链接转换位置无法确认，已停止自动折叠");
+          }
+          newTokens.push({ ...tokens[index], commentId: "" });
+          newKeys.push(afterKeys[destination]);
+        }
+      });
+      tokens = newTokens;
+      keys = newKeys;
+    } else if (name === "replaceWithMarkdownComment" || name === "replaceWithTextComment") {
+      const index = args[1];
+      const valid = String(args[0] || "").trim();
+      if (index !== undefined) {
+        const actual = Math.min(Number(index), length - 1);
+        const token = tokens.splice(actual, 1)[0];
+        keys.splice(actual, 1);
+        if (valid) {
+          const destination = Math.max(0, Math.min(tokens.length, Number(index)));
+          tokens.splice(destination, 0, { ...token, commentId: "" });
+          keys.splice(destination, 0, afterKeys[destination]);
+        }
+      } else if (valid) {
+        tokens.push(generated()); keys.push(afterKeys[afterKeys.length - 1]);
+      }
+    } else {
+      const extra = after.length - length;
+      if (extra !== 0 && extra !== 1) throw new Error("新增证明评论数量异常，已停止自动折叠");
+      if (extra === 1) {
+        const destination = name === "appendNoteLink" || args[1] === undefined
+          ? length : Math.max(0, Math.min(length, Number(args[1])));
+        tokens.splice(destination, 0, generated());
+        keys.splice(destination, 0, afterKeys[destination]);
+      }
+    }
+    this.commit(record, tokens, keys);
+    return result;
+  }
+
+  hasExcerpt(note) {
+    return !!(this.valueText(note.excerptText).trim() || (!this.isNativeNull(note.excerptPic) && note.excerptPic));
+  }
+
+  install() {
+    const names = ["appendMarkdownComment", "appendTextComment", "appendNoteLink", "removeCommentByIndex",
+      "removeCommentsByIndices", "moveComment", "sortCommentsByNewIndices", "replaceWithMarkdownComment",
+      "replaceWithTextComment", "convertLinksToNewVersion", "merge"];
+    const installed = new Map();
+    this.records.forEach(record => names.forEach(name => {
+      let owner = record.note;
+      while (owner && !Object.prototype.hasOwnProperty.call(owner, name)) owner = Object.getPrototypeOf(owner);
+      if (!owner || typeof owner[name] !== "function") return;
+      if (!installed.has(owner)) installed.set(owner, new Set());
+      if (installed.get(owner).has(name)) return;
+      const descriptor = Object.getOwnPropertyDescriptor(owner, name);
+      const original = descriptor.value;
+      if (typeof original !== "function") return;
+      const session = this;
+      // childNotes/parentNote create fresh MNNote wrappers; dispatch by noteId, not wrapper identity.
+      Object.defineProperty(owner, name, { ...descriptor,
+        value: function (...args) {
+          const tracked = session.records.get(session.noteId(this));
+          if (!tracked) return original.apply(this, args);
+          try { return session.observe(tracked, name, original, args, this); }
+          catch (error) { session.failure = session.failure || error; throw error; }
+        } });
+      installed.get(owner).add(name);
+      this.restores.push(() => Object.defineProperty(owner, name, descriptor));
+    }));
+  }
+
+  readFoldState(note = this.rootNote) {
+    const raw = note.note || note;
+    if (typeof raw.commentState !== "function" || typeof raw.setCommentsCollapsed !== "function") {
+      throw new Error("当前宿主不支持评论自动折叠，尚未开始证明合并");
+    }
+    const state = raw.commentState();
+    const record = this.records.get(this.noteId(note));
+    if (!state || state.ok !== true || String(state.noteid || "").toUpperCase() !== this.noteId(note).toUpperCase() ||
+        typeof state.revision !== "string" || !state.revision || !Array.isArray(state.comments) ||
+        state.comments.length !== record.tokens.length || state.comments.some((comment, index) =>
+          !comment || comment.index !== index + 1 || typeof comment.collapsed !== "boolean")) {
+      throw new Error("无法核对宿主的评论折叠索引，已停止自动折叠");
+    }
+    return state;
+  }
+
+  finish(note = this.rootNote) {
+    const record = this.records.get(this.noteId(note));
+    this.check(record);
+    const indices = record.tokens.map((token, index) => token.fold ? index : -1).filter(index => index >= 0);
+    if (!indices.length) return;
+    let state = this.readFoldState(note);
+    const expected = state.comments.map(comment => comment.collapsed);
+    const raw = note.note || note;
+    for (let start = 0; start < indices.length; start += 200) {
+      this.check(record);
+      const batch = indices.slice(start, start + 200);
+      const receipt = raw.setCommentsCollapsed(batch.map(index => ({ index: index + 1 })), true, state.revision);
+      if (!receipt || receipt.ok !== true || receipt.persisted !== true || receipt.collapsed !== true ||
+          receipt.requestedCount !== batch.length || !Number.isSafeInteger(receipt.changedCount) ||
+          receipt.changedCount < 0 || receipt.changedCount > batch.length) {
+        throw new Error("无法确认评论折叠已经保存，已停止后续折叠");
+      }
+      batch.forEach(index => { expected[index] = true; });
+      state = this.readFoldState(note);
+      if (state.revision !== receipt.revision || state.comments.some((comment, index) => comment.collapsed !== expected[index])) {
+        throw new Error("评论折叠读回结果不一致，已停止后续折叠");
+      }
+      this.foldedCount += batch.length;
+    }
+    this.check(record);
+  }
+
+  run(operation) {
+    if (!this.enabled) return operation();
+    try {
+      this.install();
+      const result = operation();
+      if (result && typeof result.then === "function") throw new Error("证明合并必须同步完成，已停止自动折叠");
+      this.destinationNotes.forEach(note => this.finish(note));
+      return result;
+    } catch (error) {
+      throw new Error(`${error.message || error}；已合并 ${this.mergedCount} 张卡片，已核对折叠 ${this.foldedCount} 条评论`);
+    } finally {
+      this.restores.reverse().forEach(restore => restore());
+    }
+  }
+}
+
 class HtmlMarkdownUtils {
+  static getProofMergeCandidates(rootNote, explicitSources) {
+    if (!rootNote) return [];
+    const tree = rootNote.descendantNodes;
+    const nodes = tree && Array.isArray(tree.descendant) ? tree.descendant : [];
+    const paths = tree && Array.isArray(tree.treeIndex) ? tree.treeIndex : [];
+    const protectedPaths = [];
+    nodes.forEach((note, index) => {
+      if (KnowledgeBaseTemplate.isClassificationNote(note) || KnowledgeBaseTemplate.isKnowledgeNote(note) ||
+          (typeof KnowledgeBaseTemplate.isIntermediateKnowledge === "function" && KnowledgeBaseTemplate.isIntermediateKnowledge(note))) {
+        if (Array.isArray(paths[index])) protectedPaths.push(paths[index]);
+      }
+    });
+    const isPrefix = (left, right) => left.length <= right.length && left.every((value, index) => value === right[index]);
+    const requested = Array.isArray(explicitSources) ? new Set(explicitSources.map(note => String(note.noteId))) : null;
+    return nodes.filter((note, index) => {
+      const path = paths[index];
+      if (!Array.isArray(path) || !path.length || (requested && !requested.has(String(note.noteId)))) return false;
+      // Protect both the complete subtree and each ancestor which would move it on merge.
+      return !protectedPaths.some(protectedPath => isPrefix(path, protectedPath) || isPrefix(protectedPath, path));
+    });
+  }
+
+  static runProofMergeWithCheckFolding(rootNote, sourceNotes, operation) {
+    const candidates = this.getProofMergeCandidates(rootNote, sourceNotes);
+    if (Array.isArray(sourceNotes) && candidates.length !== sourceNotes.length) {
+      throw new Error("所选证明步骤包含受保护的知识或归类分支，已停止合并");
+    }
+    sourceNotes = candidates;
+    const candidateIds = new Set(sourceNotes.map(note => String(note.noteId)));
+    const destinations = new Map([[String(rootNote.noteId), rootNote]]);
+    sourceNotes.forEach(note => {
+      const parent = note.parentNote;
+      if (parent && !candidateIds.has(String(parent.noteId))) destinations.set(String(parent.noteId), parent);
+    });
+    return new ProofMergeCheckFoldSession(rootNote, sourceNotes, Array.from(destinations.values())).run(operation);
+  }
   static icons = {
     // step: '🚩',
     // point: '▸',
@@ -32985,33 +34017,33 @@ class HtmlMarkdownUtils {
   };
   static styles = {
     // 格外注意
-    danger: 'font-weight:700;color:#6A0C0C;background:#FFC9C9;border-left:6px solid #A93226;font-size:1em;padding:8px 15px;display:inline-block;transform:skew(-3deg);box-shadow:2px 2px 5px rgba(0,0,0,0.1);',
+    danger: 'display:inline-block;box-sizing:border-box;font-weight:700;font-size:0.96em;line-height:1.55;color:#991B1B;background:linear-gradient(90deg,rgba(220,38,38,0.14) 0%,rgba(220,38,38,0.03) 85%,transparent 100%);border-left:5px solid #DC2626;padding:5px 12px;margin:3px 0;',
     // 注意
-    alert: 'background:#FFF;color:#FF8C5A;border:2px solid currentColor;border-radius:3px;padding:6px 12px;font-weight:600;box-shadow:0 1px 3px rgba(255,140,90,0.2);display:inline-block;',
+    alert: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.94em;line-height:1.5;color:#92400E;background:linear-gradient(90deg,rgba(245,158,11,0.14) 0%,transparent 90%);border-left:3.5px solid #F59E0B;padding:3px 10px;margin:2px 0;',
     // 关键
-    key: 'color: #B33F00;background: #FFF1E6;border-left: 6px solid #FF6B35;padding:16px 12px 1px;line-height:2;position:relative;top:6px;display:inline-block;font-family:monospace;margin-top:-2px;',
-    level1: "font-weight:600;color:#1E40AF;background:linear-gradient(15deg,#EFF6FF 30%,#DBEAFE);border:2px solid #3B82F6;border-radius:12px;padding:10px 18px;display:inline-block;box-shadow:2px 2px 0px #BFDBFE,4px 4px 8px rgba(59,130,246,0.12);position:relative;margin:4px 8px;",
-    level2: "font-weight:600;color:#4F79A3; background:linear-gradient(90deg,#F3E5F5 50%,#ede0f7);font-size:1.1em;padding:6px 12px;border-left:4px solid #7A9DB7;transform:skew(-1.5deg);box-shadow:1px 1px 3px rgba(0,0,0,0.05);margin-left:40px;position:relative;",
-    level3: "font-weight:500;color:#7A9DB7;background:#E8F0FE;padding:4px 10px;border-radius:12px;border:1px solid #B3D4FF;font-size:0.95em;margin-left:80px;position:relative;",
-    level4: "font-weight:400;color:#9DB7CA;background:#F8FBFF;padding:3px 8px;border-left:2px dashed #B3D4FF;font-size:0.9em;margin-left:120px;position:relative;",
-    level5: "font-weight:300;color:#B3D4FF;background:#FFFFFF;padding:2px 6px;border-radius:8px;border:1px dashed #B3D4FF;font-size:0.85em;margin-left:160px;position:relative;",
-    remark: 'background:#F5E6C9;color:#6d4c41;display:inline-block;border-left:5px solid #D4AF37;padding:2px 8px 3px 12px;border-radius:0 4px 4px 0;box-shadow:1px 1px 3px rgba(0,0,0,0.08);margin:0 2px;line-height:1.3;vertical-align:baseline;position:relative;',
+    key: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.96em;line-height:1.55;color:#92400E;background:linear-gradient(90deg,rgba(217,119,6,0.13) 0%,rgba(217,119,6,0.02) 85%,transparent 100%);border-left:4px solid #D97706;padding:5px 11px;margin:3px 0;',
+    level1: 'display:inline-block;box-sizing:border-box;font-weight:700;font-size:1.02em;line-height:1.5;color:#1E3A8A;background:linear-gradient(90deg,rgba(37,99,235,0.11) 0%,rgba(37,99,235,0.02) 75%,transparent 100%);border-left:4px solid #2563EB;padding:5px 12px;margin:4px 0;',
+    level2: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.98em;line-height:1.5;color:#1E40AF;background:linear-gradient(90deg,rgba(59,130,246,0.08) 0%,transparent 85%);border-left:3.5px solid #3B82F6;padding:4px 10px;margin:3px 0 3px 15px;',
+    level3: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.95em;line-height:1.45;color:#2563EB;background:linear-gradient(90deg,rgba(96,165,250,0.06) 0%,transparent 80%);border-left:2.5px solid #60A5FA;padding:3px 9px;margin:2px 0 2px 30px;',
+    level4: 'display:inline-block;box-sizing:border-box;font-weight:500;font-size:0.92em;line-height:1.45;color:#334155;background:transparent;border-left:2px solid #64748B;padding:2px 8px;margin:2px 0 2px 45px;',
+    level5: 'display:inline-block;box-sizing:border-box;font-weight:500;font-size:0.89em;line-height:1.4;color:#475569;background:transparent;border-left:2px dashed #94A3B8;padding:2px 8px;margin:2px 0 2px 60px;',
+    remark: 'display:inline-block;box-sizing:border-box;font-weight:400;font-size:0.93em;line-height:1.5;color:#57534E;background:transparent;border-left:3px solid #D6D3D1;padding:2px 9px;margin:2px 0;vertical-align:baseline;',
     // 目标
-    goal: 'font-weight:900;font-size:0.7em;color:#8B2635;background:linear-gradient(135deg,#F87171 0%,#FCA5A5 25%,#FECACA 60%,#FEF2F2 100%);padding:12px 24px;border-radius:50px;display:inline-block;position:relative;box-shadow:0 4px 8px rgba(248,113,113,0.25),inset 0 1px 0 rgba(255,255,255,0.5);text-shadow:0 1px 1px rgba(255,255,255,0.4);border:2px solid rgba(248,113,113,0.4);',
+    goal: 'display:block;box-sizing:border-box;font-weight:700;font-size:1.06em;line-height:1.55;color:#0F172A;background:#F8FAFC;border-top:2px solid #1E3A8A;border-bottom:1.5px solid #93C5FD;padding:8px 13px;margin:6px 0;',
     // 问题
-    question: 'font-weight:700;color:#3D1A67;background:linear-gradient(15deg,#F8F4FF 30%,#F1E8FF);border:3px double #8B5CF6;border-radius:16px 4px 16px 4px;padding:14px 22px;display:inline-block;box-shadow:4px 4px 0px #DDD6FE,8px 8px 12px rgba(99,102,241,0.12);position:relative;margin:4px 8px;',
+    question: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.96em;line-height:1.55;color:#581C87;background:linear-gradient(90deg,rgba(147,51,234,0.09) 0%,transparent 85%);border-left:3.5px solid #9333EA;padding:4px 11px;margin:3px 0;',
     // 思路
-    idea: 'font-weight:600;color:#4A4EB2;background:linear-gradient(15deg,#F0F4FF 30%,#E6EDFF);border:2px dashed #7B7FD1;border-radius:12px;padding:10px 18px;display:inline-block;box-shadow:0 0 0 2px rgba(123,127,209,0.2),inset 0 0 10px rgba(123,127,209,0.1);position:relative;margin:4px 8px;',
+    idea: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.95em;line-height:1.5;color:#4C1D95;background:linear-gradient(90deg,rgba(139,92,246,0.10) 0%,transparent 85%);border-left:3px dashed #8B5CF6;padding:4px 11px;margin:3px 0;',
     // 方法
-    method: 'display:block;font-weight:700;color:#1B4332;background:linear-gradient(135deg,#74C69D 0%,#95D5B2 25%,#C7F0DB 60%,#E8F5E8 100%);font-size:1.3em;padding:12px 20px 12px 24px;border-left:10px solid #2D6A4F;margin:0 0 12px 0;border-radius:0 6px 6px 0;box-shadow:0 4px 12px rgba(116,198,157,0.2),inset 0 1px 0 rgba(255,255,255,0.5);text-shadow:0 1px 1px rgba(255,255,255,0.4);position:relative;',
+    method: 'display:block;box-sizing:border-box;font-weight:700;font-size:1.05em;line-height:1.55;color:#064E3B;background:linear-gradient(90deg,rgba(5,150,105,0.12) 0%,rgba(5,150,105,0.03) 60%,transparent 100%);border-left:5px solid #059669;padding:8px 14px;margin:6px 0;',
     // 检查
-    check: 'font-weight:600;color:#34A853;background:#E6F7EE;border:2px solid #34A853;border-radius:4px;padding:4px 8px;display:inline-block;box-shadow:0 1px 2px rgba(52,168,83,0.2);margin:0 2px;line-height:1.3;vertical-align:baseline;position:relative;',
+    check: 'display:inline-block;box-sizing:border-box;font-weight:700;font-size:0.88em;line-height:1.35;letter-spacing:0.02em;color:#065F46;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.45);border-radius:999px;padding:2px 10px;margin:2px 2px;vertical-align:baseline;',
     // 草稿/手绘
-    sketch: 'background:transparent;color:#5D4037;display:inline-block;border-bottom:2px dotted #FF9800;padding:0 4px 2px;margin:0 2px;line-height:1.2;vertical-align:baseline;position:relative;font-size:0.9em;font-style:italic;',
+    sketch: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.9em;line-height:1.35;color:#78350F;background:linear-gradient(90deg,rgba(245,158,11,0.12) 0%,transparent 95%);border-left:2.5px dashed #D97706;padding:2px 9px;margin:2px 2px;vertical-align:baseline;',
     // 案例
-    case: 'font-weight:600;color:#2563EB;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:2px solid #3B82F6;border-radius:8px;padding:8px 16px;display:inline-block;box-shadow:0 2px 4px rgba(37,99,235,0.2);margin:4px 0;',
+    case: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.95em;line-height:1.5;color:#9A3412;background:linear-gradient(90deg,rgba(234,88,12,0.11) 0%,rgba(234,88,12,0.02) 80%,transparent 100%);border-left:3.5px solid #EA580C;padding:4px 11px;margin:3px 0;',
     // 步骤
-    step: 'font-weight:500;color:#059669;background:#ECFDF5;border-left:4px solid #10B981;padding:6px 12px;display:inline-block;border-radius:0 4px 4px 0;margin:4px 0;',
+    step: 'display:inline-block;box-sizing:border-box;font-weight:600;font-size:0.95em;line-height:1.5;color:#0F766E;background:linear-gradient(90deg,rgba(20,184,166,0.09) 0%,transparent 85%);border-left:3px solid #14B8A6;padding:3px 10px;margin:2px 0;',
   };
   // 定义即使内容为空也要输出的类型白名单
   static emptyContentWhitelist = ['check', 'sketch'];
@@ -33047,7 +34079,8 @@ class HtmlMarkdownUtils {
       } else {
         switch (type) {
           case "sketch":
-            handledText = ": " + handledText
+          case "check":
+            handledText = ": " + handledText.replace(/^[:：]\s*/, "")
             break;
         }
       }
@@ -33106,6 +34139,9 @@ class HtmlMarkdownUtils {
       Object.values(this.prefix).forEach(prefix => {
         if (prefix && text.startsWith(prefix)) {
           text = text.substring(prefix.length).trim();
+          if (prefix === 'SKETCH' || prefix === 'CHECK') {
+            text = text.replace(/^[:：]\s*/, '').trim();
+          }
         }
       });
       return text
@@ -33304,6 +34340,54 @@ class HtmlMarkdownUtils {
         HtmlMarkdownUtils.createHtmlMarkdownText(text, type)
       )
     }
+  }
+
+  /**
+   * 刷新单条 HtmlMarkdown 评论的 style 属性为最新预设样式（保留原有正文、序号与前导破折号）
+   */
+  static refreshHtmlMDCommentStyle(comment) {
+    if (!comment || typeof comment.text !== "string") return false;
+    let hasLeadingDash = false;
+    let cleanText = comment.text;
+    if (cleanText.startsWith("- ")) {
+      hasLeadingDash = true;
+      cleanText = cleanText.substring(2);
+    }
+    if (!this.isHtmlMDComment(cleanText)) return false;
+    const type = this.getSpanType(cleanText);
+    const nextStyle = this.styles[type];
+    if (!nextStyle) return false;
+    const updatedSpan = cleanText.replace(
+      /^<span(\s+[^>]*?)style="[^"]*"([^>]*)>/i,
+      `<span$1style="${nextStyle} "$2>`
+    );
+    const nextFullText = hasLeadingDash ? "- " + updatedSpan : updatedSpan;
+    if (nextFullText === comment.text) return false;
+    comment.text = nextFullText;
+    return true;
+  }
+
+  /**
+   * 批量将卡片内所有 HtmlMarkdown 评论刷新为最新预设样式
+   */
+  static refreshAllHtmlMDStyles(note) {
+    const comments = note && note.MNComments;
+    if (!comments || comments.length === 0) {
+      MNUtil.showHUD("当前卡片没有评论");
+      return 0;
+    }
+    let refreshedCount = 0;
+    MNUtil.undoGrouping(() => {
+      comments.forEach(comment => {
+        if (this.refreshHtmlMDCommentStyle(comment)) {
+          refreshedCount++;
+        }
+      });
+      if (refreshedCount > 0 && typeof note.refresh === "function") {
+        note.refresh();
+      }
+    });
+    return refreshedCount;
   }
 
   /**
@@ -33548,67 +34632,7 @@ class HtmlMarkdownUtils {
    * @returns {boolean} 如果有任何后代包含标题返回 true，否则返回 false
    */
   static hasDescendantWithTitle(rootFocusNote) {
-      try {
-          const nodesData = rootFocusNote.descendantNodes;
-          if (!nodesData || !nodesData.descendant) {
-              return false;
-          }
-          
-          const allDescendants = nodesData.descendant;
-          const treeIndex = nodesData.treeIndex;
-          
-          // 过滤掉知识点卡片和归类卡片的分支
-          const excludedBranchRoots = new Set();
-          
-          if (rootFocusNote.childNotes && rootFocusNote.childNotes.length > 0) {
-              rootFocusNote.childNotes.forEach(childNote => {
-                  if (KnowledgeBaseTemplate.isClassificationNote(childNote) || KnowledgeBaseTemplate.isKnowledgeNote(childNote)) {
-                      excludedBranchRoots.add(childNote.noteId);
-                  }
-              });
-          }
-          
-          // 检查每个后代节点
-          for (let i = 0; i < allDescendants.length; i++) {
-              const node = allDescendants[i];
-              const nodeTreeIndex = treeIndex[i];
-              
-              // 跳过被排除的分支
-              if (nodeTreeIndex.length > 0 && excludedBranchRoots.size > 0) {
-                  const directChildIndex = nodeTreeIndex[0];
-                  const directChild = rootFocusNote.childNotes[directChildIndex];
-                  if (directChild && excludedBranchRoots.has(directChild.noteId)) {
-                      continue;
-                  }
-              }
-              
-              // 检查节点是否有标题
-              let hasTitle = false;
-              if (typeof node.title === 'string') {
-                  let titleContent = "";
-                  if (typeof node.title.toNoBracketPrefixContent === 'function') {
-                      titleContent = node.title.toNoBracketPrefixContent();
-                  } else if (HtmlMarkdownUtils.isHtmlMDComment(node.title)) {
-                      titleContent = HtmlMarkdownUtils.getSpanTextContent(node.title);
-                  } else {
-                      titleContent = node.title;
-                  }
-                  
-                  if (titleContent.trim()) {
-                      hasTitle = true;
-                  }
-              }
-              
-              if (hasTitle) {
-                  return true;
-              }
-          }
-          
-          return false;
-      } catch (error) {
-        MNLog.error(error, "检查后代标题时出错");
-        return false;
-      }
+    return this.getProofMergeCandidates(rootFocusNote).some(note => String(note.title || note.noteTitle || "").trim());
   }
 
   /**
@@ -33650,52 +34674,13 @@ class HtmlMarkdownUtils {
           return;
       }
 
-      // 过滤掉知识点卡片和归类卡片的分支
-      // 首先找出所有需要排除的分支根节点（直接子节点）
-      const excludedBranchRoots = new Set();
-      
-      // 检查直接子节点
-      if (rootFocusNote.childNotes && rootFocusNote.childNotes.length > 0) {
-          rootFocusNote.childNotes.forEach(childNote => {
-              // 判断子卡片是否是归类卡片或知识点卡片（仅检查卡片自身，不向上查找）
-              if (KnowledgeBaseTemplate.isClassificationNote(childNote) || KnowledgeBaseTemplate.isKnowledgeNote(childNote)) {
-                  excludedBranchRoots.add(childNote.noteId);
-              }
-          });
-      }
-      
-      // 如果有需要排除的分支，过滤掉这些分支的所有节点
-      if (excludedBranchRoots.size > 0) {
-          const filteredDescendants = [];
-          const filteredTreeIndex = [];
-          
-          for (let i = 0; i < allDescendants.length; i++) {
-              const node = allDescendants[i];
-              const nodeTreeIndex = treeIndex[i];
-              
-              // treeIndex[0] 是直接子节点在 childNotes 中的索引
-              if (nodeTreeIndex.length > 0) {
-                  const directChildIndex = nodeTreeIndex[0];
-                  const directChild = rootFocusNote.childNotes[directChildIndex];
-                  
-                  // 如果这个节点不属于被排除的分支，则保留
-                  if (directChild && !excludedBranchRoots.has(directChild.noteId)) {
-                      filteredDescendants.push(node);
-                      filteredTreeIndex.push(nodeTreeIndex);
-                  }
-              }
-          }
-          
-          // 更新为过滤后的数组
-          allDescendants = filteredDescendants;
-          treeIndex = filteredTreeIndex;
-          
-          // 如果过滤后没有节点了，提示并返回
-          if (allDescendants.length === 0) {
-              MNUtil.showHUD("所有子卡片都是知识点或归类卡片，无法合并。", 2);
-              return;
-          }
-      }
+      const eligibleIds = new Set(this.getProofMergeCandidates(rootFocusNote).map(note => String(note.noteId)));
+      const allDescendantIds = new Set(allDescendants.map(note => String(note.noteId)));
+      const eligible = allDescendants.map((node, index) => ({ node, path: treeIndex[index] }))
+        .filter(item => eligibleIds.has(String(item.node.noteId)));
+      allDescendants = eligible.map(item => item.node);
+      treeIndex = eligible.map(item => item.path);
+      if (!allDescendants.length) return;
 
       const nodesWithInfo = allDescendants.map((node, i) => ({
           node: node,
@@ -33770,7 +34755,7 @@ class HtmlMarkdownUtils {
                   MNUtil.error(`层级 ${currentTreeIndexLevel} 的笔记 ${currentNode.id || '(无ID)'} 没有父笔记。已跳过。`);
                   continue;
               }
-              if (parentNode.id !== rootFocusNote.id && !allDescendants.some(d => d.id === parentNode.id)) {
+              if (String(parentNode.noteId) !== String(rootFocusNote.noteId) && !allDescendantIds.has(String(parentNode.noteId))) {
                   MNUtil.warn(`笔记 ${currentNode.id} 的父笔记 ${parentNode.id} 不在 rootFocusNote 后代笔记的合并范围内。已跳过此笔记的合并。`);
                   continue;
               }
@@ -34771,6 +35756,7 @@ class KnowledgeBaseClassUtils {
           KnowledgeBaseTemplate.parseNoteTitle(parentNote).type == type
         ) {
           let processedNote = KnowledgeBaseTemplate.toNoExcerptVersion(note)
+          if (typeof KnowledgeBaseDefinitionConcept !== 'undefined') KnowledgeBaseDefinitionConcept.getRuntime().retarget(note, processedNote)
           KnowledgeBaseTemplate.makeNote(processedNote, addToReview)
           //   KnowledgeBaseUtils.log("完整制卡", "onProcessNewExcerpt - 归类模式", {
           //   brotherIndex: brotherIndex,
@@ -34784,6 +35770,7 @@ class KnowledgeBaseClassUtils {
           // parentNoteType == "归类", "3 ":
           // KnowledgeBaseTemplate.parseNoteTitle(parentNote).type, 4:type})
           let processedNote = KnowledgeBaseTemplate.toNoExcerptVersion(note)
+          if (typeof KnowledgeBaseDefinitionConcept !== 'undefined') KnowledgeBaseDefinitionConcept.getRuntime().retarget(note, processedNote)
           processedNote.focusInMindMap(0.3)
         }
         break;

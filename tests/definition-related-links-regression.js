@@ -498,8 +498,7 @@ function run() {
   assert.strictEqual(KBT.isReadingClassificationNote(readingClassification), true);
   assert.strictEqual(KBT.getReadingClassificationParentNote(readingKnowledge), readingClassification);
   const readingPolicy = KBT.getQuickReadingMakeCardPolicy(readingKnowledge);
-  assert.strictEqual(readingPolicy.mode, 'rough', 'reading classification children stay rough even when quick reading is off');
-  assert.strictEqual(readingPolicy.readingClassificationParent, true);
+  assert.strictEqual(readingPolicy.mode, 'normal', 'Explicit card commands use full processing for reading classification children');
 
   KBT.changeTitle(readingKnowledge, false, '命题', {
     syncContainLinks: false,

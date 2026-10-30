@@ -1,4 +1,6 @@
 :root {
+  color-scheme: light dark;
+  accent-color: var(--color-accent);
   --color-canvas: oklch(96.5% 0.008 155);
   --color-paper: oklch(99% 0.004 95);
   --color-paper-2: oklch(97.5% 0.012 150);

@@ -7,6 +7,10 @@ function bindCheckboxChange(element, onChange) {
 }
 
 function attachSearchBoxListeners() {
+  document.getElementById('searchSourceBar')?.addEventListener('click', event => {
+    const button = event.target.closest('button[data-search-source]');
+    if (button) toggleSearchSource(button.dataset.searchSource);
+  });
   dom.searchInput.addEventListener('input', () => {
     syncSearchUsageRoundFromInput(dom.searchInput.value);
     if (state.aiCardSearch?.active && dom.searchInput.value.trim() !== state.aiCardSearch.query) {

@@ -138,6 +138,7 @@
     "tests/ocr-title-punctuation-regression.js",
     "tests/piecewise-ocr-prompt-regression.js",
     "tests/private-reference-configuration-regression.js",
+    "tests/private-reference-migration-regression.js",
     "tests/problem-chain-make-card-regression.js",
     "tests/proof-link-index-regression.js",
     "tests/proof-reader-data-regression.js",
@@ -183,6 +184,24 @@
     "tests/toolbar-usage-export-regression.js",
     "title-refactor-workbench.html",
     "toolbarUsageExport.js",
-    "utils.js"
+    "utils.js",
+    "tests/definition-merge-runtime-regression.js",
+    "tests/definition-merge-content-regression.js",
+    "tests/definition-merge-bridge-regression.js",
+    "tests/definition-merge.browser.mjs",
+    "KnowledgeBaseDefinitionConcept.js",
+    "KnowledgeBaseOCRPostprocess.js",
+    "KnowledgeBaseResearchCore.js",
+    "tests/definition-concept-background-regression.js",
+    "tests/definition-concept-toolbar-regression.js",
+    "tests/incremental-index-atomic-regression.js",
+    "tests/ocr-fixed-postprocess-regression.js",
+    "tests/ocr-structure-prompt-regression.js",
+    "tests/ocr-title-template-regression.js",
+    "tests/research-core-regression.js",
+    "tests/research-mnocr-policy-regression.js",
+    "tests/research-ocr-presentation-regression.js",
+    "tests/research-ocr-recovery-regression.js",
+    "tests/scene-card-review-policy-regression.js"
   ]
 }

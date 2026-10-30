@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "retire-date-collection",
+  "changes": [
+    {
+      "id": "retire-date-collection-20261024",
+      "type": "removed",
+      "zh": "旧日期式阅读收集退出独立模式，保留历史内容与配置，既有泛读流程继续使用。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

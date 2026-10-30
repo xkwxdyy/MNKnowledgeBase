@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "search-source-scope",
+  "changes": [
+    {
+      "id": "search-source-scope-20261024",
+      "type": "added",
+      "zh": "搜索默认主知识库并保存显式来源范围，保留重叠来源、局部搜索及原生定位。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

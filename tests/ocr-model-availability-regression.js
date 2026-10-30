@@ -34,7 +34,8 @@ function loadKnowledgeBaseConfig(modelSource) {
     },
   });
   vm.runInContext(
-    `${utilsSource.slice(start, end)}\nthis.KnowledgeBaseConfig = KnowledgeBaseConfig;`,
+    `${utilsSource.slice(0, utilsSource.indexOf('\nclass KnowledgeBaseIndexer'))}\n` +
+      `${utilsSource.slice(start, end)}\nthis.KnowledgeBaseConfig = KnowledgeBaseConfig;`,
     context,
   );
   return context.KnowledgeBaseConfig;
@@ -53,8 +54,14 @@ assert.deepStrictEqual(
     'glm-5.3-flashx-low',
     'glm-5.3-flash-nothinking',
     'doubao-seed-2-1-lite-nothinking',
+    'deepseek-flash',
   ],
   'direct OCR models must keep the benchmark ranking and exclude uncurated models',
+);
+assert.deepStrictEqual(
+  Array.from(loadKnowledgeBaseConfig({}).getAvailableOCRSources(1)),
+  Array.from(Config.DIRECT_EXCERPT_OCR_SOURCES),
+  'an empty broker catalog must retain the original candidate-list fallback including local Flash',
 );
 assert.deepStrictEqual(
   Array.from(Config.getAvailableOCRSources(2)),
@@ -166,6 +173,27 @@ Config.migrateDefaultOCRModels();
 assert.strictEqual(Config.config.excerptOCRModel, 'gpt-4.1-mini');
 assert.strictEqual(Config.config.excerptOCRModelForMode1, 'gpt-4.1-mini');
 assert.strictEqual(Config.config.excerptOCRModelForMode3, 'gpt-4.1-mini');
+
+assert.strictEqual(Config.isLiveMNOCRSource('deepseek-flash'), true,
+  'official Flash support must not depend on the broker catalog');
+Config.config = {
+  ...Config.defaultConfig,
+  excerptOCRModel: 'deepseek-flash',
+  excerptOCRModelForMode1: 'deepseek-flash',
+  excerptOCRModelForMode3: 'deepseek-flash',
+  excerptOCRTranslateModel: 'deepseek-flash',
+  quickReadingOCRModel: 'deepseek-flash',
+  quickReadingOCRFallbackModel: 'deepseek-flash',
+};
+Config.migrateDefaultOCRModels();
+for (const key of ['excerptOCRModel', 'excerptOCRModelForMode1', 'excerptOCRModelForMode3',
+  'excerptOCRTranslateModel', 'quickReadingOCRModel', 'quickReadingOCRFallbackModel']) {
+  assert.strictEqual(Config.config[key], 'deepseek-flash', `${key} must retain the explicitly saved official Flash source`);
+}
+assert.strictEqual(Config.config.excerptOCRModelIndex, available.indexOf('deepseek-flash'));
+const flashMigrationSaves = saveCalls;
+Config.migrateDefaultOCRModels();
+assert.strictEqual(saveCalls, flashMigrationSaves, 'Flash migration must be idempotent');
 
 assert.match(
   utilsSource,

@@ -23,6 +23,11 @@
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+    ::selection {
+      background: var(--color-accent-soft);
+      color: var(--color-ink);
+    }
+
     html, body {
       height: 100%;
       width: 100%;
@@ -33,6 +38,8 @@
       overflow-x: clip;
       overflow-y: hidden;
       font-size: var(--text-md);
+      color-scheme: light dark;
+      accent-color: var(--color-accent);
     }
 
     .container { display: flex; height: 100dvh; width: 100%; }
@@ -47,6 +54,8 @@
       padding: 16px 12px;
       gap: 16px;
       overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
       flex-shrink: 0;
     }
     .right-sidebar { border-right: none; border-left: 0.5px solid var(--separator-color); }
@@ -1718,6 +1727,35 @@
 }
 
 /* Keep touch hit areas after the visual layer, including hybrid pointer devices. */
+.comments-section,
+.modal-body,
+.merge-materials-list,
+.batch-delete-type-list {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.modal-title,
+.empty-state h3 {
+  text-wrap: balance;
+}
+
+.modal-desc,
+.range-hint,
+.move-banner-text,
+.empty-state p {
+  text-wrap: pretty;
+}
+
+.status-value,
+.field-count,
+.field-nav-count,
+.comment-index,
+.htmlmd-group-count,
+.batch-delete-option-count {
+  font-variant-numeric: tabular-nums;
+}
+
 @media (pointer: coarse), (any-pointer: coarse) {
   .quick-move-btn,
   .link-locate-btn,
@@ -1725,12 +1763,23 @@
   .placeholder-replace-btn,
   .link-edit-btn,
   .copy-comment-btn,
-  .pin-comment-btn {
+  .pin-comment-btn,
+  .close-btn,
+  .compact-panel-close {
     width: 44px;
     height: 44px;
     min-width: 44px;
     min-height: 44px;
     flex-shrink: 0;
+  }
+  .tool-btn,
+  .status-refresh-btn,
+  .proof-structure-open-btn,
+  .text-btn,
+  .text-merge-separator,
+  .main-action-btn,
+  .modal-btn {
+    min-height: 44px;
   }
   .expand-btn { min-height: 44px; padding: 8px 4px; }
   .comment-header { flex-wrap: wrap; }

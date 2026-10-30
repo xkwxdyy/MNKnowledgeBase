@@ -564,7 +564,7 @@ async function run() {
   assert.match(mainSource, /JSB\.require\(['"]KnowledgeBaseHandwritingOCR['"]\)/, 'main.js must load the handwriting module');
   assert.match(
     mainSource,
-    /KnowledgeBaseNetwork\.OCRToTitle\(note, excerptOCRMode, self\.preExcerptMode\)/,
+    /KnowledgeBaseNetwork\.OCRToTitle\(note, excerptOCRMode, false\)/,
     'ProcessNewExcerpt must keep calling OCRToTitle without the manual input policy',
   );
   assert.match(

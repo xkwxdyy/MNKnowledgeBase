@@ -177,139 +177,17 @@ function assertColorProtocol() {
 }
 
 function assertQuickReadingPolicy() {
-  const ordinaryParent = createNote(10, null, '普通父卡');
-  const supportedColors = new Map([
-    [0, '归类'],
-    [2, '定义'],
-    [3, '反例'],
-    [7, '例子'],
-    [10, '命题'],
-  ]);
-  supportedColors.forEach((noteType, colorIndex) => {
-    const policy = KBT.getQuickReadingMakeCardPolicy(createNote(colorIndex, ordinaryParent));
-    assert.strictEqual(policy.mode, 'rough');
-    assert.strictEqual(policy.noteType, noteType);
-  });
-  const roughDefinition = createNote(2, ordinaryParent);
-  let policy;
-
-  const unsupportedOldPurple = createNote(15, ordinaryParent);
-  policy = KBT.getQuickReadingMakeCardPolicy(unsupportedOldPurple);
-  assert.strictEqual(policy.mode, 'unsupported');
-  assert.strictEqual(policy.noteType, null);
-
-  const unsupportedQuestion = createNote(1, ordinaryParent);
-  policy = KBT.getQuickReadingMakeCardPolicy(unsupportedQuestion);
-  assert.strictEqual(policy.mode, 'unsupported', 'quick reading only supports the five confirmed types');
-
-  const colorZeroOrdinaryParent = createNote(0, null, '粗制归类卡');
-  const child = createNote(2, colorZeroOrdinaryParent);
-  policy = KBT.getQuickReadingMakeCardPolicy(child);
-  assert.strictEqual(policy.mode, 'rough', 'a color-0 parent without classification semantics must remain a rough card');
-  assert.strictEqual(policy.directParentIsClassification, false);
-  assert.strictEqual(policy.linkParentTargetFound, false);
-
-  const classificationParent = createNote(0, null, '“拓扑空间”相关定义');
-  classificationParent.noteId = 'CLASSIFICATION-A';
-  const classificationChild = createNote(2, classificationParent);
-  policy = KBT.getQuickReadingMakeCardPolicy(classificationChild);
-  assert.strictEqual(policy.mode, 'normal', 'only a direct semantic classification parent restores normal make-card');
-  assert.strictEqual(policy.directParentIsClassification, true);
-  assert.strictEqual(policy.linkParentTargetFound, true);
-
-  const definitionParent = createNote(2, null, '【定义 >> A】A');
-  const classificationColorChild = createNote(0, definitionParent, '归类 B');
-  policy = KBT.getQuickReadingMakeCardPolicy(classificationColorChild);
-  assert.strictEqual(
-    policy.mode,
-    'rough',
-    'a non-classification direct parent must not be replaced by a broader classification interpretation',
-  );
-  assert.strictEqual(policy.directParentIsClassification, false);
-  assert.strictEqual(policy.noteType, '归类');
-  assert.strictEqual(policy.linkParentTargetFound, false);
-
-  const intermediateKnowledgeCard = createNote(10, classificationParent, '中间知识卡');
-  const nestedKnowledgeCard = createNote(7, intermediateKnowledgeCard, '下层知识卡');
-  policy = KBT.getQuickReadingMakeCardPolicy(nestedKnowledgeCard);
-  assert.strictEqual(
-    policy.mode,
-    'rough',
-    'a classification grandparent must not replace the direct-parent exception',
-  );
-  assert.strictEqual(policy.directParentIsClassification, false);
-  assert.strictEqual(policy.linkParentTargetFound, false);
-
-  intermediateKnowledgeCard.comments = [{
-    type: 'linkComment',
-    text: `marginnote4app://note/${classificationParent.noteId}`,
-  }];
-  intermediateKnowledgeCard.MNComments = intermediateKnowledgeCard.comments;
-  policy = KBT.getQuickReadingMakeCardPolicy(nestedKnowledgeCard);
-  assert.strictEqual(
-    policy.mode,
-    'normal',
-    'a direct parent linked to the nearest classification ancestor must restore normal make-card',
-  );
-  assert.strictEqual(policy.directParentIsClassification, false);
-  assert.strictEqual(policy.linkParentTargetFound, true);
-
-  const markdownLinkedParent = createNote(10, classificationParent, 'Markdown 链接父卡');
-  markdownLinkedParent.comments = [{
-    type: 'markdownComment',
-    text: `- [归类 A](marginnote4app://note/${classificationParent.noteId})`,
-  }];
-  markdownLinkedParent.MNComments = markdownLinkedParent.comments;
-  policy = KBT.getQuickReadingMakeCardPolicy(createNote(3, markdownLinkedParent, '下层反例'));
-  assert.strictEqual(policy.mode, 'normal', 'an inline MarginNote link must also prove the two-level relation');
-  assert.strictEqual(policy.linkParentTargetFound, true);
-
-  const rootClassification = createNote(0, null, '无父归类卡');
-  policy = KBT.getQuickReadingMakeCardPolicy(rootClassification);
-  assert.strictEqual(policy.mode, 'rough', 'a classification card without a parent must stay rough');
-  assert.strictEqual(policy.linkParentTargetFound, false);
-
-  context.KnowledgeBaseConfig.config.readingFollowMode = false;
-  policy = KBT.getQuickReadingMakeCardPolicy(roughDefinition);
-  assert.strictEqual(policy.mode, 'normal');
-  context.KnowledgeBaseConfig.config.readingFollowMode = true;
+  for (const color of [0,1,2,3,7,10,15]) {
+    for (const parent of [null,createNote(10),createNote(0,null,'“紧算子”相关命题')]) {
+      const policy=KBT.getQuickReadingMakeCardPolicy(createNote(color,parent));
+      assert.strictEqual(policy.mode,'normal','Explicit commands always use full processing');
+      assert.strictEqual(policy.noteType,KBT.getNoteTypeByColor(color));
+    }
+  }
 }
 
 function assertQuickReadingPolicyUsesDirectParentClassification() {
-  const ordinaryParent = createNote(10, null, '普通父卡');
-  const colorZeroOrdinaryParent = createNote(0, null, '粗制归类卡');
-  const classificationParent = createNote(0, null, '“度量空间”相关定义');
-
-  withPatchedMethods(KBT, {
-    getNoteType() {
-      throw new Error('quick-reading policy must not call getNoteType');
-    },
-    getFirstClassificationParentNoteOptimized() {
-      throw new Error('quick-reading policy must not use title-based classification lookup');
-    },
-  }, () => {
-    let policy = KBT.getQuickReadingMakeCardPolicy(createNote(10, ordinaryParent, ''));
-    assert.strictEqual(policy.mode, 'rough');
-    assert.strictEqual(policy.noteType, '命题');
-
-    policy = KBT.getQuickReadingMakeCardPolicy(createNote(2, colorZeroOrdinaryParent, ''));
-    assert.strictEqual(policy.mode, 'rough');
-    assert.strictEqual(policy.noteType, '定义');
-    assert.strictEqual(policy.linkParentTargetFound, false);
-
-    policy = KBT.getQuickReadingMakeCardPolicy(createNote(2, classificationParent, ''));
-    assert.strictEqual(policy.mode, 'normal');
-    assert.strictEqual(policy.noteType, '定义');
-    assert.strictEqual(policy.linkParentTargetFound, true);
-
-    policy = KBT.getQuickReadingMakeCardPolicy(createNote(10, classificationParent, ''));
-    assert.strictEqual(policy.mode, 'normal');
-    assert.strictEqual(policy.noteType, '命题');
-
-    policy = KBT.getQuickReadingMakeCardPolicy(createNote(15, classificationParent, ''));
-    assert.strictEqual(policy.mode, 'unsupported');
-    assert.strictEqual(policy.noteType, null);
-  });
+  assert.strictEqual(KBT.getQuickReadingMakeCardPolicy(null).mode,'normal');
 }
 
 function assertQuickReadingNormalMakeNoteLocksColorType() {
@@ -804,84 +682,15 @@ function assertMainIndexerHonorsSilentEmptyEntryOption() {
 }
 
 function assertMakeCardEntryRouting() {
-  const commonPerfStubs = {
-    _beginMakeCardPerf() { return null; },
-    _recordMakeCardPerf() {},
-    _finishMakeCardPerf() {},
-  };
-  const ordinaryParent = createNote(10, null, '普通父卡');
-  const roughNote = createNote(2, ordinaryParent);
-  const calls = [];
-
-  withPatchedMethods(KBT, {
-    ...commonPerfStubs,
-    makeQuickReadingRoughCard(target, noteType) {
-      calls.push(`rough:${noteType}`);
-      return target;
-    },
-    sanitizeNoteCommentsForMake() { calls.push('sanitize'); },
-    renewNote() { calls.push('renew'); },
-    mergeTemplateAndAutoMoveNoteContent() { calls.push('normalMerge'); },
-    templateMergedCardMake() { calls.push('formalize'); },
-    addToReview() { calls.push('review'); },
-  }, () => {
-    KBT.makeCard(roughNote, true, true);
-  });
-  assert.deepStrictEqual(calls, ['rough:定义']);
-
-  calls.length = 0;
-  hudMessages.length = 0;
-  withPatchedMethods(KBT, {
-    ...commonPerfStubs,
-    makeQuickReadingRoughCard() { calls.push('rough'); },
-    sanitizeNoteCommentsForMake() { calls.push('sanitize'); },
-    renewNote() { calls.push('renew'); },
-  }, () => {
-    KBT.makeCard(createNote(15, ordinaryParent), true, true);
-  });
-  assert.deepStrictEqual(calls, []);
-  assert.ok(hudMessages.some(message => message.includes('颜色 15')));
-
-  calls.length = 0;
-  const classificationParent = createNote(0, null, '“度量空间”相关定义');
-  withPatchedMethods(KBT, {
-    ...commonPerfStubs,
-    makeQuickReadingRoughCard() { calls.push('rough'); },
-    sanitizeNoteCommentsForMake() { calls.push('sanitize'); },
-    renewNote() { calls.push('renew'); },
-    mergeTemplateAndAutoMoveNoteContent() { calls.push('normalMerge'); },
-    templateMergedCardMake() { calls.push('formalize'); },
-    addToReview() { calls.push('review'); },
-  }, () => {
-    KBT.makeCard(createNote(2, classificationParent), true, true);
-  });
-  assert.deepStrictEqual(calls, ['sanitize', 'renew', 'normalMerge', 'formalize', 'review']);
-
-  calls.length = 0;
-  const definitionParent = createNote(2, null, '【定义 >> A】A');
-  const rawClassification = createNote(0, definitionParent, '归类 B');
-  withPatchedMethods(KBT, {
-    ...commonPerfStubs,
-    convertNoteToClassificationNote(target, directly, linkParent, preprocess, options) {
-      assert.strictEqual(target, rawClassification);
-      assert.strictEqual(directly, true);
-      assert.strictEqual(linkParent, true);
-      assert.strictEqual(preprocess, true);
-      assert.strictEqual(options.usePopupDefaultTitle, undefined);
-      calls.push('classification');
-      return target;
-    },
-  }, () => {
-    assert.strictEqual(
-      KBT.makeCard(rawClassification, true, true),
-      rawClassification,
-    );
-  });
-  assert.deepStrictEqual(
-    calls,
-    ['classification'],
-    'quick-reading must not downgrade color 0 to a rough card',
-  );
+  const calls=[];
+  withPatchedMethods(KBT,{
+    _beginMakeCardPerf(){return null},_recordMakeCardPerf(){},_finishMakeCardPerf(){},
+    sanitizeNoteCommentsForMake(){calls.push('sanitize')},renewNote(){calls.push('renew')},
+    mergeTemplateAndAutoMoveNoteContent(){calls.push('fields')},templateMergedCardMake(){calls.push('links')},
+    syncFinalMakeCardIndex(){},addToReview(){throw Error('Broad cards must not enter review')},
+    makeQuickReadingRoughCard(){throw Error('Explicit make must not take the rough path')},
+  },()=>{KBT.makeCard(createNote(10,createNote(10)),true,true)});
+  assert.deepStrictEqual(calls,['sanitize','renew','fields','links']);
 }
 
 function assertColorZeroClassificationConversion() {
@@ -1106,94 +915,14 @@ async function assertPopupClassificationConversionBuildsDownwardChain() {
 }
 
 function assertMakeNoteEntryRouting() {
-  const parent = createNote(10, null, '普通父卡');
-  const sourceNote = createNote(7, parent);
-  const processedNote = createNote(7, parent);
-  const calls = [];
-
-  withPatchedMethods(KBT, {
-    _beginMakeCardPerf() { return null; },
-    _recordMakeCardPerf() {},
-    _finishMakeCardPerf() {},
-    sanitizeNoteCommentsForMake() { calls.push('sanitize'); },
-    toNoExcerptVersion(target) {
-      calls.push('convert');
-      assert.strictEqual(target, sourceNote);
-      return processedNote;
-    },
-    makeQuickReadingRoughCard(target, noteType) {
-      calls.push(`rough:${noteType}`);
-      assert.strictEqual(target, processedNote);
-      return target;
-    },
-    processNote() {
-      throw new Error('rough make-note must bypass processNote');
-    },
-    makeCard() {
-      throw new Error('rough make-note must bypass formal makeCard');
-    },
-  }, () => {
-    assert.strictEqual(KBT.makeNote(sourceNote, true, true, true), processedNote);
-  });
-
-  assert.deepStrictEqual(calls, ['convert', 'rough:例子']);
-  assert.strictEqual(processedNote.focusCount, 1);
-
-  calls.length = 0;
-  hudMessages.length = 0;
-  withPatchedMethods(KBT, {
-    _beginMakeCardPerf() { return null; },
-    _recordMakeCardPerf() {},
-    _finishMakeCardPerf() {},
-    sanitizeNoteCommentsForMake() { calls.push('sanitize'); },
-    toNoExcerptVersion() { calls.push('convert'); },
-    makeQuickReadingRoughCard() { calls.push('rough'); },
-  }, () => {
-    KBT.makeNote(createNote(15, parent), true, true, true);
-  });
-  assert.deepStrictEqual(calls, []);
-  assert.ok(hudMessages.some(message => message.includes('颜色 15')));
-
-  calls.length = 0;
-  const rawClassification = createNote(0, parent, '归类 B');
-  withPatchedMethods(KBT, {
-    _beginMakeCardPerf() { return null; },
-    _recordMakeCardPerf() {},
-    _finishMakeCardPerf() {},
-    convertNoteToClassificationNote(target, directly, linkParent, preprocess, options) {
-      assert.strictEqual(target, rawClassification);
-      assert.strictEqual(directly, true);
-      assert.strictEqual(linkParent, true);
-      assert.strictEqual(preprocess, true);
-      assert.strictEqual(options.usePopupDefaultTitle, undefined);
-      calls.push('convertClassification');
-      return target;
-    },
-    addToReview() { throw new Error('classification cards must never enter review'); },
-  }, () => {
-    assert.strictEqual(
-      KBT.makeNote(rawClassification, true, true, true),
-      rawClassification,
-    );
-  });
-  assert.deepStrictEqual(calls, ['convertClassification']);
-
-  const formalClassification = createNote(0, parent, '“B”相关命题');
-  calls.length = 0;
-  withPatchedMethods(KBT, {
-    _beginMakeCardPerf() { return null; },
-    _recordMakeCardPerf() {},
-    _finishMakeCardPerf() {},
-    convertNoteToClassificationNote(target) {
-      assert.strictEqual(target, formalClassification);
-      calls.push('maintainClassification');
-      return target;
-    },
-    addToReview() { throw new Error('formal classification cards must never enter review'); },
-  }, () => {
-    assert.strictEqual(KBT.makeNote(formalClassification, true, true, true), formalClassification);
-  });
-  assert.deepStrictEqual(calls, ['maintainClassification']);
+  const calls=[],source=createNote(7),converted=createNote(7);
+  withPatchedMethods(KBT,{
+    _beginMakeCardPerf(){return null},_recordMakeCardPerf(){},_finishMakeCardPerf(){},sanitizeNoteCommentsForMake(){},
+    processNote(note,type){assert.strictEqual(note,source);assert.strictEqual(type,'例子');calls.push('process');return converted},
+    makeCard(note,review){assert.strictEqual(note,converted);assert.strictEqual(review,false);calls.push('full');return note},
+    makeQuickReadingRoughCard(){throw Error('Explicit makeNote must use the full pipeline')},
+  },()=>{assert.strictEqual(KBT.makeNote(source,true,true,true),converted)});
+  assert.deepStrictEqual(calls,['process','full']);
 }
 
 function assertToolbarSkipsRoughParentLinkSync() {
@@ -1324,12 +1053,21 @@ function assertToolbarDelegatesQuickReadingBeforeLegacyPreProcessPath() {
     true,
     'the legacy pre-process compatibility path must remain available outside quick reading',
   );
+  toolbarContext.KnowledgeBaseTemplate.isOldTemplateCard = KBT.isOldTemplateCard.bind(KBT);
+  for (const label of ['归纳总结', 'remark', 'Remark']) {
+    const legacyNote = { noteId: 'OLD', MNComments: ['证明', '所属', '相关链接', label]
+      .map(text => ({ type: 'HtmlComment', text })) };
+    assert.strictEqual(toolbarContext.shouldUsePreProcessSafePath(legacyNote), false,
+      'Recognized legacy fields must reach core migration even with modern fields: ' + label);
+  }
+  assert.strictEqual(toolbarContext.shouldUsePreProcessSafePath(note), true,
+    'Modern cards retain the compatibility path when the shared detector is available');
 }
 
 function assertToolbarUsesConvertedClassificationNote() {
   assert.match(
     toolbarSource,
-    /const processedNote = KnowledgeBaseTemplate\.makeNote\(note, true, true, true, \{[\s\S]*?undoGrouping:\s*false,[\s\S]*?deferFinalIndexSync:\s*true,[\s\S]*?\}\);/,
+    /const processedNote = KnowledgeBaseTemplate\.makeNote\(note, true, false, true, \{[\s\S]*?undoGrouping:\s*false,[\s\S]*?deferFinalIndexSync:\s*true,[\s\S]*?\}\);/,
     'toolbar make-card must retain the classification note returned by makeNote',
   );
   assert.match(
@@ -1344,12 +1082,12 @@ function assertToolbarUsesConvertedClassificationNote() {
   );
   assert.match(
     toolbarSource,
-    /const processedNote = KnowledgeBaseTemplate\.makeCard\(targetNote, false\) \|\| targetNote;[\s\S]*?refreshedNotes\.push\(processedNote\)/,
+    /const processedNote = KnowledgeBaseTemplate\.makeCard\(targetNote, false, true, \{ silent: true \}\) \|\| targetNote;[\s\S]*?refreshedNotes\.push\(processedNote\)/,
     'double-click make-card must refresh the returned classification target',
   );
   assert.match(
     toolbarSource,
-    /const processedNote = KnowledgeBaseTemplate\.makeNote\([\s\S]*?childNote,[\s\S]*?\{ undoGrouping: false \},[\s\S]*?\);[\s\S]*?madeNotes\.push\(processedNote\)/,
+    /const processedNote = KnowledgeBaseTemplate\.makeNote\([\s\S]*?childNote,[\s\S]*?\{ undoGrouping: false, silent: true \},[\s\S]*?\);[\s\S]*?madeNotes\.push\(processedNote\)/,
     'batch child make-card must collect the returned classification target',
   );
 }
@@ -1388,293 +1126,38 @@ async function assertQuickReadingProcessesExcerptsOnly() {
 }
 
 function assertQuickReadingHighlightsAddonIcon() {
-  assert.match(
-    mainSource,
-    /checked:\s*Number\(KnowledgeBaseConfig\.config\.excerptOCRMode\) > 0\s*\|\|\s*!!KnowledgeBaseConfig\.config\.readingFollowMode/,
-    'the addon icon must stay highlighted while either direct OCR or quick reading is enabled',
-  );
-
-  const toggleStart = mainSource.indexOf('MNKnowledgeBaseClass.prototype.toggleReadingFollowMode = function()');
-  const toggleEnd = mainSource.indexOf('MNKnowledgeBaseClass.prototype.demoModeToggledInternal', toggleStart);
-  assert.ok(toggleStart !== -1 && toggleEnd > toggleStart, 'quick-reading toggle implementation must be present');
-  const toggleSource = mainSource.slice(toggleStart, toggleEnd);
-  assert.strictEqual(
-    (toggleSource.match(/this\.refreshAddonCommandStatus\(\)/g) || []).length,
-    2,
-    'enabling and disabling quick reading must immediately refresh the addon icon',
-  );
+  assert.match(mainSource,/checked:\s*Number\(KnowledgeBaseConfig.config.excerptOCRMode\) > 0/);
+  const menu=extractPrototypeFunction('toggleReadingFollowMode','demoModeToggledInternal');
+  assert.match(menu,/this.refreshAddonCommandStatus\(\)/);
+  assert.match(menu,/恢复上次接收目标/);
 }
 
 function assertQuickReadingAcceptsUntitledTargetCard() {
-  const popupStart = mainSource.indexOf('onPopupMenuOnNote: async function (sender) {');
-  const popupEnd = mainSource.indexOf('\n    /**\n     * 处理来自其他插件的通信消息', popupStart);
-  assert.ok(popupStart !== -1 && popupEnd > popupStart, 'PopupMenuOnNote handler must be present');
-  const popupSource = mainSource.slice(popupStart, popupEnd);
-  const followStart = popupSource.indexOf('if (selectedNoteId && KnowledgeBaseConfig.config.readingFollowMode)');
-  assert.notStrictEqual(followStart, -1, 'quick reading target update block must be present');
-  const followSource = popupSource.slice(followStart);
-  assert.match(
-    followSource,
-    /selectedNote && selectedNote\.noteTitle[\s\S]*?commitReadingFollowTarget\.call\(self, selectedNoteId, 'popup-titled'\)/,
-    'titled targets must retain the original immediate single-target path',
-  );
-  assert.match(
-    followSource,
-    /else if \(selectedNote\)[\s\S]*?scheduleUntitledReadingFollowTarget\.call\(self, selectedNoteId\)/,
-    'untitled targets must use delayed confirmation instead of weakening the original titled-target guard',
-  );
-  assert.ok(
-    popupSource.indexOf('commitReadingFollowTarget.call(self, selectedNoteId') >
-      popupSource.indexOf('await MNKnowledgeBaseClass.prototype.refreshOpenQuestionResearchWorkbenchForNote'),
-    'the original target update ordering after panel refreshes must be preserved',
-  );
-
-  const excerptStart = mainSource.indexOf('onProcessNewExcerpt: async function (sender) {');
-  const excerptEnd = mainSource.indexOf('\n    queryAddonCommandStatus:', excerptStart);
-  assert.ok(excerptStart !== -1 && excerptEnd > excerptStart, 'ProcessNewExcerpt handler must be present');
-  const excerptSource = mainSource.slice(excerptStart, excerptEnd);
-  assert.match(
-    excerptSource,
-    /markReadingFollowSource\.call\(self, noteId\)[\s\S]*?await self\.processReadingModeNote/,
-    'new excerpts must be marked before follow-mode processing can accept popup target updates',
-  );
-
-  const commitSource = extractPrototypeFunction('commitReadingFollowTarget', 'scheduleUntitledReadingFollowTarget');
-  assert.match(
-    commitSource,
-    /getReadingFollowRecentSourceMatch\(targetNoteId\)[\s\S]*?String\(reason\)\.startsWith\('popup-'\)[\s\S]*?recentSourceMatch\.match[\s\S]*?return false/,
-    'titled popup targets must reject a just-created excerpt by raw or realGroup identity',
-  );
-  const scheduleSource = extractPrototypeFunction('scheduleUntitledReadingFollowTarget', 'markReadingFollowSource');
-  assert.match(
-    scheduleSource,
-    /getReadingFollowRecentSourceMatch\(targetNoteId\)[\s\S]*?recentSourceMatch\.match[\s\S]*?return false/,
-    'untitled popup targets must reject a just-created excerpt by raw or realGroup identity',
-  );
-  assert.doesNotMatch(
-    scheduleSource,
-    /MNUtil\.delay\(/,
-    'untitled target persistence must not race ProcessNewExcerpt with a short timer',
-  );
-  const sourceMarkerSource = extractPrototypeFunction('markReadingFollowSource', 'isReadingFollowTargetCompatible');
-  assert.match(
-    sourceMarkerSource,
-    /sourceDiagnostic\.realGroupNoteId[\s\S]*?pendingDiagnostic[\s\S]*?canceledPendingTarget/,
-    'source detection must cancel a pending document wrapper when it resolves to the same mind-map node',
-  );
-  assert.match(
-    sourceMarkerSource,
-    /removeReadingFollowSourceFromRecentTargets\(sourceIdentityIds\)/,
-    'new excerpt auto-selection must not remain in the recent target queue',
-  );
-  const markReadingFollowSource = vm.runInNewContext(
-    `(${extractPrototypeFunction('markReadingFollowSource', 'isReadingFollowTargetCompatible')})`,
-    { Date, String, KnowledgeBaseConfig: { config: { readingFollowLastNoteId: 'OLD-TARGET' } } },
-  );
-  const raceInstance = {
-    readingFollowPendingUntitledTarget: { noteId: 'TARGET-DOC' },
-    readingFollowRecentExcerptIds: {},
-    getQuickReadingNoteDiagnostic(noteOrId) {
-      if (noteOrId === 'TARGET-DOC') return { noteId: 'TARGET-DOC', realGroupNoteId: 'SOURCE-GROUP' };
-      return { noteId: 'SOURCE-GROUP', realGroupNoteId: 'SOURCE-GROUP' };
-    },
-    removeReadingFollowSourceFromRecentTargets() { return []; },
-    logQuickReadingDiagnostic() {},
-  };
-  markReadingFollowSource.call(raceInstance, 'SOURCE-GROUP');
-  assert.strictEqual(raceInstance.readingFollowPendingUntitledTarget, null);
-  assert.strictEqual(
-    raceInstance.readingFollowRecentExcerptIds['SOURCE-GROUP'] > 0,
-    true,
-    'source detection must index the realGroup identity too',
-  );
-  const parentSource = extractPrototypeFunction('getReadingFollowParentNote', 'getReadingFollowMoveParent');
-  assert.match(
-    parentSource,
-    /readingFollowPendingUntitledTarget[\s\S]*?pendingTargetId[\s\S]*?return pendingTarget/,
-    'a blank target must be usable immediately while its delayed persistence is pending',
-  );
+  const a=mainSource.indexOf('onPopupMenuOnNote: async function'),b=mainSource.indexOf('处理来自其他插件的通信消息',a);
+  assert.doesNotMatch(mainSource.slice(a,b),/commitReadingFollowTarget|scheduleUntitledReadingFollowTarget/);
+  assert.match(extractPrototypeFunction('toggleReadingFollowMode','demoModeToggledInternal'),/selected.length !== 1/);
 }
 
 function assertQuickReadingRecentTargetFallback() {
-  assert.match(
-    knowledgeBaseSource,
-    /readingFollowRecentNoteIds:\s*\[\]/,
-    'recent quick-reading targets must be persisted in config',
-  );
-  assert.match(
-    extractPrototypeFunction('getReadingFollowRecentTargetIds', 'setReadingFollowRecentTargetIds'),
-    /return result\.slice\(0, 3\)/,
-    'recent quick-reading targets must be capped at three cards',
-  );
-  assert.match(
-    mainSource,
-    /const targetParent = this\.getReadingFollowParentNote\(note\)/,
-    'target fallback must validate candidates against the current excerpt notebook',
-  );
-
-  let saveCount = 0;
-  const queueConfig = {
-    config: {
-      readingFollowLastNoteId: 'A',
-      readingFollowRecentNoteIds: ['A', 'C', 'D'],
-    },
-    save() { saveCount += 1; },
-  };
-  const queueInstance = {
-    getReadingFollowRecentSourceMatch() { return { match: null }; },
-    getReadingFollowRecentTargetIds() {
-      return getRecentTargetIds.call(this);
-    },
-    setReadingFollowRecentTargetIds(noteIds) {
-      return setRecentTargetIds.call(this, noteIds);
-    },
-    getQuickReadingNoteDiagnostic(noteId) {
-      if (noteId === 'B') return { noteId: 'B', realGroupNoteId: 'B-GROUP' };
-      return { noteId, realGroupNoteId: noteId };
-    },
-    logQuickReadingDiagnostic() {},
-  };
-  const queueContext = { KnowledgeBaseConfig: queueConfig };
-  queueInstance.getReadingFollowRecentTargetIds = vm.runInNewContext(
-    `(${extractPrototypeFunction('getReadingFollowRecentTargetIds', 'setReadingFollowRecentTargetIds')})`,
-    queueContext,
-  );
-  queueInstance.setReadingFollowRecentTargetIds = vm.runInNewContext(
-    `(${extractPrototypeFunction('setReadingFollowRecentTargetIds', 'removeReadingFollowSourceFromRecentTargets')})`,
-    queueContext,
-  );
-  const commitTargetWithConfig = vm.runInNewContext(
-    `(${extractPrototypeFunction('commitReadingFollowTarget', 'scheduleUntitledReadingFollowTarget')})`,
-    queueContext,
-  );
-  commitTargetWithConfig.call(queueInstance, 'B', 'popup-titled');
-  assert.deepStrictEqual(Array.from(queueConfig.config.readingFollowRecentNoteIds), ['B', 'A', 'C']);
-  assert.strictEqual(queueConfig.config.readingFollowLastNoteId, 'B');
-  assert.strictEqual(saveCount, 1);
-
-  const removeSourceWithConfig = vm.runInNewContext(
-    `(${extractPrototypeFunction('removeReadingFollowSourceFromRecentTargets', 'commitReadingFollowTarget')})`,
-    queueContext,
-  );
-  const removedIds = removeSourceWithConfig.call(queueInstance, ['B-GROUP']);
-  assert.deepStrictEqual(Array.from(removedIds), ['B']);
-  assert.deepStrictEqual(Array.from(queueConfig.config.readingFollowRecentNoteIds), ['A', 'C']);
-  assert.strictEqual(queueConfig.config.readingFollowLastNoteId, 'A');
-
-  const sourceNote = { noteId: 'SOURCE' };
-  const notes = {
-    'OTHER-STUDY': { noteId: 'OTHER-STUDY' },
-    A: { noteId: 'A' },
-  };
-  const fallbackContext = {
-    String,
-    resolveAvailableNote(noteId) { return notes[noteId] || null; },
-  };
-  const isCompatible = vm.runInNewContext(
-    `(${extractPrototypeFunction('isReadingFollowTargetCompatible', 'getReadingFollowParentNote')})`,
-    fallbackContext,
-  );
-  const getParent = vm.runInNewContext(
-    `(${extractPrototypeFunction('getReadingFollowParentNote', 'getReadingFollowMoveParent')})`,
-    fallbackContext,
-  );
-  const fallbackLogs = [];
-  const fallbackSaves = [];
-  const fallbackInstance = {
-    readingFollowPendingUntitledTarget: null,
-    getReadingFollowRecentTargetIds() { return ['DELETED-B', 'OTHER-STUDY', 'A']; },
-    setReadingFollowRecentTargetIds(noteIds) {
-      fallbackSaves.push(Array.from(noteIds));
-      return { changed: true, recentTargetIds: Array.from(noteIds) };
-    },
-    isReadingFollowTargetCompatible(target, source) {
-      return isCompatible.call(this, target, source);
-    },
-    getQuickReadingNoteDiagnostic(noteOrId) {
-      const noteId = typeof noteOrId === 'string' ? noteOrId : noteOrId.noteId;
-      if (noteId === 'SOURCE') {
-        return { available: true, noteId, notebookId: 'NB-1', realGroupNotebookId: 'NB-1' };
-      }
-      if (noteId === 'OTHER-STUDY') {
-        return { available: true, noteId, notebookId: 'NB-2', realGroupNotebookId: 'NB-2' };
-      }
-      if (noteId === 'A') {
-        return { available: true, noteId, notebookId: 'NB-1', realGroupNotebookId: 'NB-1' };
-      }
-      return { available: false, noteId };
-    },
-    getSelectedNotes() { throw new Error('available fallback A must win before current selection'); },
-    logQuickReadingDiagnostic(message, detail) { fallbackLogs.push({ message, detail }); },
-  };
-  assert.strictEqual(getParent.call(fallbackInstance, sourceNote), notes.A);
-  assert.deepStrictEqual(fallbackSaves, [['A', 'OTHER-STUDY']]);
-  assert.strictEqual(fallbackLogs[0].message, 'target.recentFallbackUsed');
-  assert.deepStrictEqual(Array.from(fallbackLogs[0].detail.unavailableTargetIds), ['DELETED-B']);
-  assert.deepStrictEqual(Array.from(fallbackLogs[0].detail.incompatibleTargetIds), ['OTHER-STUDY']);
+  let receiver={noteId:'explicit',active:false}; const notes={explicit:createNote(10)};
+  const fn=vm.runInNewContext('('+extractPrototypeFunction('getReadingFollowParentNote','getReadingFollowMoveParent')+')',{
+    KnowledgeBaseResearchCore:{getRuntime:()=>({state:()=>({receiver})})},resolveAvailableNote:id=>notes[id],
+  });
+  const owner={isReadingFollowTargetCompatible:()=>true,getSelectedNotes:()=>{throw Error('Selection must not become a receiver')}};
+  assert.strictEqual(fn.call(owner,{}),null);receiver.active=true;assert.strictEqual(fn.call(owner,{}),notes.explicit);
+  delete notes.explicit;assert.strictEqual(fn.call(owner,{}),null);
 }
 
 function assertQuickReadingTargetReplacementAfterClassificationConversion() {
-  let saveCount = 0;
-  const previousConfig = context.KnowledgeBaseConfig.config;
-  const previousSave = context.KnowledgeBaseConfig.save;
-  context.KnowledgeBaseConfig.config = {
-    readingFollowMode: true,
-    readingFollowLastNoteId: 'OLD-TARGET',
-    readingFollowRecentNoteIds: ['OLD-TARGET', 'A', 'B'],
-  };
-  context.KnowledgeBaseConfig.save = () => { saveCount += 1; };
-  try {
-    const result = KBT.replaceQuickReadingTargetNoteIds(
-      ['OLD-WRAPPER', 'OLD-TARGET'],
-      'NEW-CLASSIFICATION',
-    );
-    assert.strictEqual(result.changed, true);
-    assert.strictEqual(context.KnowledgeBaseConfig.config.readingFollowLastNoteId, 'NEW-CLASSIFICATION');
-    assert.deepStrictEqual(
-      Array.from(context.KnowledgeBaseConfig.config.readingFollowRecentNoteIds),
-      ['NEW-CLASSIFICATION', 'A', 'B'],
-    );
-    assert.strictEqual(saveCount, 1);
+  assert.match(mainSource,/KnowledgeBaseResearchCore.getRuntime\(\).processExcerpt\(this, note\)/);
+  // Shared Core regression covers explicit receiver retargeting and AddTemplate nonbinding.
 
-    const missingResult = KBT.replaceQuickReadingTargetNoteIds(['NOT-IN-QUEUE'], 'OTHER');
-    assert.strictEqual(missingResult.changed, false);
-    assert.strictEqual(saveCount, 1, 'a conversion outside the target list must not rewrite config');
-  } finally {
-    context.KnowledgeBaseConfig.config = previousConfig;
-    context.KnowledgeBaseConfig.save = previousSave;
-  }
-
-  const conversionStart = toolbarSource.indexOf('async function _xdyy_convertNoteToClassificationNoteInPlace');
-  const conversionEnd = toolbarSource.indexOf('\n  global.registerCustomAction("convertToClassificationNoteDirectly"', conversionStart);
-  const conversionSource = toolbarSource.slice(conversionStart, conversionEnd);
-  assert.match(
-    conversionSource,
-    /readingFollowTargetSourceIds[\s\S]*?KnowledgeBaseTemplate\.convertNoteToClassificationNote\([\s\S]*?replaceQuickReadingTargetNoteIds\([\s\S]*?readingFollowTargetSourceIds[\s\S]*?_xdyy_getNoteIdSafe\(convertedNote\)/,
-    'MNToolbar classification conversion must replace queued source identities with the new card id',
-  );
-  assert.doesNotMatch(
-    conversionSource,
-    /MNNote\.clone|mergeInto\(/,
-    'MNToolbar must delegate classification conversion instead of duplicating the native merge implementation',
-  );
-  assert.match(
-    conversionSource,
-    /classificationChainResult[\s\S]*?createdNotes[\s\S]*?notesToIndex\.forEach[\s\S]*?_xdyy_refreshNotesAfterMakeCardDBRefresh\(notesToRefresh/,
-    'MNToolbar must index and refresh every card produced by popup // conversion',
-  );
 }
 
 function assertUnavailableTargetProxyIsRejected() {
-  const resolveStart = mainSource.indexOf('const resolveAvailableNote = function(noteOrId)');
-  const resolveEnd = mainSource.indexOf('\n\n  const readKnowledgeBaseNoteValue', resolveStart);
-  assert.ok(resolveStart !== -1 && resolveEnd > resolveStart, 'resolveAvailableNote must be present');
-  const resolveSource = mainSource.slice(resolveStart, resolveEnd);
-  assert.match(
-    resolveSource,
-    /nativeNote[\s\S]*?candidate\.noteId[\s\S]*?nativeNote\.noteId[\s\S]*?return resolvedNoteId \? candidate : null/,
-    'ghost MNNote proxies without a resolvable id must be rejected so recent-target fallback can continue',
-  );
+  const core=fs.readFileSync(path.join(addonRoot,'KnowledgeBaseResearchCore.js'),'utf8');
+  assert.match(core,/if \(!result \|\| !text\(result.noteId\)\) throw new Error\('note-unavailable'\)/);
+
 }
 
 function assertQuickReadingConversionUsesBoundedRefresh() {
@@ -1700,7 +1183,7 @@ function assertQuickReadingConversionUsesBoundedRefresh() {
       calls.push({ step: 'refresh', note, useRefreshAll, options });
     },
   }, () => {
-    assert.strictEqual(convert(sourceNote, parentNote), processedNote);
+    assert.strictEqual(convert.call({ isReadingFollowPropositionTarget: () => false }, sourceNote, parentNote), processedNote);
     assert.strictEqual(calls[0].step, 'undo');
     assert.strictEqual(calls[0].trigger.feature, 'mnknowledgebase.quickReadingConversion.noGlobalDBRefresh');
     assert.strictEqual(calls[1].step, 'convert');
@@ -1720,7 +1203,7 @@ function assertQuickReadingOCRRefreshUsesImmediateDBRefresh() {
     },
   };
   const refresh = vm.runInNewContext(
-    `(${extractPrototypeFunction('refreshAfterQuickReadingOCR', 'convertQuickReadingExcerptWithoutGlobalRefresh')})`,
+    `(${extractPrototypeFunction('refreshAfterQuickReadingOCR', 'isReadingFollowPropositionTarget')})`,
     { MNUtil: immediateInstance, KnowledgeBaseUtils: { addErrorLog() {} } },
   );
   assert.strictEqual(refresh({ noteId: 'NOTE' }, 'afterConversion'), true);
@@ -1728,7 +1211,7 @@ function assertQuickReadingOCRRefreshUsesImmediateDBRefresh() {
 
   const fallbackCalls = [];
   const fallbackRefresh = vm.runInNewContext(
-    `(${extractPrototypeFunction('refreshAfterQuickReadingOCR', 'convertQuickReadingExcerptWithoutGlobalRefresh')})`,
+    `(${extractPrototypeFunction('refreshAfterQuickReadingOCR', 'isReadingFollowPropositionTarget')})`,
     { MNUtil: {
       currentNotebookId: 'NOTEBOOK-FALLBACK',
       app: { refreshAfterDBChanged(notebookId) { fallbackCalls.push(notebookId); } },
@@ -1764,6 +1247,7 @@ async function assertQuickReadingAutoMakeCard() {
       addChild(child) { this.addChildCalls.push(child); },
     };
     return {
+      isReadingFollowPropositionTarget: () => false,
       readingFollowPendingUntitledTarget: null,
       extractReadingTagTypeAndCleanup() {},
       getReadingTypeFromColor() { return noteType; },
@@ -2040,156 +1524,11 @@ async function assertQuickReadingAutoMakeCard() {
   }
 }
 async function assertQuickReadingUsesResolvedParentForMoveAndConversion() {
-  const followStart = mainSource.indexOf('MNKnowledgeBaseClass.prototype.processReadingFollowNote = async function(note)');
-  const followEnd = mainSource.indexOf('MNKnowledgeBaseClass.prototype.processReadingModeNote', followStart);
-  assert.ok(followStart !== -1 && followEnd > followStart, 'quick-reading follow processor must be present');
-  const followSource = mainSource.slice(followStart, followEnd);
-  assert.match(
-    followSource,
-    /sourceIds\.some\(id => targetIds\.includes\(id\)\)/,
-    'self-parent protection must compare resolved mind-map IDs, not only raw wrapper IDs',
-  );
-  assert.match(
-    followSource,
-    /this\.convertQuickReadingExcerptWithoutGlobalRefresh\(note, targetParentForMove\)/,
-    'excerpt conversion must use the no-global-refresh path with the resolved target',
-  );
-
-  const processReadingFollowNote = vm.runInNewContext(
-    `(${extractPrototypeFunction('processReadingFollowNote', 'processReadingModeNote')})`,
-    {
-      Date,
-      String,
-      KnowledgeBaseConfig: { config: { readingFollowLastNoteId: 'TARGET-DOC' } },
-      MNUtil: { undoGrouping(callback) { callback(); } },
-      KnowledgeBaseTemplate: KBT,
-    },
-  );
-
-  const sourceNote = { noteId: 'SOURCE-DOC' };
-  const selectedTarget = { noteId: 'TARGET-DOC' };
-  const moveTarget = {
-    noteId: 'TARGET-GROUP',
-    addChildCalls: [],
-    addChild(note) { this.addChildCalls.push(note); },
-  };
-  const processedNote = {
-    noteId: 'PROCESSED',
-    focusCount: 0,
-    focusInMindMap() { this.focusCount += 1; },
-  };
-  const conversionCalls = [];
-  const logMessages = [];
-  const refreshCalls = [];
-  const confirmedTargetCalls = [];
-  const originalToNoExcerptVersion = KBT.toNoExcerptVersion;
-  KBT.toNoExcerptVersion = (note, parent) => {
-    conversionCalls.push({ note, parent });
-    return processedNote;
-  };
-  try {
-    const processor = {
-     readingFollowPendingUntitledTarget: { noteId: 'TARGET-DOC' },
-     extractReadingTagTypeAndCleanup() {},
-      getReadingTypeFromColor() { return ''; },
-     getReadingFollowParentNote() { return selectedTarget; },
-      getReadingFollowMoveParent() { return moveTarget; },
-      getQuickReadingNoteDiagnostic(noteOrId) {
-        if (noteOrId === sourceNote) return { noteId: 'SOURCE-DOC', realGroupNoteId: 'SOURCE-GROUP' };
-        if (noteOrId === 'SOURCE-DOC') {
-          return {
-            noteId: 'SOURCE-DOC',
-            realGroupNoteId: 'SOURCE-GROUP',
-            parentNoteId: 'TARGET-GROUP',
-            parentRealGroupNoteId: 'TARGET-GROUP',
-          };
-        }
-        if (noteOrId === selectedTarget || noteOrId === 'TARGET-DOC') {
-          return { noteId: 'TARGET-DOC', realGroupNoteId: 'TARGET-GROUP' };
-        }
-        if (noteOrId === moveTarget) return { noteId: 'TARGET-GROUP', realGroupNoteId: 'TARGET-GROUP' };
-        if (noteOrId === processedNote) {
-          return {
-            noteId: 'PROCESSED',
-            realGroupNoteId: 'PROCESSED',
-            parentNoteId: 'TARGET-GROUP',
-            parentRealGroupNoteId: 'TARGET-GROUP',
-          };
-        }
-        return { noteId: '', realGroupNoteId: '' };
-      },
-      logQuickReadingDiagnostic(message) { logMessages.push(message); },
-      getReadingFollowChildContainment() { return { childCount: 1, containsSource: true }; },
-      shouldSkipReadingOCR() { return false; },
-      async applyQuickReadingOCRToTitle() {
-        refreshCalls.push({ step: 'ocr' });
-        return true;
-      },
-      convertQuickReadingExcerptWithoutGlobalRefresh(note, parent) {
-        return KBT.toNoExcerptVersion(note, parent, { createChildUndoGrouping: false });
-      },
-      refreshAfterQuickReadingOCR(note, stage) {
-        refreshCalls.push({ step: 'refresh', note, stage, focusCount: processedNote.focusCount });
-        return true;
-      },
-      syncConvertedIntermediateIndexIfNeeded() {},
-      commitReadingFollowTarget(noteId, reason) { confirmedTargetCalls.push({ noteId, reason }); },
-    };
-
-    await processReadingFollowNote.call(processor, sourceNote);
-    assert.deepStrictEqual(moveTarget.addChildCalls, [sourceNote]);
-    assert.strictEqual(conversionCalls.length, 1);
-    assert.strictEqual(conversionCalls[0].note, sourceNote);
-    assert.strictEqual(
-      conversionCalls[0].parent,
-      moveTarget,
-      'conversion must create the replacement card under the same resolved parent used by addChild',
-    );
-    assert.strictEqual(processedNote.focusCount, 1);
-    assert.deepStrictEqual(refreshCalls, [
-      { step: 'ocr' },
-      { step: 'refresh', note: processedNote, stage: 'afterConversion', focusCount: 1 },
-    ], 'quick reading must refresh the converted card only after OCR and focus complete');
-    assert.deepStrictEqual(confirmedTargetCalls, [
-      { noteId: 'TARGET-DOC', reason: 'follow-pending-confirmed' },
-    ]);
-    assert.strictEqual(processor.readingFollowPendingUntitledTarget, null);
-    assert.ok(logMessages.includes('follow.afterAddChild'));
-    assert.ok(logMessages.includes('follow.beforeConversion'));
-    assert.ok(logMessages.includes('follow.afterConversion'));
-  } finally {
-    KBT.toNoExcerptVersion = originalToNoExcerptVersion;
-  }
-
-  const selfTargetLogs = [];
-   const selfTargetProcessor = {
-     extractReadingTagTypeAndCleanup() {},
-      getReadingTypeFromColor() { return ''; },
-     getReadingFollowParentNote() { return selectedTarget; },
-    getReadingFollowMoveParent() {
-      return {
-        noteId: 'SOURCE-GROUP',
-        addChild() { throw new Error('resolved self-target must never be mutated'); },
-      };
-    },
-    getQuickReadingNoteDiagnostic(noteOrId) {
-      if (noteOrId === selectedTarget) return { noteId: 'TARGET-DOC', realGroupNoteId: 'SOURCE-GROUP' };
-      if (noteOrId && noteOrId.noteId === 'SOURCE-GROUP') {
-        return { noteId: 'SOURCE-GROUP', realGroupNoteId: 'SOURCE-GROUP' };
-      }
-      return { noteId: 'SOURCE-DOC', realGroupNoteId: 'SOURCE-GROUP' };
-    },
-    logQuickReadingDiagnostic(message) { selfTargetLogs.push(message); },
-    getReadingFollowChildContainment() { return { childCount: 0, containsSource: false }; },
-    shouldSkipReadingOCR() { return true; },
-    syncConvertedIntermediateIndexIfNeeded() {},
-    commitReadingFollowTarget() { return true; },
-  };
-  await processReadingFollowNote.call(selfTargetProcessor, sourceNote);
-  assert.ok(
-    selfTargetLogs.includes('follow.selfTargetBlocked'),
-    'different raw IDs resolving to one mind-map node must be blocked',
-  );
+  const calls=[],owner={window:{}},note={noteId:'source'};
+  const fn=vm.runInNewContext('('+extractPrototypeFunction('processReadingFollowNote','processReadingModeNote')+')',{
+    KnowledgeBaseResearchCore:{getRuntime:()=>({processExcerpt:(instance,input)=>{assert.strictEqual(instance,owner);assert.strictEqual(input,note);calls.push('shared')}})},
+  });
+  await fn.call(owner,note);assert.deepStrictEqual(calls,['shared']);
 }
 
 (async () => {

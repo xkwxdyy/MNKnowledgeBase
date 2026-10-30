@@ -824,14 +824,19 @@ function updateSearchEmptyState({ pending, failed, waiting, total }) {
   const hasQuery = !!state.userInput;
   const hasCards = state.cards.length > 0;
   const local = !!state.localSearchRootId;
+  const sourceLimited = !local && Array.isArray(state.searchSources) && !state.searchSources.includes('all');
+  const noSources = sourceLimited && state.searchSources.length === 0;
   const title = failed ? '这次搜索未完成'
     : waiting ? '等待知识库数据'
     : !hasCards ? '当前知识库暂无卡片'
+    : noSources ? '尚未选择搜索来源'
     : '没有匹配的卡片';
   const description = failed ? '请重新搜索；如果仍未完成，可刷新列表后重试。'
     : waiting ? '数据载入后会自动显示。也可以刷新列表重新获取。'
     : !hasCards ? '添加知识库卡片后，刷新列表即可搜索。'
+    : noSources ? '从上方选择主知识库或其他来源后，即可显示结果。'
     : local ? '当前仅搜索所选卡片的子孙卡片。可调整条件，或从上方退出局部搜索。'
+    : sourceLimited ? '当前仅搜索已选来源。可从上方加入其他来源，或调整关键词和筛选条件。'
     : hasFilters ? '试着减少筛选条件，或使用更短的关键词。清除筛选会保留关键词。'
     : '试着使用更短的关键词，或检查输入的词组。';
   document.getElementById('searchEmptyTitle').textContent = title;
@@ -862,6 +867,7 @@ function renderSelectedCardInfo(title, subtitle) {
 }
 
 function updateSelectionInfo() {
+  if (window.MNKBOrganizationUI) window.MNKBOrganizationUI.updateSelection();
   if (!state.selectedCardId) {
     dom.selectedCardInfo.textContent = '未选中卡片';
     dom.selectedCardInfo.classList.add('empty');

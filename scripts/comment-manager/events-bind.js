@@ -265,9 +265,27 @@
       }
       if (dom.mergeCookingText) {
         dom.mergeCookingText.addEventListener('input', updateMergeConfirmState);
+        dom.mergeCookingText.addEventListener('keydown', (event) => {
+          if (event.isComposing || event.keyCode === 229) return;
+          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+            if (dom.mergeInlineConfirmBtn && !dom.mergeInlineConfirmBtn.disabled) {
+              event.preventDefault();
+              confirmInlineMerge();
+            }
+          }
+        });
       }
       if (dom.textMergeCookingText) {
         dom.textMergeCookingText.addEventListener('input', updateTextMergeConfirmState);
+        dom.textMergeCookingText.addEventListener('keydown', (event) => {
+          if (event.isComposing || event.keyCode === 229) return;
+          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+            if (dom.mergeTextConfirmBtn && !dom.mergeTextConfirmBtn.disabled) {
+              event.preventDefault();
+              confirmTextMerge();
+            }
+          }
+        });
       }
       if (dom.textMergeCustomSeparator) {
         dom.textMergeCustomSeparator.addEventListener('input', handleTextMergeCustomSeparatorInput);

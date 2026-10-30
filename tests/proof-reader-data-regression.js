@@ -95,6 +95,38 @@ controller.runJavaScript = async script => { injected.push(script); return accep
   controller.runJavaScript = async () => { instance.currentProofStructureContext = { noteId: 'NEXT', fieldName: '证明' }; return true; };
   assert.equal((await controller.loadProofStructureWorkbenchData('NOTE', '证明')).reason, 'stale-proof-response');
   const main = fs.readFileSync(require.resolve('../main.js'), 'utf8');
+  const openFrom = main.indexOf('  MNKnowledgeBaseClass.prototype.openProofStructureWorkbench =');
+  const openTo = main.indexOf('  MNKnowledgeBaseClass.prototype.returnFromProofStructureWorkbench =', openFrom);
+  context.MNKnowledgeBaseClass = function() {};
+  context.MNNote = { new: noteId => ({ noteId }) };
+  context.MNUtil = { showHUD() {} };
+  // The native callback belongs to the WebView controller, not the addon.
+  context.self = controller;
+  context.KnowledgeBaseUtils.checkCommentWebViewController = () => {};
+  context.KnowledgeBaseUtils.commentWebViewController = controller;
+  context.KnowledgeBaseUtils.log = () => {};
+  vm.runInContext(main.slice(openFrom, openTo), context);
+  const openingAddon = new context.MNKnowledgeBaseClass();
+  openingAddon.prepareProofStructureWorkbenchData = (noteOrId, fieldName) => (
+    instance.prepareProofStructureWorkbenchData(typeof noteOrId === 'string' ? noteOrId : noteOrId.noteId, fieldName)
+  );
+  context.global.MNKnowledgeBaseInstance = openingAddon;
+  pending = false;
+  controller.canReplaceCommentSurface = async () => true;
+  controller.show = async () => { controller.view.hidden = false; };
+  controller.loadProofStructureWorkbenchHTML = () => {
+    controller.currentHTMLType = 'proof-structure-workbench';
+    controller.webViewLoaded = true;
+  };
+  controller.runJavaScript = async () => true;
+  controller.currentHTMLType = 'comment-manager';
+  assert.equal(await openingAddon.openProofStructureWorkbench('NOTE', '证明'), true, '从评论面板首次打开证明图必须成功');
+  assert.equal(openingAddon.currentManagedNote.noteId, 'NOTE');
+  assert.equal(openingAddon.currentProofStructureContext.noteId, 'NOTE');
+  assert.equal(controller.currentProofStructureContext, undefined, '证明上下文不得写入原生回调所属的控制器');
+  const previousContext = openingAddon.currentProofStructureContext;
+  assert.equal(await openingAddon.openProofStructureWorkbench('NOTE', '证明'), true, '复用已打开的证明图仍须成功');
+  assert.notEqual(openingAddon.currentProofStructureContext, previousContext, '再次打开应使旧会话失效');
   const from = main.indexOf('  MNKnowledgeBaseClass.prototype.returnFromProofStructureWorkbench =');
   const to = main.indexOf('  MNKnowledgeBaseClass.prototype.refreshOpenCommentManagerForNote', from);
   const notices = [];

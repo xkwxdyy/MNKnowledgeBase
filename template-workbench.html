@@ -2,25 +2,68 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
   <title>模板工作台</title>
   <style>
     :root {
+      color-scheme: light dark;
+      accent-color: var(--blue);
       --bg: #f5f7fb;
       --panel: #ffffff;
+      --surface-soft: #fbfcff;
       --line: #d9e0ea;
+      --border-hover: #b8c4d9;
+      --button-hover-bg: #f8faff;
       --text: #1d2330;
       --muted: #697386;
       --blue: #2f6fed;
+      --blue-hover: #245cd1;
       --blue-soft: #e8f0ff;
+      --quick-border: #bfd2ff;
+      --quick-ink: #173f91;
+      --quick-hover-bg: #e1ecff;
+      --quick-hover-border: #9cbcf8;
       --green: #1f8f62;
       --orange: #c46a17;
+      --confirm-bg: #fff7ed;
+      --confirm-ink: #9a4a09;
       --danger: #b42318;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141821;
+        --panel: #1c222e;
+        --surface-soft: #222938;
+        --line: #30394b;
+        --border-hover: #495772;
+        --button-hover-bg: #252d3d;
+        --text: #ebeff7;
+        --muted: #98a3b8;
+        --blue: #5890ff;
+        --blue-hover: #73a3ff;
+        --blue-soft: rgba(88, 144, 255, 0.16);
+        --quick-border: rgba(88, 144, 255, 0.36);
+        --quick-ink: #a8c7ff;
+        --quick-hover-bg: rgba(88, 144, 255, 0.24);
+        --quick-hover-border: rgba(88, 144, 255, 0.54);
+        --green: #3dd68c;
+        --orange: #f5a524;
+        --confirm-bg: rgba(245, 165, 36, 0.16);
+        --confirm-ink: #fbd38d;
+        --danger: #f97066;
+      }
+    }
+
     * {
       box-sizing: border-box;
+    }
+
+    ::selection {
+      background: var(--blue-soft);
+      color: var(--text);
     }
 
     html,
@@ -50,7 +93,7 @@
       gap: 16px;
       padding: 14px 18px;
       border-bottom: 1px solid var(--line);
-      background: #fff;
+      background: var(--panel);
     }
 
     .top-actions {
@@ -65,6 +108,7 @@
       font-size: 18px;
       font-weight: 700;
       line-height: 1.3;
+      text-wrap: balance;
     }
 
     .target {
@@ -78,13 +122,14 @@
       color: var(--muted);
       text-align: right;
       font-size: 13px;
+      font-variant-numeric: tabular-nums;
     }
 
     .close-mode-btn {
       min-width: 112px;
-      border-color: #bfd2ff;
-      color: #174ea6;
-      background: #eef4ff;
+      border-color: var(--quick-border);
+      color: var(--quick-ink);
+      background: var(--blue-soft);
       font-weight: 650;
     }
 
@@ -138,7 +183,7 @@
       width: 100%;
       border: 1px solid var(--line);
       border-radius: 6px;
-      background: #fff;
+      background: var(--panel);
       color: var(--text);
       font: inherit;
       padding: 9px 10px;
@@ -149,11 +194,13 @@
       min-height: 150px;
       line-height: 1.55;
       resize: vertical;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
     .base-title-input {
-      min-height: 128px;
+      min-height: 76px;
       font-family: inherit;
       font-size: 15px;
       line-height: 1.55;
@@ -175,6 +222,7 @@
       color: var(--muted);
       font-size: 12px;
       line-height: 1.5;
+      text-wrap: pretty;
     }
 
     .quick-grid {
@@ -187,7 +235,7 @@
     button {
       border: 1px solid var(--line);
       border-radius: 6px;
-      background: #fff;
+      background: var(--panel);
       color: var(--text);
       font: inherit;
       min-height: 36px;
@@ -200,8 +248,8 @@
     }
 
     button:hover:not(:disabled) {
-      border-color: #b8c4d9;
-      background: #f8faff;
+      border-color: var(--border-hover);
+      background: var(--button-hover-bg);
     }
 
     button:focus-visible {
@@ -217,14 +265,14 @@
     .quick-btn {
       text-align: left;
       background: var(--blue-soft);
-      border-color: #bfd2ff;
-      color: #173f91;
+      border-color: var(--quick-border);
+      color: var(--quick-ink);
       font-weight: 650;
     }
 
     .quick-btn:hover:not(:disabled) {
-      background: #e1ecff;
-      border-color: #9cbcf8;
+      background: var(--quick-hover-bg);
+      border-color: var(--quick-hover-border);
     }
 
     .segmented {
@@ -241,15 +289,17 @@
     }
 
     .mode-btn[aria-pressed="true"]:hover:not(:disabled) {
-      border-color: #245cd1;
-      background: #245cd1;
+      border-color: var(--blue-hover);
+      background: var(--blue-hover);
     }
 
     .mode-btn.confirm-pending,
-    .mode-btn.confirm-pending:hover:not(:disabled) {
+    .mode-btn.confirm-pending:hover:not(:disabled),
+    .secondary.confirm-pending,
+    .secondary.confirm-pending:hover:not(:disabled) {
       border-color: var(--orange);
-      background: #fff7ed;
-      color: #9a4a09;
+      background: var(--confirm-bg);
+      color: var(--confirm-ink);
       font-weight: 700;
       box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
     }
@@ -259,7 +309,7 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       overflow: hidden;
-      background: #fbfcff;
+      background: var(--surface-soft);
     }
 
     .preview-head {
@@ -269,8 +319,9 @@
       gap: 10px;
       padding: 10px 12px;
       border-bottom: 1px solid var(--line);
-      background: #fff;
+      background: var(--panel);
       font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
 
     .preview-body {
@@ -289,7 +340,7 @@
       border: 1px solid var(--line);
       border-radius: 6px;
       padding: 9px 10px;
-      background: #fbfcff;
+      background: var(--panel);
     }
 
     .preview-title {
@@ -301,6 +352,7 @@
       margin-top: 3px;
       color: var(--muted);
       font-size: 12px;
+      font-variant-numeric: tabular-nums;
     }
 
     .footer-actions {
@@ -321,13 +373,13 @@
     }
 
     .primary:hover:not(:disabled) {
-      border-color: #245cd1;
-      background: #245cd1;
+      border-color: var(--blue-hover);
+      background: var(--blue-hover);
     }
 
     .secondary {
       color: var(--blue);
-      border-color: #bfd2ff;
+      border-color: var(--quick-border);
     }
 
     .empty {
@@ -336,6 +388,7 @@
       border-radius: 6px;
       padding: 16px;
       text-align: center;
+      text-wrap: pretty;
     }
 
     .ok {
@@ -651,7 +704,31 @@
       }
     }
 
+    let resetConfirmArmed = false;
+    let resetConfirmTimer = null;
+
+    function disarmResetConfirm() {
+      resetConfirmArmed = false;
+      clearTimeout(resetConfirmTimer);
+      if (dom.resetBtn) {
+        dom.resetBtn.classList.remove('confirm-pending');
+        dom.resetBtn.textContent = '重置';
+      }
+    }
+
     function resetForm() {
+      const hasInput = String(dom.chainInput.value || '').trim().length > 0
+        || normalizeText(dom.baseTitleInput.value) !== normalizeText(state.baseTitle);
+      if (hasInput && !resetConfirmArmed) {
+        resetConfirmArmed = true;
+        dom.resetBtn.classList.add('confirm-pending');
+        dom.resetBtn.textContent = '再点一次重置';
+        setStatus('再点一次「重置」清空当前模板输入', '');
+        clearTimeout(resetConfirmTimer);
+        resetConfirmTimer = setTimeout(disarmResetConfirm, MODE_CONFIRM_WINDOW_MS);
+        return;
+      }
+      disarmResetConfirm();
       clearPendingMode();
       dom.baseTitleInput.value = state.baseTitle || '';
       dom.chainInput.value = '';
@@ -749,13 +826,40 @@
     document.querySelectorAll('[data-preset]').forEach((btn) => {
       btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
     });
-    dom.baseTitleInput.addEventListener('input', buildPreview);
-    dom.chainInput.addEventListener('input', buildPreview);
+    dom.baseTitleInput.addEventListener('input', () => {
+      disarmResetConfirm();
+      buildPreview();
+    });
+    dom.chainInput.addEventListener('input', () => {
+      disarmResetConfirm();
+      buildPreview();
+    });
     dom.modeButtons.addEventListener('click', (event) => {
       const btn = event.target.closest('[data-mode]');
       if (btn) {
         event.preventDefault();
         handleModeActivate(btn.dataset.mode);
+      }
+    });
+    dom.modeButtons.addEventListener('keydown', (event) => {
+      if (event.isComposing || event.keyCode === 229) return;
+      if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+      const btn = event.target.closest('[data-mode]');
+      if (!btn) return;
+      const buttons = Array.from(dom.modeButtons.querySelectorAll('[data-mode]:not(:disabled)'));
+      const idx = buttons.indexOf(btn);
+      if (idx === -1 || buttons.length === 0) return;
+      event.preventDefault();
+      let nextIdx = idx;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIdx = (idx + 1) % buttons.length;
+      else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIdx = (idx - 1 + buttons.length) % buttons.length;
+      else if (event.key === 'Home') nextIdx = 0;
+      else if (event.key === 'End') nextIdx = buttons.length - 1;
+      const nextBtn = buttons[nextIdx];
+      if (nextBtn) {
+        clearPendingMode();
+        setMode(nextBtn.dataset.mode);
+        nextBtn.focus();
       }
     });
     dom.modeButtons.addEventListener('dblclick', (event) => {
@@ -768,10 +872,11 @@
     }
     document.addEventListener('keydown', (event) => {
       if (event.isComposing || event.keyCode === 229) return;
-      if (event.key === 'Escape' && state.pendingModeTap.mode) {
+      if (event.key === 'Escape' && (state.pendingModeTap.mode || resetConfirmArmed)) {
         event.preventDefault();
         clearPendingMode();
-        setStatus(state.noteId ? '已取消创建确认' : '已取消', '');
+        disarmResetConfirm();
+        setStatus(state.noteId ? '已取消确认状态' : '已取消', '');
         return;
       }
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {

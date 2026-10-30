@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "topic": "reading-review-target",
+  "changes": [
+    {
+      "id": "reading-review-target",
+      "type": "fixed",
+      "zh": "精读制卡按明确的处理后卡片对象请求复习，并沿用原卡识别出的类型，避免选择命令失效及顶层卡片遗漏。",
+      "changelog": false,
+      "announce": false
+    }
+  ]
+}

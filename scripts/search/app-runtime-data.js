@@ -152,7 +152,9 @@ function upsertCardsIntoPatchMap(cardMap, upserts) {
     if (card.type === '归类' || previous?.type === '归类') {
       classificationTouched = true;
     }
-    cardMap.set(key, card);
+    cardMap.set(key, previous?.indexSources && !card.indexSources
+      ? { ...card, indexSources: previous.indexSources.slice() }
+      : card);
   });
   return classificationTouched;
 }

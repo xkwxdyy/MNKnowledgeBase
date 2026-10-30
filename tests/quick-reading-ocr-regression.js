@@ -26,6 +26,8 @@ const context = {
   Number,
   Object,
   Promise,
+  KnowledgeBaseDefinitionConcept: require('../KnowledgeBaseDefinitionConcept'),
+  MNUtil: { currentNotebookId: 'study' },
   RegExp,
   Set,
   String,
@@ -242,6 +244,7 @@ async function captureQuickReadingOCRRequest(needTranslation) {
     },
   };
   context.MNUtil = {
+    delay() { return new Promise(() => {}); },
     MD5(value) {
       return `md5-${String(value).length}`;
     },
@@ -296,6 +299,16 @@ async function captureQuickReadingOCRRequest(needTranslation) {
   assert.strictEqual(normalVisionResult, '普通识别成功');
   assert.strictEqual(normalOCRRequestCalls, 1, 'ordinary OCR must retain the existing MNOCR request path');
   assert.strictEqual(timedOCRRequestCalls, 0, 'ordinary OCR must not use the quick-reading timed request path');
+
+  delete context.ocrNetwork.sendRequest;
+  const currentMNOCRVisionResult = await originalChatGPTVision(
+    'image-data',
+    'vision-model',
+    'prompt',
+    false,
+  );
+  assert.strictEqual(currentMNOCRVisionResult, '限时识别成功');
+  assert.strictEqual(timedOCRRequestCalls, 1, 'MNOCR without its legacy sender must use MNUtils JSON transport even without a timeout option');
 
   context.MNConnection.sendRequest = async () => ({ error: 'The request timed out.' });
   const timeoutDiagnostic = {};
@@ -359,29 +372,55 @@ async function captureQuickReadingOCRRequest(needTranslation) {
     ocrDiagnosticTarget: nonTimeoutDiagnostic,
   });
   assert.strictEqual(nonTimeoutResult, undefined);
-  assert.deepStrictEqual(attemptedModels, ['broken-model'], 'non-timeout failures must not spend a second provider request');
-  assert.strictEqual(nonTimeoutDiagnostic.fallbackUsed, false);
+  assert.deepStrictEqual(attemptedModels, ['broken-model', 'fast-model'], 'provider errors must immediately try the configured fallback');
+  assert.strictEqual(nonTimeoutDiagnostic.fallbackUsed, true);
+
+  const originalConfig = JSON.stringify(context.KnowledgeBaseConfig.config);
+  const legacyCalls = [];
+  context.KnowledgeBaseConfig.getAvailableOCRSources = mode => {
+    assert.strictEqual(mode, 2, 'fallback candidates must match the requested OCR mode');
+    return ['broken-model', 'Doc2X', 'SimpleTex', 'unused-model', 'Doc2X'];
+  };
+  context.ocrNetwork.doc2xImgOCR = async image => {
+    legacyCalls.push(['Doc2X', image]);
+    throw Error('fixture unavailable');
+  };
+  context.ocrNetwork.simpleTexOCR = async image => {
+    legacyCalls.push(['SimpleTex', image]);
+    return '备用公式识别成功';
+  };
+  const legacyDiagnostic = {};
+  attemptedModels.length = 0;
+  assert.strictEqual(await Network.OCR('image-data', 'broken-model', 'same prompt', {
+    mode: 2, timeoutSeconds: 12, fallbackSource: 'broken-model', ocrDiagnosticTarget: legacyDiagnostic,
+  }), '备用公式识别成功');
+  assert.deepStrictEqual(attemptedModels, ['broken-model']);
+  assert.deepStrictEqual(legacyCalls, [['Doc2X', 'image-data'], ['SimpleTex', 'image-data']], 'legacy fallbacks must use their own OCR adapters and retain the image');
+  assert.deepStrictEqual(Array.from(legacyDiagnostic.attempts, attempt => attempt.model), ['broken-model', 'Doc2X', 'SimpleTex']);
+  assert.strictEqual(legacyDiagnostic.finalModel, 'SimpleTex');
+  assert.strictEqual(legacyDiagnostic.success, true);
+  assert.strictEqual(JSON.stringify(context.KnowledgeBaseConfig.config), originalConfig, 'fallback must not change saved user configuration');
+
+  attemptedModels.length = 0;
+  legacyCalls.length = 0;
+  Network.ChatGPTVision = async () => '主模型识别成功';
+  const successDiagnostic = {};
+  assert.strictEqual(await Network.OCR('image-data', 'working-model', 'prompt', {
+    mode: 2, ocrDiagnosticTarget: successDiagnostic,
+  }), '主模型识别成功');
+  assert.strictEqual(successDiagnostic.attempts.length, 1, 'a successful primary must stop the chain');
+  assert.strictEqual(successDiagnostic.fallbackUsed, false);
+  assert.strictEqual(legacyCalls.length, 0);
 
   assert.match(
     mainSource,
     /applyQuickReadingOCRToTitle[\s\S]*?applyOCRToTitleWithMode\(note, 1, \{\s*\.\.\.options,\s*quickReadingPlainText: true,/,
     'quick reading must explicitly select the Unicode-only post-processing profile',
   );
-  assert.match(
-    mainSource,
-    /processReadingFollowNote[\s\S]*?applyQuickReadingOCRToTitle\(note,\s*\{\s*ocrDiagnosticTarget:/,
-    'quick reading follow flow must retain its dedicated OCR entry point',
-  );
-  assert.match(
-    mainSource,
-    /refreshAfterQuickReadingOCR[\s\S]*?xdyyRefreshAfterDBChangedNow[\s\S]*?app\.refreshAfterDBChanged[\s\S]*?refreshAfterDBChanged/,
-    'quick reading must use an immediate post-OCR DB refresh with compatible fallbacks',
-  );
-  assert.match(
-    mainSource,
-    /ocrSuccess = !!await this\.applyQuickReadingOCRToTitle[\s\S]*?this\.refreshAfterQuickReadingOCR\(processedNote \|\| note, 'afterConversion'\)/,
-    'quick reading must refresh only after successful OCR and conversion complete',
-  );
+  assert.match(mainSource, /processReadingFollowNote = async function\(note\) \{\s*return KnowledgeBaseResearchCore.getRuntime\(\).processExcerpt\(this, note\)/, 'Broad routing delegates to the shared guarded pipeline');
+  const core = fs.readFileSync(path.join(addonRoot, 'KnowledgeBaseResearchCore.js'), 'utf8');
+  assert.match(core, /ocr: function \(instance, n, options\)[\s\S]*?instance.applyQuickReadingOCRToTitle/, 'Shared routing retains the dedicated OCR entry');
+  assert.match(core, /await deps\.ocr[\s\S]*?deps\.convert[\s\S]*?await deps\.refresh/, 'Presentation follows OCR and conversion');
   assert.match(
     utilsSource,
     /OCRToTitle[\s\S]*?const applyTitle = \(\) => \{[\s\S]*?refreshNoteLocally\(note, false[\s\S]*?await KnowledgeBaseTemplate\.runUndoGroupingWithoutGlobalDBRefreshAsync\(applyTitle/,
@@ -398,9 +437,9 @@ async function captureQuickReadingOCRRequest(needTranslation) {
     'the model settings menu must expose a dedicated quick-reading model selector',
   );
   assert.match(
-    mainSource,
-    /follow\.slow[\s\S]*?ocr:\s*ocrDiagnostic/,
-    'the retained slow summary must include the per-request OCR diagnostic payload',
+    core,
+    /log\('ocr.finished',[\s\S]*?durationMs:[\s\S]*?log\('excerpt.finished'/,
+    'Shared routing retains phase timing diagnostics without private content',
   );
 
   console.log('quick reading OCR regression ok');

@@ -95,7 +95,8 @@ vm.runInContext(
 );
 
 const instance = new context.MNKnowledgeBaseClass();
-instance.convertExcerptToNoExcerptIfNeeded = (note) => note;
+let conversions = 0;
+instance.convertExcerptToNoExcerptIfNeeded = (note) => { conversions++; return note; };
 instance._webViewSearchDataCache = {
   fullIndexData: {
     cards: [
@@ -139,6 +140,22 @@ async function run() {
   assert.strictEqual(mainCalls[0].options.usageScore, 8, '主卡刷新必须继承使用权重');
   assert.strictEqual(intermediateCalls.length, 1);
   assert.strictEqual(mainResult.entry.indexSource, 'main');
+  assert.strictEqual(conversions, 2, 'ordinary manual index refresh keeps its original conversion policy');
+  const readOnlyResult = await instance._refreshSearchCardIndex('CARD-3', {
+    indexSource: 'main', showErrorHUD: false, showSuccessHUD: false, allowCardMutation: false,
+  });
+  assert.strictEqual(readOnlyResult.success, true);
+  assert.strictEqual(conversions, 2, 'post-transaction indexing must not create another card or undo group');
+  context.KnowledgeBaseUtils.webViewController = { webViewLoaded: true, currentHTMLType: 'search', webView: {} };
+  instance.pushSearchIndexPatchToWebView = async () => false;
+  instance.isWebViewPushResultSuccess = () => false;
+  instance._loadSearchDataToWebView = async () => { throw Error('read-only indexing must not run a full reload fallback'); };
+  const patchFailure = await instance._refreshSearchCardIndex('CARD-4', {
+    indexSource: 'main', showErrorHUD: false, showSuccessHUD: false, allowCardMutation: false,
+  });
+  assert.strictEqual(patchFailure.success, false);
+  assert.strictEqual(patchFailure.persisted, true);
+  assert.strictEqual(conversions, 2);
 
   assert.match(searchInteractionsSource, /params\.indexSource\s*=\s*String\(card\.indexSource\)/);
   assert.match(controllerSource, /indexSource:\s*config\.params\.indexSource/);

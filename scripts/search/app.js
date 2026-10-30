@@ -263,7 +263,9 @@ function init() {
   loadTemplateOptions();
   loadSidebarOperationPreference();
   loadSidebarWidth();
+  loadSearchSources();
   loadLocalSearchRoot();
+  renderSearchSourceBar();
   rebuildCardLookup();
   rebuildFilteredCardLookup();
   rebuildAIRecommendationLookup();

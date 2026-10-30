@@ -363,7 +363,7 @@
           content = content.replace(emoji, '').trim();
         });
 
-      ['思路：', '方法：', 'CHECK', 'SKETCH', 'SKETCH: '].forEach((prefix) => {
+      ['思路：', '方法：', 'CHECK: ', 'CHECK', 'SKETCH: ', 'SKETCH'].forEach((prefix) => {
         if (content.startsWith(prefix)) {
           content = content.slice(prefix.length).trim();
         }
